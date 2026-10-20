@@ -3,6 +3,9 @@ services:
     build: ./
     env_file:
       - .env
+    environment:
+      POSTGRES_HOST: db
+      POSTGRES_PORT: 5432
     container_name: ${CONTAINER_NAME}
     ports: 
       - ${PORT}:${PORT}
@@ -17,7 +20,7 @@ services:
       - .env
     container_name: ${POSTGRES_NAME}
     ports:
-      - "${POSTGRES_PORT}:${POSTGRES_PORT}"
+      - "${POSTGRES_HOST_PORT:-5432}:${POSTGRES_PORT}"
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}

@@ -1,5 +1,5 @@
 export interface ClientProps {
-  id: number;
+  id?: number;
   nit: string;
   businessName: string;
   commercialName: string;
@@ -41,7 +41,7 @@ export interface UpdateClientProps {
 }
 
 export class Client {
-  readonly id: number;
+  readonly id?: number;
   nit: string;
   businessName: string;
   commercialName: string;
@@ -115,4 +115,3 @@ export class Client {
     this.updatedAt = new Date();
   }
 }
-

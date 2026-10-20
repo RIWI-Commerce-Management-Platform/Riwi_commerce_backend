@@ -7,7 +7,7 @@ import { ClientNotFoundError } from '../domain/client-not-found.error.js';
 export class GetClientByIdUseCase {
   constructor(private readonly clientRepository: ClientRepository) {}
 
-  async execute(id: string): Promise<Client> {
+  async execute(id: number): Promise<Client> {
     const client = await this.clientRepository.findById(id);
     if (!client) {
       throw new ClientNotFoundError(id);
@@ -15,4 +15,3 @@ export class GetClientByIdUseCase {
     return client;
   }
 }
-

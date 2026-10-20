@@ -6,7 +6,7 @@ import { ClientNitAlreadyExistsError } from '../domain/client-nit-already-exists
 import { GeocodingPort } from './ports/geocoding.port.js';
 
 export interface UpdateClientInput {
-  id: string;
+  id: number;
   nit?: string;
   businessName?: string;
   commercialName?: string;
@@ -99,4 +99,3 @@ export class UpdateClientUseCase {
     return this.clientRepository.save(client);
   }
 }
-

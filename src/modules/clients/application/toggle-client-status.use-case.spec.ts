@@ -19,7 +19,7 @@ describe('ToggleClientStatusUseCase', () => {
 
   const createActiveClient = () =>
     new Client({
-      id: 'client-1',
+      id: 1,
       nit: '900123456-1',
       businessName: 'Distribuidora Los Andes S.A.S.',
       commercialName: 'Los Andes Market',
@@ -44,7 +44,7 @@ describe('ToggleClientStatusUseCase', () => {
 
     const useCase = new ToggleClientStatusUseCase(mockRepository);
 
-    await expect(useCase.execute({ id: 'missing-id' })).rejects.toThrow(
+    await expect(useCase.execute({ id: 999 })).rejects.toThrow(
       ClientNotFoundError,
     );
   });
@@ -54,7 +54,7 @@ describe('ToggleClientStatusUseCase', () => {
     findById.mockResolvedValueOnce(client);
 
     const useCase = new ToggleClientStatusUseCase(mockRepository);
-    const result = await useCase.execute({ id: 'client-1' });
+    const result = await useCase.execute({ id: 1 });
 
     expect(result.isActive).toBe(false);
     expect(save).toHaveBeenCalledWith(client);
@@ -66,9 +66,8 @@ describe('ToggleClientStatusUseCase', () => {
     findById.mockResolvedValueOnce(client);
 
     const useCase = new ToggleClientStatusUseCase(mockRepository);
-    const result = await useCase.execute({ id: 'client-1', isActive: true });
+    const result = await useCase.execute({ id: 1, isActive: true });
 
     expect(result.isActive).toBe(true);
   });
 });
-

@@ -22,7 +22,7 @@ export class ClientOrmEntity {
 
   @Column({ type: 'varchar', length: 255 })
   address!: string;
-  
+
   @Column({ type: 'varchar', length: 100 })
   department!: string;
 
@@ -68,4 +68,3 @@ export class ClientOrmEntity {
   @UpdateDateColumn({ name: 'updated_at', type: 'timestamptz' })
   updatedAt!: Date;
 }
-

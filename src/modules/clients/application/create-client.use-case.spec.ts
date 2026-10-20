@@ -47,7 +47,7 @@ describe('CreateClientUseCase', () => {
     findByNit.mockResolvedValueOnce(
       new Client({
         ...baseInput,
-        id: 'existing-id',
+        id: 99,
         isActive: true,
         createdAt: new Date(),
         updatedAt: new Date(),
@@ -109,4 +109,3 @@ describe('CreateClientUseCase', () => {
     expect(result.longitude).toBeNull();
   });
 });
-

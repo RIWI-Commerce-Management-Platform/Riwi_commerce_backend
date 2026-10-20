@@ -4,7 +4,7 @@ import { ClientRepository } from '../domain/client.repository.js';
 import { ClientNotFoundError } from '../domain/client-not-found.error.js';
 
 export interface ToggleClientStatusInput {
-  id: string;
+  id: number;
   isActive?: boolean;
 }
 
@@ -35,4 +35,3 @@ export class ToggleClientStatusUseCase {
     return this.clientRepository.save(client);
   }
 }
-

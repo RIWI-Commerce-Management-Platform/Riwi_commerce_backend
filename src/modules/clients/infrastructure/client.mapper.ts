@@ -29,7 +29,9 @@ export class ClientMapper {
 
   static toOrm(domain: Client): ClientOrmEntity {
     const orm = new ClientOrmEntity();
-    orm.id = domain.id;
+    if (domain.id !== undefined) {
+      orm.id = domain.id;
+    }
     orm.nit = domain.nit;
     orm.businessName = domain.businessName;
     orm.commercialName = domain.commercialName;
@@ -52,4 +54,3 @@ export class ClientMapper {
     return orm;
   }
 }
-

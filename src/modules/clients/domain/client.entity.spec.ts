@@ -4,7 +4,7 @@ import { Client } from './client.entity.js';
 describe('Client Entity', () => {
   const createBaseClient = (): Client => {
     return new Client({
-      id: 'c4e5f6a7-1234-4567-89ab-cdef01234567',
+      id: 1,
       nit: '900123456-1',
       businessName: 'Distribuidora Los Andes S.A.S.',
       commercialName: 'Los Andes Market',
@@ -30,7 +30,7 @@ describe('Client Entity', () => {
   it('should instantiate correctly with given props', () => {
     const client = createBaseClient();
 
-    expect(client.id).toBe('c4e5f6a7-1234-4567-89ab-cdef01234567');
+    expect(client.id).toBe(1);
     expect(client.nit).toBe('900123456-1');
     expect(client.businessName).toBe('Distribuidora Los Andes S.A.S.');
     expect(client.isActive).toBe(true);
@@ -82,4 +82,3 @@ describe('Client Entity', () => {
     expect(client.businessName).toBe('Distribuidora Los Andes S.A.S.');
   });
 });
-

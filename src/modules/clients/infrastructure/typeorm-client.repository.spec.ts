@@ -7,7 +7,7 @@ import { Client } from '../domain/client.entity.js';
 describe('TypeOrmClientRepository', () => {
   const createMockOrmEntity = (): ClientOrmEntity => {
     const orm = new ClientOrmEntity();
-    orm.id = 'c4e5f6a7-1234-4567-89ab-cdef01234567';
+    orm.id = 1;
     orm.nit = '900123456-1';
     orm.businessName = 'Distribuidora Los Andes S.A.S.';
     orm.commercialName = 'Los Andes Market';
@@ -36,10 +36,10 @@ describe('TypeOrmClientRepository', () => {
     const mockRepo = { findOneBy } as unknown as Repository<ClientOrmEntity>;
 
     const repo = new TypeOrmClientRepository(mockRepo);
-    const result = await repo.findById(orm.id);
+    const result = await repo.findById(1);
 
-    expect(findOneBy).toHaveBeenCalledWith({ id: orm.id });
-    expect(result?.id).toBe(orm.id);
+    expect(findOneBy).toHaveBeenCalledWith({ id: 1 });
+    expect(result?.id).toBe(1);
     expect(result?.latitude).toBe(6.2442);
   });
 
@@ -48,7 +48,7 @@ describe('TypeOrmClientRepository', () => {
     const mockRepo = { findOneBy } as unknown as Repository<ClientOrmEntity>;
 
     const repo = new TypeOrmClientRepository(mockRepo);
-    const result = await repo.findById('non-existent');
+    const result = await repo.findById(999);
 
     expect(result).toBeNull();
   });
@@ -72,7 +72,7 @@ describe('TypeOrmClientRepository', () => {
 
     const repo = new TypeOrmClientRepository(mockRepo);
     const domain = new Client({
-      id: orm.id,
+      id: 1,
       nit: orm.nit,
       businessName: orm.businessName,
       commercialName: orm.commercialName,
@@ -97,7 +97,7 @@ describe('TypeOrmClientRepository', () => {
     const result = await repo.save(domain);
 
     expect(save).toHaveBeenCalled();
-    expect(result.id).toBe(domain.id);
+    expect(result.id).toBe(1);
   });
 
   it('findPaginated should apply filters and return paginated domain clients', async () => {
@@ -148,7 +148,7 @@ describe('TypeOrmClientRepository', () => {
     expect(take).toHaveBeenCalledWith(10);
     expect(orderBy).toHaveBeenCalledWith('client.created_at', 'DESC');
     expect(result.data).toHaveLength(1);
-    expect(result.data[0].id).toBe(orm.id);
+    expect(result.data[0].id).toBe(1);
     expect(result.meta).toEqual({
       total: 1,
       page: 1,
@@ -159,4 +159,3 @@ describe('TypeOrmClientRepository', () => {
     });
   });
 });
-

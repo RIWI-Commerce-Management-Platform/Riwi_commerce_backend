@@ -2,8 +2,8 @@ import { ApiProperty } from '@nestjs/swagger';
 import { Client } from '../../domain/client.entity.js';
 
 export class ClientResponseDto {
-  @ApiProperty({ example: '3fa85f64-5717-4562-b3fc-2c963f66afa6' })
-  id: string;
+  @ApiProperty({ example: 1 })
+  id: number;
 
   @ApiProperty({ example: '900123456-1' })
   nit: string;
@@ -63,7 +63,7 @@ export class ClientResponseDto {
   updatedAt: Date;
 
   constructor(client: Client) {
-    this.id = client.id;
+    this.id = client.id!;
     this.nit = client.nit;
     this.businessName = client.businessName;
     this.commercialName = client.commercialName;

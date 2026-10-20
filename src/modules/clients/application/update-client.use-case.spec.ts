@@ -25,7 +25,7 @@ describe('UpdateClientUseCase', () => {
   };
 
   const baseProps = {
-    id: 'client-1',
+    id: 1,
     nit: '900123456-1',
     businessName: 'Distribuidora Los Andes S.A.S.',
     commercialName: 'Los Andes Market',
@@ -55,7 +55,7 @@ describe('UpdateClientUseCase', () => {
     const useCase = new UpdateClientUseCase(mockRepository, mockGeocodingPort);
 
     await expect(
-      useCase.execute({ id: 'non-existent-id', commercialName: 'New Name' }),
+      useCase.execute({ id: 999, commercialName: 'New Name' }),
     ).rejects.toThrow(ClientNotFoundError);
   });
 
@@ -64,7 +64,7 @@ describe('UpdateClientUseCase', () => {
     findByNit.mockResolvedValueOnce(
       new Client({
         ...baseProps,
-        id: 'different-client-id',
+        id: 2,
         nit: '900999999-9',
       }),
     );
@@ -72,7 +72,7 @@ describe('UpdateClientUseCase', () => {
     const useCase = new UpdateClientUseCase(mockRepository, mockGeocodingPort);
 
     await expect(
-      useCase.execute({ id: 'client-1', nit: '900999999-9' }),
+      useCase.execute({ id: 1, nit: '900999999-9' }),
     ).rejects.toThrow(ClientNitAlreadyExistsError);
   });
 
@@ -85,7 +85,7 @@ describe('UpdateClientUseCase', () => {
 
     const useCase = new UpdateClientUseCase(mockRepository, mockGeocodingPort);
     const result = await useCase.execute({
-      id: 'client-1',
+      id: 1,
       address: 'Carrera 43A # 1-50',
       municipality: 'Envigado',
     });
@@ -105,7 +105,7 @@ describe('UpdateClientUseCase', () => {
 
     const useCase = new UpdateClientUseCase(mockRepository, mockGeocodingPort);
     const result = await useCase.execute({
-      id: 'client-1',
+      id: 1,
       address: 'Carrera 43A # 1-50',
       latitude: 10.0,
       longitude: -74.0,

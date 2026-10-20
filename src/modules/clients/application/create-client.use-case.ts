@@ -1,4 +1,3 @@
-import { randomUUID } from 'node:crypto';
 import { Injectable } from '@nestjs/common';
 import { Client } from '../domain/client.entity.js';
 import { ClientRepository } from '../domain/client.repository.js';
@@ -54,7 +53,6 @@ export class CreateClientUseCase {
 
     const now = new Date();
     const client = new Client({
-      id: randomUUID(),
       nit: input.nit,
       businessName: input.businessName,
       commercialName: input.commercialName,
@@ -79,4 +77,3 @@ export class CreateClientUseCase {
     return this.clientRepository.save(client);
   }
 }
-

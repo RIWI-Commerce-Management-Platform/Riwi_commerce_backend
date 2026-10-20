@@ -8,7 +8,13 @@ export class CreateClientsTable1792505831167 implements MigrationInterface {
       new Table({
         name: 'clients',
         columns: [
-          { name: 'id', type: 'uuid', isPrimary: true },
+          {
+            name: 'id',
+            type: 'int',
+            isPrimary: true,
+            isGenerated: true,
+            generationStrategy: 'increment',
+          },
           { name: 'nit', type: 'varchar', length: '30', isUnique: true },
           { name: 'business_name', type: 'varchar', length: '255' },
           { name: 'commercial_name', type: 'varchar', length: '255' },
@@ -45,4 +51,3 @@ export class CreateClientsTable1792505831167 implements MigrationInterface {
     await queryRunner.dropTable('clients');
   }
 }
-

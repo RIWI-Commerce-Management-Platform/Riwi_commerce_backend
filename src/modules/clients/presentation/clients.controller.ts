@@ -7,6 +7,7 @@ import {
   HttpStatus,
   NotFoundException,
   Param,
+  ParseIntPipe,
   Patch,
   Post,
   Put,
@@ -17,6 +18,7 @@ import {
   ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
+  ApiParam,
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
@@ -76,12 +78,15 @@ export class ClientsController {
 
   @Get(':id')
   @ApiOperation({ summary: 'Get client details by ID' })
+  @ApiParam({ name: 'id', type: Number, example: 1 })
   @ApiOkResponse({
     description: 'Client details including coordinates.',
     type: ClientResponseDto,
   })
   @ApiNotFoundResponse({ description: 'Client not found.' })
-  async getClientById(@Param('id') id: string): Promise<ClientResponseDto> {
+  async getClientById(
+    @Param('id', ParseIntPipe) id: number,
+  ): Promise<ClientResponseDto> {
     try {
       const client = await this.getClientByIdUseCase.execute(id);
       return new ClientResponseDto(client);
@@ -136,6 +141,7 @@ export class ClientsController {
 
   @Put(':id')
   @ApiOperation({ summary: 'Update an existing client' })
+  @ApiParam({ name: 'id', type: Number, example: 1 })
   @ApiOkResponse({
     description: 'The client has been successfully updated.',
     type: ClientResponseDto,
@@ -145,7 +151,7 @@ export class ClientsController {
     description: 'The requested NIT is already taken by another client.',
   })
   async update(
-    @Param('id') id: string,
+    @Param('id', ParseIntPipe) id: number,
     @Body() dto: UpdateClientDto,
   ): Promise<ClientResponseDto> {
     try {
@@ -183,13 +189,14 @@ export class ClientsController {
 
   @Patch(':id/status')
   @ApiOperation({ summary: 'Activate or deactivate a client' })
+  @ApiParam({ name: 'id', type: Number, example: 1 })
   @ApiOkResponse({
     description: 'The client status has been updated successfully.',
     type: ClientResponseDto,
   })
   @ApiNotFoundResponse({ description: 'Client not found.' })
   async toggleStatus(
-    @Param('id') id: string,
+    @Param('id', ParseIntPipe) id: number,
     @Body() dto?: ToggleClientStatusDto,
   ): Promise<ClientResponseDto> {
     try {

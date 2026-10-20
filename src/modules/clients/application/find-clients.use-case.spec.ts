@@ -20,7 +20,7 @@ describe('FindClientsUseCase', () => {
 
   it('should call clientRepository.findPaginated and return result', async () => {
     const dummyClient = new Client({
-      id: 'c4e5f6a7-1234-4567-89ab-cdef01234567',
+      id: 1,
       nit: '900123456-1',
       businessName: 'Distribuidora Los Andes S.A.S.',
       commercialName: 'Los Andes Market',
@@ -70,4 +70,3 @@ describe('FindClientsUseCase', () => {
     expect(result).toEqual(expectedResult);
   });
 });
-

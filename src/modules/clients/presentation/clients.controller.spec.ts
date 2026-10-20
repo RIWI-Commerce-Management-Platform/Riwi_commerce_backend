@@ -16,7 +16,7 @@ import { PaginatedResult } from '../../../shared/pagination/paginated-result.int
 
 describe('ClientsController', () => {
   const dummyClient = new Client({
-    id: 'c4e5f6a7-1234-4567-89ab-cdef01234567',
+    id: 1,
     nit: '900123456-1',
     businessName: 'Distribuidora Los Andes S.A.S.',
     commercialName: 'Los Andes Market',
@@ -95,7 +95,7 @@ describe('ClientsController', () => {
       const response = await controller.findClients(query);
 
       expect(response.data).toHaveLength(1);
-      expect(response.data[0].id).toBe(dummyClient.id);
+      expect(response.data[0].id).toBe(1);
       expect(response.data[0].latitude).toBe(6.2442);
       expect(response.data[0].longitude).toBe(-75.5812);
       expect(response.meta.total).toBe(1);
@@ -116,19 +116,19 @@ describe('ClientsController', () => {
     it('should return client response with coordinates when found', async () => {
       getClientByIdExecute.mockResolvedValueOnce(dummyClient);
 
-      const response = await controller.getClientById(dummyClient.id);
+      const response = await controller.getClientById(1);
 
-      expect(response.id).toBe(dummyClient.id);
+      expect(response.id).toBe(1);
       expect(response.latitude).toBe(6.2442);
       expect(response.longitude).toBe(-75.5812);
     });
 
     it('should translate ClientNotFoundError to NotFoundException', async () => {
       getClientByIdExecute.mockRejectedValueOnce(
-        new ClientNotFoundError('missing-id'),
+        new ClientNotFoundError(999),
       );
 
-      await expect(controller.getClientById('missing-id')).rejects.toThrow(
+      await expect(controller.getClientById(999)).rejects.toThrow(
         NotFoundException,
       );
     });
@@ -157,7 +157,7 @@ describe('ClientsController', () => {
 
       const response = await controller.create(dto);
 
-      expect(response.id).toBe(dummyClient.id);
+      expect(response.id).toBe(1);
       expect(response.nit).toBe(dummyClient.nit);
     });
 
@@ -178,20 +178,17 @@ describe('ClientsController', () => {
     it('should return ClientResponseDto on successful update', async () => {
       updateExecute.mockResolvedValueOnce(dummyClient);
 
-      const response = await controller.update(
-        'c4e5f6a7-1234-4567-89ab-cdef01234567',
-        dto,
-      );
+      const response = await controller.update(1, dto);
 
-      expect(response.id).toBe(dummyClient.id);
+      expect(response.id).toBe(1);
     });
 
     it('should translate ClientNotFoundError to NotFoundException', async () => {
       updateExecute.mockRejectedValueOnce(
-        new ClientNotFoundError('missing-id'),
+        new ClientNotFoundError(999),
       );
 
-      await expect(controller.update('missing-id', dto)).rejects.toThrow(
+      await expect(controller.update(999, dto)).rejects.toThrow(
         NotFoundException,
       );
     });
@@ -201,9 +198,7 @@ describe('ClientsController', () => {
         new ClientNitAlreadyExistsError('900999999-9'),
       );
 
-      await expect(
-        controller.update('c4e5f6a7-1234-4567-89ab-cdef01234567', dto),
-      ).rejects.toThrow(ConflictException);
+      await expect(controller.update(1, dto)).rejects.toThrow(ConflictException);
     });
   });
 
@@ -211,23 +206,20 @@ describe('ClientsController', () => {
     it('should return ClientResponseDto on toggle', async () => {
       toggleStatusExecute.mockResolvedValueOnce(dummyClient);
 
-      const response = await controller.toggleStatus(
-        'c4e5f6a7-1234-4567-89ab-cdef01234567',
-        {
-          isActive: false,
-        },
-      );
+      const response = await controller.toggleStatus(1, {
+        isActive: false,
+      });
 
-      expect(response.id).toBe(dummyClient.id);
+      expect(response.id).toBe(1);
     });
 
     it('should translate ClientNotFoundError to NotFoundException', async () => {
       toggleStatusExecute.mockRejectedValueOnce(
-        new ClientNotFoundError('missing-id'),
+        new ClientNotFoundError(999),
       );
 
       await expect(
-        controller.toggleStatus('missing-id', { isActive: false }),
+        controller.toggleStatus(999, { isActive: false }),
       ).rejects.toThrow(NotFoundException);
     });
   });

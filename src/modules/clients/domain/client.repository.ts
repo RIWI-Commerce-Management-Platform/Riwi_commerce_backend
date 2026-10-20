@@ -10,3 +10,4 @@ export abstract class ClientRepository {
     criteria: ClientFilterCriteria,
   ): Promise<PaginatedResult<Client>>;
 }
+

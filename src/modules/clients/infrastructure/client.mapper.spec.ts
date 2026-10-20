@@ -6,7 +6,7 @@ import { ClientOrmEntity } from './client.orm-entity.js';
 describe('ClientMapper', () => {
   it('should map from ORM entity to domain entity correctly', () => {
     const orm = new ClientOrmEntity();
-    orm.id = 'c4e5f6a7-1234-4567-89ab-cdef01234567';
+    orm.id = 1;
     orm.nit = '900123456-1';
     orm.businessName = 'Distribuidora Los Andes S.A.S.';
     orm.commercialName = 'Los Andes Market';
@@ -29,7 +29,7 @@ describe('ClientMapper', () => {
 
     const domain = ClientMapper.toDomain(orm);
 
-    expect(domain.id).toBe(orm.id);
+    expect(domain.id).toBe(1);
     expect(domain.nit).toBe(orm.nit);
     expect(domain.businessName).toBe(orm.businessName);
     expect(domain.latitude).toBe(6.2442);
@@ -39,7 +39,7 @@ describe('ClientMapper', () => {
 
   it('should map from domain entity to ORM entity correctly', () => {
     const domain = new Client({
-      id: 'c4e5f6a7-1234-4567-89ab-cdef01234567',
+      id: 1,
       nit: '900123456-1',
       businessName: 'Distribuidora Los Andes S.A.S.',
       commercialName: 'Los Andes Market',
@@ -63,11 +63,10 @@ describe('ClientMapper', () => {
 
     const orm = ClientMapper.toOrm(domain);
 
-    expect(orm.id).toBe(domain.id);
+    expect(orm.id).toBe(1);
     expect(orm.nit).toBe(domain.nit);
     expect(orm.latitude).toBeNull();
     expect(orm.longitude).toBeNull();
     expect(orm.isActive).toBe(true);
   });
 });
-
