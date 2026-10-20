@@ -38,8 +38,9 @@ export class TypeOrmQuoteRepository implements QuoteRepository {
   }
 
   async generateNextQuoteNumber(): Promise<string> {
-    const latest = await this.ormRepository.findOne({
+    const [latest] = await this.ormRepository.find({
       order: { createdAt: 'DESC' },
+      take: 1,
     });
 
     if (!latest?.quoteNumber) {
