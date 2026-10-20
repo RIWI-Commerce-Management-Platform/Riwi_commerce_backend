@@ -10,3 +10,4 @@ export abstract class ZoneRepository {
   abstract findByName(name: string): Promise<Zone | null>;
   abstract save(zone: Zone): Promise<Zone>;
 }
+}

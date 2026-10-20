@@ -1,0 +1,234 @@
+import { ConflictException, NotFoundException } from '@nestjs/common';
+import { describe, expect, it, vi } from 'vitest';
+import { Client } from '../domain/client.entity.js';
+import { ClientNitAlreadyExistsError } from '../domain/client-nit-already-exists.error.js';
+import { ClientNotFoundError } from '../domain/client-not-found.error.js';
+import { CreateClientUseCase } from '../application/create-client.use-case.js';
+import { UpdateClientUseCase } from '../application/update-client.use-case.js';
+import { ToggleClientStatusUseCase } from '../application/toggle-client-status.use-case.js';
+import { FindClientsUseCase } from '../application/find-clients.use-case.js';
+import { GetClientByIdUseCase } from '../application/get-client-by-id.use-case.js';
+import { ClientsController } from './clients.controller.js';
+import { CreateClientDto } from './dto/create-client.dto.js';
+import { UpdateClientDto } from './dto/update-client.dto.js';
+import { FindClientsQueryDto } from './dto/find-clients-query.dto.js';
+import { PaginatedResult } from '../../../shared/pagination/paginated-result.interface.js';
+
+describe('ClientsController', () => {
+  const dummyClient = new Client({
+    id: 'c4e5f6a7-1234-4567-89ab-cdef01234567',
+    nit: '900123456-1',
+    businessName: 'Distribuidora Los Andes S.A.S.',
+    commercialName: 'Los Andes Market',
+    address: 'Calle 50 # 45-20',
+    department: 'Antioquia',
+    municipality: 'Medellín',
+    neighborhood: 'Laureles',
+    phone: '+573001234567',
+    email: 'contacto@losandes.com',
+    zoneId: 'b6f6f96e-5264-4b53-9a3b-2fefbbbbbbbb',
+    clientTypeId: 'a1b2c3d4-e5f6-7a8b-9c0d-1e2f3a4b5c6d',
+    potentialId: 'c1d2e3f4-a5b6-7c8d-9e0f-1a2b3c4d5e6f',
+    clientStatusId: 'd1e2f3a4-b5c6-7d8e-9f0a-1b2c3d4e5f6a',
+    visitFrequencyDays: 15,
+    latitude: 6.2442,
+    longitude: -75.5812,
+    isActive: true,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  });
+
+  const createExecute = vi.fn();
+  const mockCreateUseCase = {
+    execute: createExecute,
+  } as unknown as CreateClientUseCase;
+
+  const updateExecute = vi.fn();
+  const mockUpdateUseCase = {
+    execute: updateExecute,
+  } as unknown as UpdateClientUseCase;
+
+  const toggleStatusExecute = vi.fn();
+  const mockToggleStatusUseCase = {
+    execute: toggleStatusExecute,
+  } as unknown as ToggleClientStatusUseCase;
+
+  const findClientsExecute = vi.fn();
+  const mockFindClientsUseCase = {
+    execute: findClientsExecute,
+  } as unknown as FindClientsUseCase;
+
+  const getClientByIdExecute = vi.fn();
+  const mockGetClientByIdUseCase = {
+    execute: getClientByIdExecute,
+  } as unknown as GetClientByIdUseCase;
+
+  const controller = new ClientsController(
+    mockCreateUseCase,
+    mockUpdateUseCase,
+    mockToggleStatusUseCase,
+    mockFindClientsUseCase,
+    mockGetClientByIdUseCase,
+  );
+
+  describe('findClients', () => {
+    it('should return paginated clients with coordinates and meta', async () => {
+      const paginatedResult: PaginatedResult<Client> = {
+        data: [dummyClient],
+        meta: {
+          total: 1,
+          page: 1,
+          limit: 10,
+          totalPages: 1,
+          hasNextPage: false,
+          hasPreviousPage: false,
+        },
+      };
+
+      findClientsExecute.mockResolvedValueOnce(paginatedResult);
+
+      const query = new FindClientsQueryDto();
+      query.search = 'Andes';
+      query.page = '1';
+      query.limit = '10';
+
+      const response = await controller.findClients(query);
+
+      expect(response.data).toHaveLength(1);
+      expect(response.data[0].id).toBe(dummyClient.id);
+      expect(response.data[0].latitude).toBe(6.2442);
+      expect(response.data[0].longitude).toBe(-75.5812);
+      expect(response.meta.total).toBe(1);
+      expect(findClientsExecute).toHaveBeenCalledWith({
+        search: 'Andes',
+        zoneId: undefined,
+        clientTypeId: undefined,
+        potentialId: undefined,
+        municipality: undefined,
+        isActive: undefined,
+        page: 1,
+        limit: 10,
+      });
+    });
+  });
+
+  describe('getClientById', () => {
+    it('should return client response with coordinates when found', async () => {
+      getClientByIdExecute.mockResolvedValueOnce(dummyClient);
+
+      const response = await controller.getClientById(dummyClient.id);
+
+      expect(response.id).toBe(dummyClient.id);
+      expect(response.latitude).toBe(6.2442);
+      expect(response.longitude).toBe(-75.5812);
+    });
+
+    it('should translate ClientNotFoundError to NotFoundException', async () => {
+      getClientByIdExecute.mockRejectedValueOnce(
+        new ClientNotFoundError('missing-id'),
+      );
+
+      await expect(controller.getClientById('missing-id')).rejects.toThrow(
+        NotFoundException,
+      );
+    });
+  });
+
+  describe('create', () => {
+    const dto: CreateClientDto = {
+      nit: '900123456-1',
+      businessName: 'Distribuidora Los Andes S.A.S.',
+      commercialName: 'Los Andes Market',
+      address: 'Calle 50 # 45-20',
+      department: 'Antioquia',
+      municipality: 'Medellín',
+      neighborhood: 'Laureles',
+      phone: '+573001234567',
+      email: 'contacto@losandes.com',
+      zoneId: 'b6f6f96e-5264-4b53-9a3b-2fefbbbbbbbb',
+      clientTypeId: 'a1b2c3d4-e5f6-7a8b-9c0d-1e2f3a4b5c6d',
+      potentialId: 'c1d2e3f4-a5b6-7c8d-9e0f-1a2b3c4d5e6f',
+      clientStatusId: 'd1e2f3a4-b5c6-7d8e-9f0a-1b2c3d4e5f6a',
+      visitFrequencyDays: 15,
+    };
+
+    it('should return ClientResponseDto on successful creation', async () => {
+      createExecute.mockResolvedValueOnce(dummyClient);
+
+      const response = await controller.create(dto);
+
+      expect(response.id).toBe(dummyClient.id);
+      expect(response.nit).toBe(dummyClient.nit);
+    });
+
+    it('should translate ClientNitAlreadyExistsError to ConflictException', async () => {
+      createExecute.mockRejectedValueOnce(
+        new ClientNitAlreadyExistsError('900123456-1'),
+      );
+
+      await expect(controller.create(dto)).rejects.toThrow(ConflictException);
+    });
+  });
+
+  describe('update', () => {
+    const dto: UpdateClientDto = {
+      commercialName: 'Updated Name',
+    };
+
+    it('should return ClientResponseDto on successful update', async () => {
+      updateExecute.mockResolvedValueOnce(dummyClient);
+
+      const response = await controller.update(
+        'c4e5f6a7-1234-4567-89ab-cdef01234567',
+        dto,
+      );
+
+      expect(response.id).toBe(dummyClient.id);
+    });
+
+    it('should translate ClientNotFoundError to NotFoundException', async () => {
+      updateExecute.mockRejectedValueOnce(
+        new ClientNotFoundError('missing-id'),
+      );
+
+      await expect(controller.update('missing-id', dto)).rejects.toThrow(
+        NotFoundException,
+      );
+    });
+
+    it('should translate ClientNitAlreadyExistsError to ConflictException', async () => {
+      updateExecute.mockRejectedValueOnce(
+        new ClientNitAlreadyExistsError('900999999-9'),
+      );
+
+      await expect(
+        controller.update('c4e5f6a7-1234-4567-89ab-cdef01234567', dto),
+      ).rejects.toThrow(ConflictException);
+    });
+  });
+
+  describe('toggleStatus', () => {
+    it('should return ClientResponseDto on toggle', async () => {
+      toggleStatusExecute.mockResolvedValueOnce(dummyClient);
+
+      const response = await controller.toggleStatus(
+        'c4e5f6a7-1234-4567-89ab-cdef01234567',
+        {
+          isActive: false,
+        },
+      );
+
+      expect(response.id).toBe(dummyClient.id);
+    });
+
+    it('should translate ClientNotFoundError to NotFoundException', async () => {
+      toggleStatusExecute.mockRejectedValueOnce(
+        new ClientNotFoundError('missing-id'),
+      );
+
+      await expect(
+        controller.toggleStatus('missing-id', { isActive: false }),
+      ).rejects.toThrow(NotFoundException);
+    });
+  });
+});
