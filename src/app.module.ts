@@ -7,6 +7,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import configuration from './shared/config/configuration.js';
 import { ZonesModule } from './modules/zones/zones.module.js';
 import { ClientsModule } from './modules/clients/clients.module.js';
+import { CatalogsModule } from './modules/catalogs/catalogs.module.js';
 
 export const { ObserveModule, ObserveInstrument } = createObserveModule();
 
@@ -41,6 +42,7 @@ export const { ObserveModule, ObserveInstrument } = createObserveModule();
     }),
     ZonesModule,
     ClientsModule,
+    CatalogsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

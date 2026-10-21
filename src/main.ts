@@ -13,6 +13,7 @@ async function bootstrap() {
     .addTag('Commerce API')
     .addTag('Clients', 'Client management endpoints')
     .addTag('Client Contacts', 'Client contacts management')
+    .addTag('Catalogs', 'System parameter catalogs and seed')
     .build();
   const documentFactory = () => SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('docs', app, documentFactory);
