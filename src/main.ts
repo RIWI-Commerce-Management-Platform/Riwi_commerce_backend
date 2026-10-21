@@ -11,6 +11,8 @@ async function bootstrap() {
     .setDescription('RIwi Commerce Management Platform')
     .setVersion('1.0')
     .addTag('Commerce API')
+    .addTag('Clients', 'Client management endpoints')
+    .addTag('Client Contacts', 'Client contacts management')
     .build();
   const documentFactory = () => SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('docs', app, documentFactory);
