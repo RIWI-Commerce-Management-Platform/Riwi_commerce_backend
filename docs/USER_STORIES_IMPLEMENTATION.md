@@ -128,7 +128,47 @@ Before detailing individual user stories, the foundation for the module was esta
 
 ---
 
-## 5. Summary Table of Implemented Endpoints
+## 5. User Story HU-14: Manage Catalogs & Initial Seed
+
+### What was done?
+- **Domain Layer (`src/modules/catalogs/domain/`):**
+  - Created domain entities: `ClientType`, `Potential` (with `order`), `ClientStatus`, `Portfolio` (with `description`), and `VisitResult`.
+  - Added domain methods for updating names, descriptions, priorities, and deactivating items.
+  - Defined abstract `CatalogRepository` covering CRUD and initial data seeding.
+  - Defined explicit domain errors: `InvalidCatalogTypeError` and `CatalogItemNotFoundError`.
+- **Application Layer (`src/modules/catalogs/application/`):**
+  - Implemented `ListCatalogsUseCase`: Returns all system catalogs grouped in a single structured object (`zones`, `clientTypes`, `potentials`, `clientStatuses`, `portfolios`, `visitResults`).
+  - Implemented `ListCatalogByTypeUseCase`: Queries individual catalog collections.
+  - Implemented `CreateCatalogItemUseCase`: Creates custom catalog items with UUID v4.
+  - Implemented `UpdateCatalogItemUseCase`: Updates catalog items following `PATCH` semantics.
+  - Implemented `SeedCatalogsUseCase`: Seeds the database with default parametric data for the **Barranquilla Metropolitan Area** (Barranquilla Norte, Barranquilla Sur, Soledad, Malambo, Galapa) and corporate industry standards.
+- **Infrastructure Layer (`src/modules/catalogs/infrastructure/`):**
+  - Created ORM entities for `client_types`, `potentials`, `client_statuses`, `portfolios`, and `visit_results`.
+  - Created `CatalogMapper` for bidirectional entity translation.
+  - Implemented `TypeOrmCatalogRepository` with idempotent upsert queries.
+  - Implemented `CatalogsSeedService` implementing `OnApplicationBootstrap` to automatically seed catalogs upon application startup.
+  - Created database migration `CreateCatalogsTables1792505831169`.
+- **Presentation Layer (`src/modules/catalogs/presentation/`):**
+  - Created DTOs: `CatalogItemResponseDto`, `AllCatalogsResponseDto`, `CreateCatalogItemDto`, and `UpdateCatalogItemDto`.
+  - Implemented `CatalogsController` (`/catalogs`) with full Swagger documentation:
+    - `GET /catalogs` (Grouped catalogs)
+    - `GET /catalogs/seed/status`
+    - `POST /catalogs/seed/run`
+    - `GET /catalogs/:type`
+    - `POST /catalogs/:type`
+    - `PATCH /catalogs/:type/:id` (using `PATCH`)
+
+### Why was it done?
+- **Zero Hardcoded Data:** Client classifications, sales potentials, and visit outcomes must be dynamic and stored in the database, avoiding hardcoded values in frontend forms or business code.
+- **Frontend Developer Experience:** Single-call aggregation (`GET /catalogs`) allows UI components (such as client creation wizards) to fetch all dropdown data in parallel without firing multiple roundtrips.
+
+### What was it done for?
+- Seeds the initial commercial territory of Atlántico (Barranquilla, Soledad, Malambo, Galapa).
+- Standardizes customer segmentation (`Mayorista`, `Minorista`, etc.) and pipeline prioritization (`Alto`, `Medio`, `Bajo`).
+
+---
+
+## 6. Summary Table of Implemented Endpoints
 
 | HTTP Method | Path | Description | Associated Story |
 |---|---|---|---|
@@ -142,10 +182,15 @@ Before detailing individual user stories, the foundation for the module was esta
 | `PATCH` | `/clients/:clientId/contacts/:contactId` | Update contact information | HU-13 |
 | `PATCH` | `/clients/:clientId/contacts/:contactId/primary` | Designate contact as primary | HU-13 |
 | `DELETE` | `/clients/:clientId/contacts/:contactId` | Soft delete contact person | HU-13 |
+| `GET` | `/catalogs` | Get all system catalogs grouped for frontend selectors | HU-14 |
+| `GET` | `/catalogs/:type` | Get items for a specific catalog type | HU-14 |
+| `POST` | `/catalogs/:type` | Create a new catalog item (Admin) | HU-14 |
+| `PATCH` | `/catalogs/:type/:id` | Update a catalog item using PATCH (Admin) | HU-14 |
+| `POST` | `/catalogs/seed/run` | Trigger initial seed (Barranquilla, Soledad, etc.) | HU-14 |
 
 ---
 
-## 6. Quality & Verification Metrics
+## 7. Quality & Verification Metrics
 - **TypeScript strict mode:** 0 errors under NodeNext ESM.
 - **Static code analysis (`oxlint`):** 0 errors, 0 warnings across all files.
 - **Unit test suite (`vitest`):** Fully isolated test coverage across domain entities, use cases, mappers, and controllers.
