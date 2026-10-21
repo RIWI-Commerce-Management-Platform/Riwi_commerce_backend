@@ -10,22 +10,22 @@ export class FindClientsQueryDto extends PaginationQueryDto {
   search?: string;
 
   @ApiPropertyOptional({
-    description: 'Filter by Zone UUID',
-    example: 'b6f6f96e-5264-4b53-9a3b-2fefbbbbbbbb',
+    description: 'Filter by Zone ID',
+    example: 1,
   })
-  zoneId?: string;
+  zoneId?: number | string;
 
   @ApiPropertyOptional({
-    description: 'Filter by Client Type UUID',
-    example: 'a1b2c3d4-e5f6-7a8b-9c0d-1e2f3a4b5c6d',
+    description: 'Filter by Client Type ID',
+    example: 1,
   })
-  clientTypeId?: string;
+  clientTypeId?: number | string;
 
   @ApiPropertyOptional({
-    description: 'Filter by Potential classification UUID',
-    example: 'c1d2e3f4-a5b6-7c8d-9e0f-1a2b3c4d5e6f',
+    description: 'Filter by Potential classification ID',
+    example: 1,
   })
-  potentialId?: string;
+  potentialId?: number | string;
 
   @ApiPropertyOptional({
     description: 'Filter by Municipality or City',
@@ -60,5 +60,25 @@ export class FindClientsQueryDto extends PaginationQueryDto {
     }
     return undefined;
   }
+
+  get parsedZoneId(): number | undefined {
+    return parseFilterId(this.zoneId);
+  }
+
+  get parsedClientTypeId(): number | undefined {
+    return parseFilterId(this.clientTypeId);
+  }
+
+  get parsedPotentialId(): number | undefined {
+    return parseFilterId(this.potentialId);
+  }
+}
+
+function parseFilterId(value: number | string | undefined): number | undefined {
+  if (value === undefined || value === null || value === '') {
+    return undefined;
+  }
+  const parsed = Number(value);
+  return Number.isInteger(parsed) ? parsed : undefined;
 }
 

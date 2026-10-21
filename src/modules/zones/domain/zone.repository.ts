@@ -6,7 +6,7 @@ import { Zone } from './zone.entity.js';
  */
 export abstract class ZoneRepository {
   abstract findAll(): Promise<Zone[]>;
-  abstract findById(id: string): Promise<Zone | null>;
+  abstract findById(id: number): Promise<Zone | null>;
   abstract findByName(name: string): Promise<Zone | null>;
   abstract save(zone: Zone): Promise<Zone>;
 }

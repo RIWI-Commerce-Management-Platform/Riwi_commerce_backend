@@ -34,8 +34,9 @@ services:
   sonarqube:
     image: sonarqube:community
     container_name: sonarqube
+    profiles: ["quality"]
     ports:
-      - "9000:9000"
+      - "${SONARQUBE_PORT}:${SONARQUBE_PORT}"
     environment:
       - SONAR_ES_BOOTSTRAP_CHECKS_DISABLE=true
     volumes:
@@ -43,6 +44,12 @@ services:
       - sonarqube_extensions:/opt/sonarqube/extensions
       - sonarqube_logs:/opt/sonarqube/logs
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:${SONARQUBE_PORT}/api/system/status | grep -q '\"status\":\"UP\"'"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 45s
 
 volumes:
   postgres_data:

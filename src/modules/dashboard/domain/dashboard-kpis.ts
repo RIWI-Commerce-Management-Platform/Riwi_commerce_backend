@@ -9,6 +9,6 @@ export interface DashboardKpis {
 }
 
 export interface DashboardFilters {
-  territoryId?: string;
+  territoryId?: number;
   weekStart: string;
 }

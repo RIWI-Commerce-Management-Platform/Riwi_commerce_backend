@@ -38,17 +38,17 @@ export class ClientOrmEntity {
   @Column({ type: 'varchar', length: 150 })
   email!: string;
 
-  @Column({ name: 'zone_id', type: 'uuid' })
-  zoneId!: string;
+  @Column({ name: 'zone_id', type: 'int' })
+  zoneId!: number;
 
-  @Column({ name: 'client_type_id', type: 'uuid' })
-  clientTypeId!: string;
+  @Column({ name: 'client_type_id', type: 'int' })
+  clientTypeId!: number;
 
-  @Column({ name: 'potential_id', type: 'uuid' })
-  potentialId!: string;
+  @Column({ name: 'potential_id', type: 'int' })
+  potentialId!: number;
 
-  @Column({ name: 'client_status_id', type: 'uuid' })
-  clientStatusId!: string;
+  @Column({ name: 'client_status_id', type: 'int' })
+  clientStatusId!: number;
 
   @Column({ name: 'visit_frequency_days', type: 'int' })
   visitFrequencyDays!: number;

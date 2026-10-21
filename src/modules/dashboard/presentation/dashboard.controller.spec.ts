@@ -2,19 +2,16 @@
 import { describe, it, expect, vi } from 'vitest';
 
 import { DashboardController } from './dashboard.controller.js';
+import { DashboardFiltersDto } from './dto/dashboard-filters.dto.js';
 import { GetDashboardKpisUseCase } from '../application/use-cases/get-dashboard-kpis.use-case.js';
 
-import type {
-  DashboardKpis,
-  DashboardFilters,
-} from '../domain/dashboard-kpis.js';
+import type { DashboardKpis } from '../domain/dashboard-kpis.js';
 
 describe('DashboardController', () => {
-  it('should pass filters to the use case and return KPIs', async () => {
-    const filters: DashboardFilters = {
-      territoryId: 'zone-1',
-      weekStart: '2026-10-19',
-    };
+  it('should pass parsed filters to the use case and return KPIs', async () => {
+    const filters = new DashboardFiltersDto();
+    filters.territoryId = '1';
+    filters.weekStart = '2026-10-19';
 
     const expectedKpis: DashboardKpis = {
       scheduledVisits: 24,
@@ -35,7 +32,10 @@ describe('DashboardController', () => {
 
     const result = await controller.getKpis(filters);
 
-    expect(executeMock).toHaveBeenCalledExactlyOnceWith(filters);
+    expect(executeMock).toHaveBeenCalledExactlyOnceWith({
+      weekStart: '2026-10-19',
+      territoryId: 1,
+    });
     expect(result).toEqual(expectedKpis);
   });
 });

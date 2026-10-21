@@ -14,7 +14,9 @@ export class ZoneMapper {
 
   static toOrm(domain: Zone): ZoneOrmEntity {
     const orm = new ZoneOrmEntity();
-    orm.id = domain.id;
+    if (domain.id !== undefined) {
+      orm.id = domain.id;
+    }
     orm.name = domain.name;
     orm.isActive = domain.isActive;
     orm.createdAt = domain.createdAt;

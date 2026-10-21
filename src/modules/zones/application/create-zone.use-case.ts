@@ -1,4 +1,3 @@
-import { randomUUID } from 'node:crypto';
 import { Injectable } from '@nestjs/common';
 import { Zone } from '../domain/zone.entity.js';
 import { ZoneRepository } from '../domain/zone.repository.js';
@@ -20,7 +19,6 @@ export class CreateZoneUseCase {
 
     const now = new Date();
     const zone = new Zone({
-      id: randomUUID(),
       name: input.name,
       isActive: true,
       createdAt: now,

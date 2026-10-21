@@ -56,28 +56,28 @@ export class CreateClientDto {
   email!: string;
 
   @ApiProperty({
-    example: 'b6f6f96e-5264-4b53-9a3b-2fefbbbbbbbb',
-    description: 'Assigned zone UUID',
+    example: 1,
+    description: 'Assigned zone ID',
   })
-  zoneId!: string;
+  zoneId!: number;
 
   @ApiProperty({
-    example: 'a1b2c3d4-e5f6-7a8b-9c0d-1e2f3a4b5c6d',
-    description: 'Client type UUID',
+    example: 1,
+    description: 'Client type ID',
   })
-  clientTypeId!: string;
+  clientTypeId!: number;
 
   @ApiProperty({
-    example: 'c1d2e3f4-a5b6-7c8d-9e0f-1a2b3c4d5e6f',
-    description: 'Potential classification UUID',
+    example: 1,
+    description: 'Potential classification ID',
   })
-  potentialId!: string;
+  potentialId!: number;
 
   @ApiProperty({
-    example: 'd1e2f3a4-b5c6-7d8e-9f0a-1b2c3d4e5f6a',
-    description: 'Client status UUID',
+    example: 1,
+    description: 'Client status ID',
   })
-  clientStatusId!: string;
+  clientStatusId!: number;
 
   @ApiProperty({
     example: 15,

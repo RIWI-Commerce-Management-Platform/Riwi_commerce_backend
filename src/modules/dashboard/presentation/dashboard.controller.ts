@@ -19,7 +19,7 @@ export class DashboardController {
   async getKpis(@Query() filters: DashboardFiltersDto) {
     return this.getDashboardKpisUseCase.execute({
       weekStart: filters.weekStart,
-      territoryId: filters.territoryId,
+      territoryId: filters.parsedTerritoryId,
     });
   }
 }

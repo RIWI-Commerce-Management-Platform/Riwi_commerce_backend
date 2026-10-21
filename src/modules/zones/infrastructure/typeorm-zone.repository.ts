@@ -18,7 +18,7 @@ export class TypeOrmZoneRepository implements ZoneRepository {
     return rows.map((row) => ZoneMapper.toDomain(row));
   }
 
-  async findById(id: string): Promise<Zone | null> {
+  async findById(id: number): Promise<Zone | null> {
     const row = await this.repository.findOneBy({ id });
     return row ? ZoneMapper.toDomain(row) : null;
   }

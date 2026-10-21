@@ -1,5 +1,5 @@
 export interface ZoneProps {
-  id: string;
+  id?: number;
   name: string;
   isActive: boolean;
   createdAt: Date;
@@ -7,7 +7,7 @@ export interface ZoneProps {
 }
 
 export class Zone {
-  readonly id: string;
+  readonly id?: number;
   name: string;
   isActive: boolean;
   readonly createdAt: Date;

@@ -8,7 +8,13 @@ export class CreateZonesTable1792430815281 implements MigrationInterface {
       new Table({
         name: 'zones',
         columns: [
-          { name: 'id', type: 'uuid', isPrimary: true },
+          {
+            name: 'id',
+            type: 'int',
+            isPrimary: true,
+            isGenerated: true,
+            generationStrategy: 'increment',
+          },
           { name: 'name', type: 'varchar', length: '120', isUnique: true },
           { name: 'is_active', type: 'boolean', default: true },
           { name: 'created_at', type: 'timestamptz', default: 'now()' },

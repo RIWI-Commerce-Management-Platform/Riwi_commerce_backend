@@ -60,9 +60,9 @@ export class ClientsController {
   ): Promise<PaginatedClientResponseDto> {
     const result = await this.findClientsUseCase.execute({
       search: query.search,
-      zoneId: query.zoneId,
-      clientTypeId: query.clientTypeId,
-      potentialId: query.potentialId,
+      zoneId: query.parsedZoneId,
+      clientTypeId: query.parsedClientTypeId,
+      potentialId: query.parsedPotentialId,
       municipality: query.municipality,
       isActive: query.parsedIsActive,
       page: query.parsedPage,

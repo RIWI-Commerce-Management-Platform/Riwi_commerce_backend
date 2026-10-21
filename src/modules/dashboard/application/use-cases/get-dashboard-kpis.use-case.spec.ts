@@ -11,7 +11,7 @@ describe('GetDashboardKpisUseCase', () => {
   it('should return KPIs using the provided filters', async () => {
     // Arrange: prepare test data
     const filters: DashboardFilters = {
-      territoryId: 'zone-1',
+      territoryId: 1,
       weekStart: '2026-10-19',
     };
 

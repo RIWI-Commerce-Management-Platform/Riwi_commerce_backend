@@ -14,10 +14,10 @@ export interface CreateClientInput {
   neighborhood: string;
   phone: string;
   email: string;
-  zoneId: string;
-  clientTypeId: string;
-  potentialId: string;
-  clientStatusId: string;
+  zoneId: number;
+  clientTypeId: number;
+  potentialId: number;
+  clientStatusId: number;
   visitFrequencyDays: number;
   latitude?: number | null;
   longitude?: number | null;

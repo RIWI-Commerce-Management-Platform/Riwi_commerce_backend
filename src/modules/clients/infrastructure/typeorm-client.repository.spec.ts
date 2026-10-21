@@ -17,10 +17,10 @@ describe('TypeOrmClientRepository', () => {
     orm.neighborhood = 'Laureles';
     orm.phone = '+573001234567';
     orm.email = 'contacto@losandes.com';
-    orm.zoneId = 'b6f6f96e-5264-4b53-9a3b-2fefbbbbbbbb';
-    orm.clientTypeId = 'a1b2c3d4-e5f6-7a8b-9c0d-1e2f3a4b5c6d';
-    orm.potentialId = 'c1d2e3f4-a5b6-7c8d-9e0f-1a2b3c4d5e6f';
-    orm.clientStatusId = 'd1e2f3a4-b5c6-7d8e-9f0a-1b2c3d4e5f6a';
+    orm.zoneId = 10;
+    orm.clientTypeId = 20;
+    orm.potentialId = 30;
+    orm.clientStatusId = 40;
     orm.visitFrequencyDays = 15;
     orm.latitude = 6.2442;
     orm.longitude = -75.5812;
@@ -124,9 +124,9 @@ describe('TypeOrmClientRepository', () => {
     const repo = new TypeOrmClientRepository(mockRepo);
     const result = await repo.findPaginated({
       search: 'Andes',
-      zoneId: 'b6f6f96e-5264-4b53-9a3b-2fefbbbbbbbb',
-      clientTypeId: 'a1b2c3d4-e5f6-7a8b-9c0d-1e2f3a4b5c6d',
-      potentialId: 'c1d2e3f4-a5b6-7c8d-9e0f-1a2b3c4d5e6f',
+      zoneId: 10,
+      clientTypeId: 20,
+      potentialId: 30,
       municipality: 'Medellín',
       isActive: true,
       page: 1,
@@ -139,7 +139,7 @@ describe('TypeOrmClientRepository', () => {
       { search: '%andes%' },
     );
     expect(andWhere).toHaveBeenCalledWith('client.zone_id = :zoneId', {
-      zoneId: 'b6f6f96e-5264-4b53-9a3b-2fefbbbbbbbb',
+      zoneId: 10,
     });
     expect(andWhere).toHaveBeenCalledWith('client.is_active = :isActive', {
       isActive: true,

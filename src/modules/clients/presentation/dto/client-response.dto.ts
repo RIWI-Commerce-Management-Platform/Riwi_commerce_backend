@@ -32,17 +32,17 @@ export class ClientResponseDto {
   @ApiProperty({ example: 'contacto@losandes.com' })
   email: string;
 
-  @ApiProperty({ example: 'b6f6f96e-5264-4b53-9a3b-2fefbbbbbbbb' })
-  zoneId: string;
+  @ApiProperty({ example: 1 })
+  zoneId: number;
 
-  @ApiProperty({ example: 'a1b2c3d4-e5f6-7a8b-9c0d-1e2f3a4b5c6d' })
-  clientTypeId: string;
+  @ApiProperty({ example: 1 })
+  clientTypeId: number;
 
-  @ApiProperty({ example: 'c1d2e3f4-a5b6-7c8d-9e0f-1a2b3c4d5e6f' })
-  potentialId: string;
+  @ApiProperty({ example: 1 })
+  potentialId: number;
 
-  @ApiProperty({ example: 'd1e2f3a4-b5c6-7d8e-9f0a-1b2c3d4e5f6a' })
-  clientStatusId: string;
+  @ApiProperty({ example: 1 })
+  clientStatusId: number;
 
   @ApiProperty({ example: 15 })
   visitFrequencyDays: number;
