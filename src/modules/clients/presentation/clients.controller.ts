@@ -10,7 +10,6 @@ import {
   ParseIntPipe,
   Patch,
   Post,
-  Put,
   Query,
 } from '@nestjs/common';
 import {
@@ -139,7 +138,7 @@ export class ClientsController {
     }
   }
 
-  @Put(':id')
+  @Patch(':id')
   @ApiOperation({ summary: 'Update an existing client' })
   @ApiParam({ name: 'id', type: Number, example: 1 })
   @ApiOkResponse({
