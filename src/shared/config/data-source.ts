@@ -7,7 +7,7 @@ import { DataSource } from 'typeorm';
  * outside Nest's DI and ConfigModule — run it via `npm run typeorm`, which
  * loads .env with Node's --env-file flag before this file executes.
  */
-export const dataSource = new DataSource({
+const dataSource = new DataSource({
   type: 'postgres',
   host: process.env.POSTGRES_HOST ?? 'localhost',
   port: parseInt(process.env.POSTGRES_PORT ?? '', 10) || 5432,
@@ -18,3 +18,6 @@ export const dataSource = new DataSource({
   entities: ['src/modules/**/infrastructure/*.orm-entity.ts'],
   migrations: ['src/modules/**/infrastructure/migrations/*.ts'],
 });
+
+export default dataSource;
+

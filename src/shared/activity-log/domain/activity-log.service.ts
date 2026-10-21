@@ -13,4 +13,10 @@ export interface ActivityLogEntry {
  */
 export abstract class ActivityLogService {
   abstract record(entry: ActivityLogEntry): Promise<void>;
+  abstract register(
+    clientId: number,
+    action: string,
+    description: string,
+    user: string | number,
+  ): Promise<void>;
 }

@@ -20,4 +20,15 @@ export class NoopActivityLogService implements ActivityLogService {
       `[activity-log] ${entry.action} ${entry.entityType}#${entry.entityId} by advisor#${entry.actorId}`,
     );
   }
+
+  async register(
+    clientId: number,
+    action: string,
+    description: string,
+    user: string | number,
+  ): Promise<void> {
+    this.logger.log(
+      `[activity-log] client#${clientId} action=${action} desc="${description}" user=${user}`,
+    );
+  }
 }
