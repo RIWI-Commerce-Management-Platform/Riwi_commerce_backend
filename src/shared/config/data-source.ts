@@ -18,3 +18,6 @@ const dataSource = new DataSource({
   entities: ['src/modules/**/infrastructure/*.orm-entity.ts'],
   migrations: ['src/modules/**/infrastructure/migrations/*.ts'],
 });
+
+export default dataSource;
+
