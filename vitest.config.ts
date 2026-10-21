@@ -8,5 +8,21 @@ export default defineConfig({
     globals: true,
     root: './',
     include: ['**/*.spec.ts'],
+    coverage: {
+      provider: 'v8',
+      reporter: ['text', 'lcov', 'html'],
+      reportsDirectory: './coverage',
+      exclude: [
+        'dist/**',
+        'coverage/**',
+        '**/*.spec.ts',
+        '**/*.orm-entity.ts',
+        '**/*.mapper.ts',
+        '**/*.dto.ts',
+        '**/*.module.ts',
+        'src/main.ts',
+        'src/shared/config/**',
+      ],
+    },
   },
 });

@@ -53,7 +53,7 @@ export class TypeOrmQuoteRepository implements QuoteRepository {
       return `COT-${String(count + 1).padStart(4, '0')}`;
     }
 
-    const nextSequential = parseInt(matches[1], 10) + 1;
+    const nextSequential = Number.parseInt(matches[1], 10) + 1;
     return `COT-${String(nextSequential).padStart(4, '0')}`;
   }
 }

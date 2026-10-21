@@ -23,7 +23,8 @@
     "typeorm": "node --env-file=.env --import tsx node_modules/typeorm/cli.js -d src/shared/config/data-source.ts",
     "migration:generate": "npm run typeorm -- migration:generate",
     "migration:run": "npm run typeorm -- migration:run",
-    "migration:revert": "npm run typeorm -- migration:revert"
+    "migration:revert": "npm run typeorm -- migration:revert",
+    "sonar": "npm run test:cov && sonar-scanner"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1153.0",
@@ -52,6 +53,7 @@
     "oxlint": "^1.58.0",
     "oxlint-tsgolint": "^7.0.2001",
     "prettier": "^3.4.2",
+    "sonarqube-scanner": "^4.4.0",
     "source-map-support": "^0.5.21",
     "supertest": "^7.0.0",
     "tsx": "^4.23.15",
