@@ -14,4 +14,8 @@ export default () => ({
     secret: process.env.JWT_SECRET ?? 'dev-secret-change-me',
     expiresIn: process.env.JWT_EXPIRES_IN ?? '1h',
   },
+  betterAuth: {
+    secret: process.env.BETTER_AUTH_SECRET,
+    url: process.env.BETTER_AUTH_URL ?? `http://localhost:${process.env.PORT ?? 3000}`,
+  },
 });

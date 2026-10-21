@@ -6,6 +6,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import configuration from './shared/config/configuration.js';
 import { ZonesModule } from './modules/zones/zones.module.js';
+import { AuthModule } from './modules/auth/auth.module.js';
 
 export const { ObserveModule, ObserveInstrument } = createObserveModule();
 
@@ -23,7 +24,7 @@ export const { ObserveModule, ObserveInstrument } = createObserveModule();
     // }),
     ConfigModule.forRoot({
       isGlobal: true,
-      load: [configuration]
+      load: [configuration],
     }),
     TypeOrmModule.forRootAsync({
       inject: [ConfigService],
@@ -34,11 +35,12 @@ export const { ObserveModule, ObserveInstrument } = createObserveModule();
         username: config.get<string>('database.username'),
         password: config.get<string>('database.password'),
         database: config.get<string>('database.name'),
-        autoLoadEntities: true, 
+        autoLoadEntities: true,
         synchronize: false,
       }),
     }),
     ZonesModule,
+    AuthModule,
   ],
   controllers: [AppController],
   providers: [AppService],
