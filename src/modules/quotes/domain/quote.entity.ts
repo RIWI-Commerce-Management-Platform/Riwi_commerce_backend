@@ -1,0 +1,44 @@
+import { QuoteItem } from './quote-item.entity.js';
+import { QuoteStatus } from './quote-status.enum.js';
+
+export interface QuoteProps {
+  id: string;
+  quoteNumber: string;
+  clientId: string;
+  status: QuoteStatus;
+  subtotal: number;
+  total: number;
+  notes?: string | null;
+  documentKey?: string | null;
+  items: QuoteItem[];
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export class Quote {
+  readonly id: string;
+  readonly quoteNumber: string;
+  readonly clientId: string;
+  status: QuoteStatus;
+  subtotal: number;
+  total: number;
+  notes?: string | null;
+  documentKey?: string | null;
+  items: QuoteItem[];
+  readonly createdAt: Date;
+  updatedAt: Date;
+
+  constructor(props: QuoteProps) {
+    this.id = props.id;
+    this.quoteNumber = props.quoteNumber;
+    this.clientId = props.clientId;
+    this.status = props.status;
+    this.subtotal = props.subtotal;
+    this.total = props.total;
+    this.notes = props.notes;
+    this.documentKey = props.documentKey;
+    this.items = props.items;
+    this.createdAt = props.createdAt;
+    this.updatedAt = props.updatedAt;
+  }
+}

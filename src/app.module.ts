@@ -6,6 +6,8 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import configuration from './shared/config/configuration.js';
 import { ZonesModule } from './modules/zones/zones.module.js';
+import { FileStorageModule } from './shared/file-storage/file-storage.module.js';
+import { QuotesModule } from './modules/quotes/quotes.module.js';
 
 export const { ObserveModule, ObserveInstrument } = createObserveModule();
 
@@ -39,6 +41,8 @@ export const { ObserveModule, ObserveInstrument } = createObserveModule();
       }),
     }),
     ZonesModule,
+    FileStorageModule,
+    QuotesModule,
   ],
   controllers: [AppController],
   providers: [AppService],
