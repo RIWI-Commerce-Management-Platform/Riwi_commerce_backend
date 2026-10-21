@@ -1,16 +1,29 @@
 import {
+  Body,
   Controller,
   Get,
-  Patch,
   Param,
-  Query,
-  Body,
-  Headers,
-  BadRequestException,
   ParseIntPipe,
+  Patch,
+  Query,
+  Req,
+  UsePipes,
+  ValidationPipe,
 } from '@nestjs/common';
 
-import { ApiOperation, ApiTags, ApiHeader, ApiParam } from '@nestjs/swagger';
+import type { Request } from 'express';
+
+import {
+  ApiHeader,
+  ApiOperation,
+  ApiParam,
+  ApiQuery,
+  ApiResponse,
+  ApiTags,
+  ApiUnauthorizedResponse,
+} from '@nestjs/swagger';
+
+import { CurrentAdvisorProvider } from '../../../../shared/auth/domain/current-advisor.provider.js';
 
 import { GetVisitAgendaUseCase } from '../../application/use-cases/get-visit-agenda.use-case.js';
 
@@ -24,7 +37,26 @@ import { VisitAgendaQueryDto } from '../dtos/visit-agenda-query.dto.js';
 
 import { RegisterVisitResultDto } from '../dtos/register-visit-result.dto.js';
 
+import { VisitSummaryResponseDto } from '../dtos/visit-summary-response.dto.js';
+
+import { VisitDetailResponseDto } from '../dtos/visit-detail-response.dto.js';
+
 @ApiTags('Visits')
+@ApiHeader({
+  name: 'x-user-id',
+  required: true,
+  // TEMPORARY: placeholder header while Better Auth is not integrated
+  // (owner: Efraín, E1). It must be replaced by the real session/JWT adapter.
+  description: 'TEMPORARY advisor id header. Will be replaced by Better Auth.',
+  deprecated: true,
+})
+@ApiUnauthorizedResponse({ description: 'Missing or invalid advisor header.' })
+@UsePipes(
+  new ValidationPipe({
+    whitelist: true,
+    transform: true,
+  }),
+)
 @Controller('visits')
 export class VisitsController {
   constructor(
@@ -32,63 +64,118 @@ export class VisitsController {
     private readonly getVisitById: GetVisitByIdUseCase,
     private readonly startVisit: StartVisitUseCase,
     private readonly registerVisitResult: RegisterVisitResultUseCase,
+    private readonly currentAdvisor: CurrentAdvisorProvider,
   ) {}
 
-  private getAdvisorId(userId?: number): number {
-    if (!userId) {
-      throw new BadRequestException('Authenticated advisor is required.');
-    }
-
-    return userId;
-  }
-
   @Get('agenda')
-  @ApiOperation({ summary: 'Get advisor visit agenda' })
-  @ApiHeader({
-    name: 'x-user-id',
-    required: true,
-    description: 'Temporary local testing header only',
+  @ApiOperation({
+    summary: 'Get the authenticated advisor agenda for a day or a week',
+  })
+  @ApiQuery({
+    name: 'period',
+    required: false,
+    enum: ['day', 'week'],
+    description: 'Defaults to day.',
+  })
+  @ApiQuery({
+    name: 'date',
+    required: false,
+    description: "Reference date in 'YYYY-MM-DD' format. Defaults to today.",
+    example: '2026-10-20',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Visits ordered by scheduled date and time.',
+    type: [VisitSummaryResponseDto],
   })
   async getAgenda(
-    @Headers('x-user-id') userId: number,
+    @Req() request: Request,
     @Query() query: VisitAgendaQueryDto,
-  ) {
-    return this.getVisitAgenda.execute(
-      this.getAdvisorId(userId),
+  ): Promise<VisitSummaryResponseDto[]> {
+    const advisorId = await this.currentAdvisor.extract(request);
+
+    const visits = await this.getVisitAgenda.execute(
+      advisorId,
       query.period ?? 'day',
+      query.date,
     );
+
+    return visits.map((visit) => new VisitSummaryResponseDto(visit));
   }
 
   @Get(':id')
-  @ApiOperation({ summary: 'Get visit details' })
+  @ApiOperation({ summary: 'Get visit details for the authenticated advisor' })
   @ApiParam({ name: 'id', description: 'Visit ID' })
+  @ApiResponse({
+    status: 200,
+    description:
+      'Visit details including client/contact information when available.',
+    type: VisitDetailResponseDto,
+  })
+  @ApiResponse({ status: 404, description: 'Visit not found for this advisor.' })
   async getById(
     @Param('id', ParseIntPipe) id: number,
-    @Headers('x-user-id') userId: number,
-  ) {
-    return this.getVisitById.execute(id, this.getAdvisorId(userId));
+    @Req() request: Request,
+  ): Promise<VisitDetailResponseDto> {
+    const advisorId = await this.currentAdvisor.extract(request);
+
+    const visit = await this.getVisitById.execute(id, advisorId);
+
+    return new VisitDetailResponseDto(visit);
   }
 
   @Patch(':id/start')
-  @ApiOperation({ summary: 'Start a visit' })
+  @ApiOperation({ summary: 'Start a pending visit' })
+  @ApiParam({ name: 'id', description: 'Visit ID' })
+  @ApiResponse({
+    status: 200,
+    description: 'Visit moved to IN_PROGRESS with its actual start time.',
+    type: VisitDetailResponseDto,
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Visit is not in the PENDING status.',
+  })
+  @ApiResponse({ status: 404, description: 'Visit not found for this advisor.' })
   async start(
     @Param('id', ParseIntPipe) id: number,
-    @Headers('x-user-id') userId: number,
-  ) {
-    return this.startVisit.execute(id, this.getAdvisorId(userId));
+    @Req() request: Request,
+  ): Promise<VisitDetailResponseDto> {
+    const advisorId = await this.currentAdvisor.extract(request);
+
+    const visit = await this.startVisit.execute(id, advisorId);
+
+    return new VisitDetailResponseDto(visit);
   }
 
   @Patch(':id/result')
-  @ApiOperation({ summary: 'Register visit result' })
+  @ApiOperation({ summary: 'Register the result of an in-progress visit' })
+  @ApiParam({ name: 'id', description: 'Visit ID' })
+  @ApiResponse({
+    status: 200,
+    description:
+      'Visit moved to VISITED with end time, observations and selected results.',
+    type: VisitDetailResponseDto,
+  })
+  @ApiResponse({
+    status: 400,
+    description:
+      'Invalid payload, invalid result ids, observations over 500 characters or invalid status transition.',
+  })
+  @ApiResponse({ status: 404, description: 'Visit not found for this advisor.' })
   async registerResult(
     @Param('id', ParseIntPipe) id: number,
-    @Headers('x-user-id') userId: number,
+    @Req() request: Request,
     @Body() body: RegisterVisitResultDto,
-  ) {
-    return this.registerVisitResult.execute(
-      id,
-      this.getAdvisorId(userId),
-      body,
-    );
+  ): Promise<VisitDetailResponseDto> {
+    const advisorId = await this.currentAdvisor.extract(request);
+
+    const visit = await this.registerVisitResult.execute(id, advisorId, {
+      endTime: body.endTime,
+      observations: body.observations,
+      results: body.results,
+    });
+
+    return new VisitDetailResponseDto(visit);
   }
 }

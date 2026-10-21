@@ -1,9 +1,17 @@
-import { Visit, VisitStatus } from '../../domain/visit.entity.js';
+import { Visit, VisitResult, VisitStatus } from '../../domain/visit.entity.js';
 
 import { VisitOrmEntity } from '../visit.orm-entity.js';
 
 export class VisitMapper {
   static toDomain(entity: VisitOrmEntity): Visit {
+    const results: VisitResult[] = (entity.resultLinks ?? [])
+      .filter((link) => link.resultOption)
+      .map((link) => ({
+        id: link.resultId,
+        name: link.resultOption?.name ?? '',
+        observation: link.observation ?? undefined,
+      }));
+
     return new Visit({
       id: entity.id,
       clientId: entity.clientId,
@@ -16,6 +24,7 @@ export class VisitMapper {
       status: entity.status as VisitStatus,
       objective: entity.objective,
       observations: entity.observations,
+      results,
     });
   }
 

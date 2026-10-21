@@ -1,3 +1,7 @@
+import { EmptyVisitResultsError } from './errors/empty-visit-results.error.js';
+import { InvalidVisitObservationsError } from './errors/invalid-visit-observations.error.js';
+import { InvalidVisitStatusError } from './errors/invalid-visit-status.error.js';
+
 export enum VisitStatus {
   PENDING = 'PENDING',
   IN_PROGRESS = 'IN_PROGRESS',
@@ -5,6 +9,8 @@ export enum VisitStatus {
   RESCHEDULE = 'RESCHEDULE',
   NOT_VISITED = 'NOT_VISITED',
 }
+
+export const MAX_VISIT_OBSERVATIONS_LENGTH = 500;
 
 export interface VisitResult {
   id: number;
@@ -49,7 +55,7 @@ export class Visit {
     return this.props.routeId;
   }
 
-  get scheduleAt(): Date | null {
+  get scheduledAt(): Date {
     return this.props.scheduledAt;
   }
 
@@ -85,20 +91,26 @@ export class Visit {
     return this.props.clientPotential;
   }
 
+  get observations(): string | null | undefined {
+    return this.props.observations;
+  }
+
   get results(): VisitResult[] {
     return this.props.results ?? [];
   }
 
   start(): Visit {
     if (this.props.status !== VisitStatus.PENDING) {
-      throw new Error('Only pending visits can be started');
+      throw new InvalidVisitStatusError(this.props.status, 'started');
     }
+
+    const now = new Date();
 
     return new Visit({
       ...this.props,
       status: VisitStatus.IN_PROGRESS,
-      actualDate: new Date(),
-      startTime: new Date().toTimeString().slice(0, 8),
+      actualDate: now,
+      startTime: now.toTimeString().slice(0, 8),
     });
   }
 
@@ -108,8 +120,20 @@ export class Visit {
     results: VisitResult[];
   }): Visit {
     if (this.props.status !== VisitStatus.IN_PROGRESS) {
-      throw new Error('Only in-progress visits can be completed');
+      throw new InvalidVisitStatusError(this.props.status, 'completed');
     }
+
+    if (data.results.length === 0) {
+      throw new EmptyVisitResultsError();
+    }
+
+    if (data.observations.length > MAX_VISIT_OBSERVATIONS_LENGTH) {
+      throw new InvalidVisitObservationsError(
+        data.observations.length,
+        MAX_VISIT_OBSERVATIONS_LENGTH,
+      );
+    }
+
     return new Visit({
       ...this.props,
       status: VisitStatus.VISITED,
@@ -118,6 +142,7 @@ export class Visit {
       results: data.results,
     });
   }
+
   toJSON(): VisitProps {
     return { ...this.props };
   }

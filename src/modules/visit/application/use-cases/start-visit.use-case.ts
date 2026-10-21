@@ -1,14 +1,21 @@
 import {
+  BadRequestException,
   Injectable,
   NotFoundException,
-  BadRequestException,
 } from '@nestjs/common';
 
 import { VisitDao } from '../../domain/dao/visit.dao.js';
 
+import { InvalidVisitStatusError } from '../../domain/errors/invalid-visit-status.error.js';
+
+import { ActivityLogService } from '../../../../shared/activity-log/domain/activity-log.service.js';
+
 @Injectable()
 export class StartVisitUseCase {
-  constructor(private readonly visitDao: VisitDao) {}
+  constructor(
+    private readonly visitDao: VisitDao,
+    private readonly activityLog: ActivityLogService,
+  ) {}
 
   async execute(id: number, advisorId: number) {
     const visit = await this.visitDao.findByIdAndAdvisor(id, advisorId);
@@ -17,14 +24,28 @@ export class StartVisitUseCase {
       throw new NotFoundException('Visit not found.');
     }
 
-    try {
-      const startedVisit = visit.start();
+    let startedVisit;
 
-      return await this.visitDao.save(startedVisit);
+    try {
+      startedVisit = visit.start();
     } catch (error) {
-      throw new BadRequestException(
-        error instanceof Error ? error.message : 'Unable to start visit.',
-      );
+      if (error instanceof InvalidVisitStatusError) {
+        throw new BadRequestException(error.message);
+      }
+
+      throw error;
     }
+
+    const saved = await this.visitDao.save(startedVisit);
+
+    await this.activityLog.record({
+      action: 'visit.started',
+      entityType: 'visit',
+      entityId: saved.id,
+      actorId: advisorId,
+      metadata: { clientId: saved.clientId },
+    });
+
+    return saved;
   }
 }
