@@ -1,10 +1,10 @@
-
 pipeline {
     agent any
 
     options {
         skipDefaultCheckout(true)
         disableConcurrentBuilds()
+        timestamps()
     }
 
     stages {
@@ -19,6 +19,11 @@ pipeline {
                 sh 'npm ci'
             }
         }
+        stage('Test') {
+            steps {
+                sh 'npm run test'
+            }
+        }
 
         stage('Build') {
             steps {
@@ -27,9 +32,21 @@ pipeline {
         }
 
         stage('Deploy') {
+            when {
+                branch 'main'
+            }
             steps {
                 sh 'bash deploy.sh'
             }
+        }
+    }
+     post {
+        success {
+            echo 'Pipeline completed successfully.'
+        }
+
+        failure {
+            echo 'Pipeline failed. Review the stage logs.'
         }
     }
 }
