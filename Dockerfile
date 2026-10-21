@@ -18,4 +18,4 @@ RUN npm run build
 
 # Command to run the application
 # This is the command that will be executed when the container starts. It runs the NestJS application in development mode.
-CMD ["npm", "run", "start:dev"]
+CMD ["sh", "-c", "npm run migration:run && npm run start:dev"]
