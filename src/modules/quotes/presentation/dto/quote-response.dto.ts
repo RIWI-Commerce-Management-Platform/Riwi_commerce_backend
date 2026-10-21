@@ -6,9 +6,9 @@ import { QuoteItemResponseDto } from './quote-item-response.dto.js';
 export class QuoteResponseDto {
   @ApiProperty({
     description: 'Unique identifier of the quote',
-    example: '3fa85f64-5717-4562-b3fc-2c963f66afa6',
+    example: 1,
   })
-  id: string;
+  id: number;
 
   @ApiProperty({
     description: 'Consecutive commercial number',
@@ -18,9 +18,9 @@ export class QuoteResponseDto {
 
   @ApiProperty({
     description: 'ID of the client associated with the quote',
-    example: '550e8400-e29b-41d4-a716-446655440000',
+    example: 1,
   })
-  clientId: string;
+  clientId: number;
 
   @ApiProperty({
     description: 'Current status of the quote',
@@ -72,7 +72,7 @@ export class QuoteResponseDto {
   updatedAt: Date;
 
   constructor(quote: Quote) {
-    this.id = quote.id;
+    this.id = quote.id!;
     this.quoteNumber = quote.quoteNumber;
     this.clientId = quote.clientId;
     this.status = quote.status;

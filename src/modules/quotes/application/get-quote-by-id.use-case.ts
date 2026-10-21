@@ -7,7 +7,7 @@ import { QuoteNotFoundError } from '../domain/errors/quote-not-found.error.js';
 export class GetQuoteByIdUseCase {
   constructor(private readonly quoteRepository: QuoteRepository) {}
 
-  async execute(id: string): Promise<Quote> {
+  async execute(id: number): Promise<Quote> {
     const quote = await this.quoteRepository.findById(id);
     if (!quote) {
       throw new QuoteNotFoundError(id);

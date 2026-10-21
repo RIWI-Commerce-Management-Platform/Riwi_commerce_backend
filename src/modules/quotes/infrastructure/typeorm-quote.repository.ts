@@ -19,7 +19,7 @@ export class TypeOrmQuoteRepository implements QuoteRepository {
     return QuoteMapper.toDomain(saved);
   }
 
-  async findById(id: string): Promise<Quote | null> {
+  async findById(id: number): Promise<Quote | null> {
     const found = await this.ormRepository.findOne({
       where: { id },
       relations: { items: true },
@@ -38,22 +38,14 @@ export class TypeOrmQuoteRepository implements QuoteRepository {
   }
 
   async generateNextQuoteNumber(): Promise<string> {
-    const [latest] = await this.ormRepository.find({
-      order: { createdAt: 'DESC' },
-      take: 1,
-    });
+    // Reading the latest row and incrementing it in application code is
+    // racy under concurrent requests (two callers can read the same
+    // "latest" before either commits). A Postgres sequence hands out a
+    // unique value per call atomically, with no locking needed.
+    const [{ nextval }] = await this.ormRepository.query<
+      { nextval: string }[]
+    >("SELECT nextval('quote_number_seq') AS nextval");
 
-    if (!latest?.quoteNumber) {
-      return 'COT-0001';
-    }
-
-    const matches = latest.quoteNumber.match(/COT-(\d+)/);
-    if (!matches || !matches[1]) {
-      const count = await this.ormRepository.count();
-      return `COT-${String(count + 1).padStart(4, '0')}`;
-    }
-
-    const nextSequential = parseInt(matches[1], 10) + 1;
-    return `COT-${String(nextSequential).padStart(4, '0')}`;
+    return `COT-${nextval.padStart(4, '0')}`;
   }
 }

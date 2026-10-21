@@ -24,7 +24,7 @@ describe('CreateQuoteUseCase', () => {
   it('should throw EmptyQuoteItemsError when items array is empty', async () => {
     await expect(
       useCase.execute({
-        clientId: 'client-123',
+        clientId: 123,
         items: [],
       }),
     ).rejects.toThrow(EmptyQuoteItemsError);
@@ -33,7 +33,7 @@ describe('CreateQuoteUseCase', () => {
   it('should throw InvalidQuoteItemValuesError when quantity is 0 or negative', async () => {
     await expect(
       useCase.execute({
-        clientId: 'client-123',
+        clientId: 123,
         items: [
           {
             productName: 'Monitor 27"',
@@ -48,7 +48,7 @@ describe('CreateQuoteUseCase', () => {
   it('should throw InvalidQuoteItemValuesError when unit price is negative', async () => {
     await expect(
       useCase.execute({
-        clientId: 'client-123',
+        clientId: 123,
         items: [
           {
             productName: 'Teclado Mecanico',
@@ -62,7 +62,7 @@ describe('CreateQuoteUseCase', () => {
 
   it('should successfully calculate subtotal and total in backend and create quote', async () => {
     const result = await useCase.execute({
-      clientId: 'client-123',
+      clientId: 123,
       notes: 'Descuento aplicado',
       items: [
         {
@@ -80,7 +80,7 @@ describe('CreateQuoteUseCase', () => {
 
     expect(result.quoteNumber).toBe('COT-0001');
     expect(result.status).toBe(QuoteStatus.DRAFT);
-    expect(result.clientId).toBe('client-123');
+    expect(result.clientId).toBe(123);
     expect(result.items).toHaveLength(2);
     expect(result.items[0].subtotal).toBe(1000);
     expect(result.items[1].subtotal).toBe(76.5);

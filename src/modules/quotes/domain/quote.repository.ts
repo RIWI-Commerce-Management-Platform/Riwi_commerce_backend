@@ -6,7 +6,7 @@ import { Quote } from './quote.entity.js';
  */
 export abstract class QuoteRepository {
   abstract save(quote: Quote): Promise<Quote>;
-  abstract findById(id: string): Promise<Quote | null>;
+  abstract findById(id: number): Promise<Quote | null>;
   abstract findByQuoteNumber(quoteNumber: string): Promise<Quote | null>;
   abstract generateNextQuoteNumber(): Promise<string>;
 }

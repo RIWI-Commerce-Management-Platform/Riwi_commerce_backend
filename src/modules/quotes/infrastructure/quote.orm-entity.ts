@@ -3,21 +3,21 @@ import {
   CreateDateColumn,
   Entity,
   OneToMany,
-  PrimaryColumn,
+  PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
 import { QuoteItemOrmEntity } from './quote-item.orm-entity.js';
 
 @Entity('quotes')
 export class QuoteOrmEntity {
-  @PrimaryColumn('uuid')
-  id!: string;
+  @PrimaryGeneratedColumn()
+  id!: number;
 
   @Column({ name: 'quote_number', type: 'varchar', length: 30, unique: true })
   quoteNumber!: string;
 
-  @Column({ name: 'client_id', type: 'uuid' })
-  clientId!: string;
+  @Column({ name: 'client_id', type: 'int' })
+  clientId!: number;
 
   @Column({ type: 'varchar', length: 30 })
   status!: string;

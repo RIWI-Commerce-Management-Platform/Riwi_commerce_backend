@@ -1,6 +1,6 @@
 export interface QuoteItemProps {
-  id: string;
-  quoteId?: string;
+  id?: number;
+  quoteId?: number;
   productName: string;
   quantity: number;
   unitPrice: number;
@@ -8,8 +8,8 @@ export interface QuoteItemProps {
 }
 
 export class QuoteItem {
-  readonly id: string;
-  quoteId?: string;
+  readonly id?: number;
+  quoteId?: number;
   readonly productName: string;
   readonly quantity: number;
   readonly unitPrice: number;

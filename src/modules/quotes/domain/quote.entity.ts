@@ -2,9 +2,9 @@ import { QuoteItem } from './quote-item.entity.js';
 import { QuoteStatus } from './quote-status.enum.js';
 
 export interface QuoteProps {
-  id: string;
+  id?: number;
   quoteNumber: string;
-  clientId: string;
+  clientId: number;
   status: QuoteStatus;
   subtotal: number;
   total: number;
@@ -16,9 +16,9 @@ export interface QuoteProps {
 }
 
 export class Quote {
-  readonly id: string;
+  readonly id?: number;
   readonly quoteNumber: string;
-  readonly clientId: string;
+  readonly clientId: number;
   status: QuoteStatus;
   subtotal: number;
   total: number;

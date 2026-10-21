@@ -3,17 +3,17 @@ import {
   Entity,
   JoinColumn,
   ManyToOne,
-  PrimaryColumn,
+  PrimaryGeneratedColumn,
 } from 'typeorm';
 import type { QuoteOrmEntity } from './quote.orm-entity.js';
 
 @Entity('quote_items')
 export class QuoteItemOrmEntity {
-  @PrimaryColumn('uuid')
-  id!: string;
+  @PrimaryGeneratedColumn()
+  id!: number;
 
-  @Column({ name: 'quote_id', type: 'uuid' })
-  quoteId!: string;
+  @Column({ name: 'quote_id', type: 'int' })
+  quoteId!: number;
 
   @Column({ name: 'product_name', type: 'varchar', length: 200 })
   productName!: string;

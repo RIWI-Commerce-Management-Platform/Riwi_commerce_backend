@@ -3,10 +3,10 @@ import { CreateQuoteItemDto } from './create-quote-item.dto.js';
 
 export class CreateQuoteDto {
   @ApiProperty({
-    description: 'UUID of the client associated with this quote',
-    example: '550e8400-e29b-41d4-a716-446655440000',
+    description: 'ID of the client associated with this quote',
+    example: 1,
   })
-  clientId!: string;
+  clientId!: number;
 
   @ApiPropertyOptional({
     description: 'Optional commercial notes or observations',

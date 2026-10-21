@@ -4,9 +4,9 @@ import { QuoteItem } from '../../domain/quote-item.entity.js';
 export class QuoteItemResponseDto {
   @ApiProperty({
     description: 'Unique identifier of the quote item',
-    example: '3fa85f64-5717-4562-b3fc-2c963f66afa6',
+    example: 1,
   })
-  id: string;
+  id: number;
 
   @ApiProperty({
     description: 'Product name or service description',
@@ -33,7 +33,7 @@ export class QuoteItemResponseDto {
   subtotal: number;
 
   constructor(item: QuoteItem) {
-    this.id = item.id;
+    this.id = item.id!;
     this.productName = item.productName;
     this.quantity = item.quantity;
     this.unitPrice = item.unitPrice;

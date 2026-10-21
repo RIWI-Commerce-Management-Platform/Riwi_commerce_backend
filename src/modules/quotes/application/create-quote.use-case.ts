@@ -1,5 +1,4 @@
 import { Injectable } from '@nestjs/common';
-import { randomUUID } from 'node:crypto';
 import { Quote } from '../domain/quote.entity.js';
 import { QuoteItem } from '../domain/quote-item.entity.js';
 import { QuoteStatus } from '../domain/quote-status.enum.js';
@@ -15,7 +14,6 @@ export class CreateQuoteUseCase {
   async execute(command: CreateQuoteCommand): Promise<Quote> {
     this.validateCommand(command);
 
-    const quoteId = randomUUID();
     const nextQuoteNumber = await this.quoteRepository.generateNextQuoteNumber();
 
     const items = command.items.map((itemCommand) => {
@@ -24,8 +22,6 @@ export class CreateQuoteUseCase {
       );
 
       return new QuoteItem({
-        id: randomUUID(),
-        quoteId,
         productName: itemCommand.productName,
         quantity: itemCommand.quantity,
         unitPrice: itemCommand.unitPrice,
@@ -40,7 +36,6 @@ export class CreateQuoteUseCase {
     const now = new Date();
 
     const quote = new Quote({
-      id: quoteId,
       quoteNumber: nextQuoteNumber,
       clientId: command.clientId,
       status: QuoteStatus.DRAFT,

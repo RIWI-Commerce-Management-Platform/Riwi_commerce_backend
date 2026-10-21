@@ -35,7 +35,9 @@ export class QuoteMapper {
 
   static toOrm(domain: Quote): QuoteOrmEntity {
     const orm = new QuoteOrmEntity();
-    orm.id = domain.id;
+    if (domain.id !== undefined) {
+      orm.id = domain.id;
+    }
     orm.quoteNumber = domain.quoteNumber;
     orm.clientId = domain.clientId;
     orm.status = domain.status;
@@ -48,8 +50,13 @@ export class QuoteMapper {
 
     orm.items = (domain.items ?? []).map((domainItem) => {
       const itemOrm = new QuoteItemOrmEntity();
-      itemOrm.id = domainItem.id;
-      itemOrm.quoteId = domain.id;
+      if (domainItem.id !== undefined) {
+        itemOrm.id = domainItem.id;
+      }
+      // The quote's id isn't known yet for a new quote (DB-generated on
+      // insert), so link via the relation and let TypeORM's cascade set
+      // the quote_id FK once the parent row is inserted.
+      itemOrm.quote = orm;
       itemOrm.productName = domainItem.productName;
       itemOrm.quantity = domainItem.quantity;
       itemOrm.unitPrice = domainItem.unitPrice;

@@ -9,18 +9,28 @@ export class CreateQuotesTables1792430815290 implements MigrationInterface {
   name = 'CreateQuotesTables1792430815290';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
+    // Backs generateNextQuoteNumber(): a dedicated sequence hands out a
+    // unique consecutive number per call with no read-then-increment race.
+    await queryRunner.query('CREATE SEQUENCE quote_number_seq START 1');
+
     await queryRunner.createTable(
       new Table({
         name: 'quotes',
         columns: [
-          { name: 'id', type: 'uuid', isPrimary: true },
+          {
+            name: 'id',
+            type: 'int',
+            isPrimary: true,
+            isGenerated: true,
+            generationStrategy: 'increment',
+          },
           {
             name: 'quote_number',
             type: 'varchar',
             length: '30',
             isUnique: true,
           },
-          { name: 'client_id', type: 'uuid' },
+          { name: 'client_id', type: 'int' },
           { name: 'status', type: 'varchar', length: '30', default: "'DRAFT'" },
           { name: 'subtotal', type: 'decimal', precision: 12, scale: 2 },
           { name: 'total', type: 'decimal', precision: 12, scale: 2 },
@@ -41,8 +51,14 @@ export class CreateQuotesTables1792430815290 implements MigrationInterface {
       new Table({
         name: 'quote_items',
         columns: [
-          { name: 'id', type: 'uuid', isPrimary: true },
-          { name: 'quote_id', type: 'uuid' },
+          {
+            name: 'id',
+            type: 'int',
+            isPrimary: true,
+            isGenerated: true,
+            generationStrategy: 'increment',
+          },
+          { name: 'quote_id', type: 'int' },
           { name: 'product_name', type: 'varchar', length: '200' },
           { name: 'quantity', type: 'int' },
           { name: 'unit_price', type: 'decimal', precision: 12, scale: 2 },
@@ -65,5 +81,6 @@ export class CreateQuotesTables1792430815290 implements MigrationInterface {
   public async down(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.dropTable('quote_items');
     await queryRunner.dropTable('quotes');
+    await queryRunner.query('DROP SEQUENCE quote_number_seq');
   }
 }

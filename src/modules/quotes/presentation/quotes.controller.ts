@@ -1,4 +1,11 @@
-import { Body, Controller, Get, Param, Post } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  ParseIntPipe,
+  Post,
+} from '@nestjs/common';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { CreateQuoteUseCase } from '../application/create-quote.use-case.js';
 import { GetQuoteByIdUseCase } from '../application/get-quote-by-id.use-case.js';
@@ -38,7 +45,9 @@ export class QuotesController {
     description: 'Quote details and line items',
     type: QuoteResponseDto,
   })
-  async getById(@Param('id') id: string): Promise<QuoteResponseDto> {
+  async getById(
+    @Param('id', ParseIntPipe) id: number,
+  ): Promise<QuoteResponseDto> {
     const quote = await this.getQuoteByIdUseCase.execute(id);
     return new QuoteResponseDto(quote);
   }
