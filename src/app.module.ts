@@ -11,6 +11,7 @@ import { FileStorageModule } from './shared/file-storage/file-storage.module.js'
 import { QuotesModule } from './modules/quotes/quotes.module.js';
 import { ClientsModule } from './modules/clients/clients.module.js';
 import { CatalogsModule } from './modules/catalogs/catalogs.module.js';
+import { FollowUpsModule } from './modules/follow-ups/follow-ups.module.js';
 
 export const { ObserveModule, ObserveInstrument } = createObserveModule();
 
@@ -47,6 +48,7 @@ export const { ObserveModule, ObserveInstrument } = createObserveModule();
     ZonesModule,
     ClientsModule,
     CatalogsModule,
+    FollowUpsModule,
     FileStorageModule,
     QuotesModule,
   ],
