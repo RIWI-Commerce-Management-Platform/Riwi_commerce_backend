@@ -4,6 +4,7 @@ import { AppController } from './app.controller.js';
 import { AppService } from './app.service.js';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { VisitsModule } from './modules/visit/visit.module.js';
 import configuration from './shared/config/configuration.js';
 import { ZonesModule } from './modules/zones/zones.module.js';
 import { FileStorageModule } from './shared/file-storage/file-storage.module.js';
@@ -23,6 +24,7 @@ export const { ObserveModule, ObserveInstrument } = createObserveModule();
     //   appSecret: 'YOUR_APP_SECRET',
     //   serviceId: 'Riwi_commerce_backend',
     // }),
+    VisitsModule,
     ConfigModule.forRoot({
       isGlobal: true,
       load: [configuration]
