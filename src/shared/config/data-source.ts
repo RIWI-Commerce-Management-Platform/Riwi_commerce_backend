@@ -8,6 +8,7 @@ import { ZoneOrmEntity } from '../../modules/zones/infrastructure/zone.orm-entit
 import { ClientOrmEntity } from '../../modules/client/infrastructure/client.orm-entity.js';
 import { CreateZonesTable1792430815281 } from '../../modules/zones/infrastructure/migrations/1792430815281-CreateZonesTable.js';
 import { CreateAuthTables1792598977478 } from '../../modules/auth/infrastructure/migrations/1792598977478-CreateAuthTables.js';
+import { AddUserRoles1792641000000 } from '../../modules/auth/infrastructure/migrations/1792641000000-AddUserRoles.js';
 
 /**
  * Standalone DataSource for the TypeORM CLI (migration:generate/run/revert)
@@ -29,7 +30,11 @@ const dataSource = new DataSource({
     ZoneOrmEntity,
     ClientOrmEntity,
   ],
-  migrations: [CreateZonesTable1792430815281, CreateAuthTables1792598977478],
+  migrations: [
+    CreateZonesTable1792430815281,
+    CreateAuthTables1792598977478,
+    AddUserRoles1792641000000,
+  ],
 });
 
 export default dataSource;

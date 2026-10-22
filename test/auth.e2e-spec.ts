@@ -35,6 +35,7 @@ describe('Auth Module (e2e)', () => {
 
       expect(response.body).toHaveProperty('user');
       expect(response.body.user.email).toBe(testUser.email);
+      expect(response.body.user.role).toBe('ASESOR');
     });
 
     it('debe rechazar credenciales incorrectas con status 401 y mensaje de error', async () => {

@@ -1,4 +1,11 @@
-import { Column, CreateDateColumn, Entity, PrimaryColumn, UpdateDateColumn } from 'typeorm';
+import {
+  Column,
+  CreateDateColumn,
+  Entity,
+  PrimaryColumn,
+  UpdateDateColumn,
+} from 'typeorm';
+import { UserRole } from '../domain/user-role.enum.js';
 
 @Entity('user')
 export class UserOrmEntity {
@@ -16,6 +23,12 @@ export class UserOrmEntity {
 
   @Column('text', { name: 'image', nullable: true })
   image!: string | null;
+
+  @Column('varchar', { name: 'role', length: 32, default: UserRole.ASESOR })
+  role!: UserRole;
+
+  @Column('uuid', { name: 'zoneId', nullable: true })
+  zoneId!: string | null;
 
   @CreateDateColumn({ name: 'createdAt', type: 'timestamptz' })
   createdAt!: Date;
