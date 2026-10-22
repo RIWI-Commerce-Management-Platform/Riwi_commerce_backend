@@ -69,6 +69,8 @@ export class AuthTokenService {
           'EX',
           this.refreshTtlSeconds,
         )
+        .sadd(this.userSessionsKey(userId), sid)
+        .expire(this.userSessionsKey(userId), this.refreshTtlSeconds)
         .exec();
 
     if (!result || result.some(([error]) => error)) {
@@ -107,17 +109,21 @@ export class AuthTokenService {
       `if redis.call('GET', KEYS[1]) ~= ARGV[1] then return 0 end
        if redis.call('GET', KEYS[2]) ~= ARGV[2] then return 0 end
        redis.call('DEL', KEYS[2])
-       redis.call('SET', KEYS[3], ARGV[3], 'EX', ARGV[5])
-       redis.call('SET', KEYS[1], ARGV[4], 'EX', ARGV[5])
+      redis.call('SET', KEYS[3], ARGV[3], 'EX', ARGV[6])
+       redis.call('SET', KEYS[1], ARGV[4], 'EX', ARGV[6])
+      redis.call('SADD', KEYS[4], ARGV[5])
+      redis.call('EXPIRE', KEYS[4], ARGV[6])
        return 1`,
-      3,
+      4,
       sessionKey,
       oldRefreshKey,
       this.refreshKey(claims.sid, nextRefreshJti),
+      this.userSessionsKey(claims.sub),
       rawSession,
       this.hashToken(refreshToken),
       this.hashToken(tokens.refreshToken),
       JSON.stringify(nextSession),
+      claims.sid,
       String(this.refreshTtlSeconds),
     );
 
@@ -163,6 +169,33 @@ export class AuthTokenService {
       sessionKey,
       this.refreshKey(sid, session.refreshJti),
     );
+    await this.redis.client.srem(this.userSessionsKey(userId), sid);
+  }
+
+  async revokeAllSessions(userId: string): Promise<void> {
+    const sessionsKey = this.userSessionsKey(userId);
+    const sessionIds = await this.redis.client.smembers(sessionsKey);
+    const keysToDelete = [sessionsKey];
+
+    for (const sid of sessionIds) {
+      const rawSession = await this.redis.client.get(this.sessionKey(sid));
+      if (!rawSession) {
+        continue;
+      }
+      const session = this.parseSession(rawSession);
+      if (session.userId === userId) {
+        keysToDelete.push(
+          this.sessionKey(sid),
+          this.refreshKey(sid, session.refreshJti),
+        );
+      }
+    }
+
+    if (keysToDelete.length > 1) {
+      await this.redis.client.del(...keysToDelete);
+    } else {
+      await this.redis.client.del(sessionsKey);
+    }
   }
 
   private async signTokenPair(
@@ -257,6 +290,10 @@ export class AuthTokenService {
 
   private refreshKey(sid: string, jti: string): string {
     return `auth:refresh:${sid}:${jti}`;
+  }
+
+  private userSessionsKey(userId: string): string {
+    return `auth:user-sessions:${userId}`;
   }
 
   private hashToken(token: string): string {

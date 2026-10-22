@@ -143,6 +143,10 @@ export class AuthService {
     await this.tokenService.revokeSession(userId, sessionId);
   }
 
+  async revokeAllSessions(userId: string): Promise<void> {
+    await this.tokenService.revokeAllSessions(userId);
+  }
+
   private async createAuthResponse(user: UserOrmEntity): Promise<AuthResponse> {
     const tokens = await this.tokenService.createSession(user.id);
     return {

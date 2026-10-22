@@ -20,4 +20,10 @@ export default () => ({
   redis: {
     url: process.env.REDIS_URL ?? 'redis://localhost:6379',
   },
+  betterAuth: {
+    secret: process.env.BETTER_AUTH_SECRET,
+    url:
+      process.env.BETTER_AUTH_URL ??
+      `http://localhost:${process.env.PORT ?? 3000}`,
+  },
 });

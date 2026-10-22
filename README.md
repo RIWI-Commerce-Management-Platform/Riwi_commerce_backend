@@ -28,7 +28,8 @@ Comercial 360 API (clients, routes, visits, follow-ups, quotes, orders, and KPIs
    ```
 
    Or, if you'd rather run the app outside Docker, set `POSTGRES_*`, `REDIS_URL`,
-   and a strong `JWT_SECRET` in `.env`, then start with:
+   and strong `JWT_SECRET` and `BETTER_AUTH_SECRET` values in `.env`, then start
+   with:
 
    ```bash
    npm run start:dev
@@ -68,9 +69,10 @@ Each module keeps its own migrations under `src/modules/<module>/infrastructure/
 
 Authentication uses short-lived HS256 access JWTs and rotating refresh JWTs.
 Redis stores active sessions and one-time refresh-token hashes; it is required
-for login, refresh, and all protected endpoints. Set `JWT_SECRET` to a
-cryptographically random value of at least 32 characters (for example,
-`openssl rand -base64 48`).
+for login, refresh, and all protected endpoints. Better Auth also provides
+cookie sessions for Microsoft OAuth and manages password-reset tokens in
+PostgreSQL. Set `JWT_SECRET` and `BETTER_AUTH_SECRET` to cryptographically
+random values of at least 32 characters (for example, `openssl rand -base64 48`).
 
 - `POST /auth/register` and `POST /auth/login` return `accessToken`,
   `refreshToken`, `tokenType`, `expiresIn`, and the user.
@@ -80,10 +82,49 @@ cryptographically random value of at least 32 characters (for example,
   token pair. Each refresh token is single-use.
 - `POST /auth/logout` requires a valid bearer access token and revokes its
   Redis session.
+- `POST /auth/forgot-password` accepts `{ "email": "user@example.com" }` and
+  always returns a generic response. Configure `SMTP_HOST`, `SMTP_PORT`,
+  `SMTP_SECURE`, `SMTP_USER`, `SMTP_PASSWORD`, and `SMTP_FROM` to deliver
+  recovery email. The reset token expires after 30 minutes by default; change
+  this with `PASSWORD_RESET_TOKEN_TTL_SECONDS`. Tokens are single-use.
+- `POST /auth/reset-password` accepts `{ "token": "...", "newPassword": "..." }`.
+  A successful reset revokes JWT sessions and Better Auth sessions.
+- Better Auth endpoints are mounted at `/api/auth/*`; use Better Auth's client
+  for Microsoft OAuth and its native session flow. `BETTER_AUTH_URL` must be the
+  externally reachable backend URL, and `FRONTEND_URL` must be the frontend
+  origin.
 
-The former Better Auth cookie and `/api/auth/*` endpoints are no longer served.
-Existing account password hashes remain compatible; the legacy Better Auth
-session tables may remain in PostgreSQL but are no longer used for authentication.
+Set `MICROSOFT_CLIENT_ID`, `MICROSOFT_CLIENT_SECRET`, and
+`MICROSOFT_TENANT_ID` together to enable Microsoft sign-in. Register a Microsoft
+Entra ID application:
+
+1. In **Microsoft Entra admin center → App registrations**, create an app and
+   select **Accounts in this organizational directory only**.
+2. Under **Authentication**, add a **Web** platform and register
+   `http://localhost:3015/api/auth/callback/microsoft` for local development,
+   or `${BETTER_AUTH_URL}/api/auth/callback/microsoft` in deployment.
+3. Under **Token configuration**, add the `email` optional claim to the ID
+   token so Better Auth can verify the user's tenant email claim.
+4. Under **Certificates & secrets**, create a client secret and copy its value
+   immediately.
+5. From the app's **Overview**, copy the Application (client) ID and Directory
+   (tenant) ID into `MICROSOFT_CLIENT_ID` and `MICROSOFT_TENANT_ID`. Set the
+   copied secret value as `MICROSOFT_CLIENT_SECRET`, then restart the backend.
+
+The configured tenant ID binds Microsoft sign-in to that organizational tenant.
+Only Microsoft profiles with a verified email claim are accepted. This allows
+linking an existing local account by its verified Microsoft email while
+avoiding linking based only on an unverified email string. The existing user's
+role is retained.
+
+This repository contains the backend only, so it has no login page to update.
+The frontend should add the forgot-password link and form using
+`POST /auth/forgot-password`, and submit the token from the reset redirect to
+`POST /auth/reset-password`. For Microsoft sign-in, initialize Better Auth's
+client with the backend URL and call
+`signIn.social({ provider: "microsoft", callbackURL: "<frontend-url>" })`;
+send requests with credentials enabled so the Better Auth cookie session is
+available to protected backend endpoints.
 
 ## Roles
 

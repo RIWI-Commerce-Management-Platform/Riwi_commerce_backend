@@ -133,10 +133,12 @@ describe('Auth Module (e2e)', () => {
       .expect(401);
   });
 
-  it('does not expose the legacy Better Auth endpoint', async () => {
+  it('serves the Better Auth session endpoint', async () => {
     await request(app.getHttpServer())
-      .post('/api/auth/sign-in/email')
-      .send(testUser)
-      .expect(404);
+      .get('/api/auth/get-session')
+      .expect(200)
+      .expect((response) => {
+        expect(response.body).toBeNull();
+      });
   });
 });

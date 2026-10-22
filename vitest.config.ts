@@ -8,5 +8,10 @@ export default defineConfig({
     globals: true,
     root: './',
     include: ['**/*.spec.ts'],
+    env: {
+      BETTER_AUTH_SECRET:
+        process.env.BETTER_AUTH_SECRET ??
+        'unit-test-better-auth-secret-at-least-thirty-two-characters',
+    },
   },
 });
