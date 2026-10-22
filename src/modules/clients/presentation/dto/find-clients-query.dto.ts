@@ -12,18 +12,21 @@ export class FindClientsQueryDto extends PaginationQueryDto {
   @ApiPropertyOptional({
     description: 'Filter by Zone ID',
     example: 1,
+    type: Number,
   })
   zoneId?: number | string;
 
   @ApiPropertyOptional({
     description: 'Filter by Client Type ID',
     example: 1,
+    type: Number,
   })
   clientTypeId?: number | string;
 
   @ApiPropertyOptional({
     description: 'Filter by Potential classification ID',
     example: 1,
+    type: Number,
   })
   potentialId?: number | string;
 

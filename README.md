@@ -63,6 +63,29 @@ The API is available at `http://localhost:${PORT}` and the Swagger docs at `http
 
 Each module keeps its own migrations under `src/modules/<module>/infrastructure/migrations/`.
 
+## Roles
+
+New users are assigned the `ASESOR` role by default. Available roles are `ADMIN`,
+`DIRECTOR_REGIONAL`, and `ASESOR`; a regional director must be assigned to a zone.
+Only an Admin can change a user's role through `PATCH /auth/users/:userId/role`:
+
+```json
+{ "role": "DIRECTOR_REGIONAL", "zoneId": 1 }
+```
+
+Omit `zoneId` for `ADMIN` and `ASESOR`. After running the migrations and
+registering the first administrator account, promote it once directly in PostgreSQL:
+
+```sql
+UPDATE "user" SET "role" = 'ADMIN' WHERE "email" = 'admin@ejemplo.com';
+```
+
+The `@Roles(...)` decorator and `RolesGuard` protect endpoints that declare them.
+Sessions are validated through Better Auth, and roles are read from the database
+to avoid trusting stale session data. Filtering routes, visits, and quotes by
+advisor/zone, linking users to an `ASESOR` record, and role-based frontend menus
+remain out of scope because those modules and the frontend are not in this repository.
+
 ## Architecture
 
 Every business module lives in `src/modules/<module>/` with 4 layers (dependencies always point inward):

@@ -1,4 +1,11 @@
-import { Entity, Column, PrimaryGeneratedColumn } from 'typeorm';
+import {
+  Entity,
+  Column,
+  JoinColumn,
+  ManyToOne,
+  PrimaryGeneratedColumn,
+} from 'typeorm';
+import type { ClientOrmEntity } from '../../clients/infrastructure/client.orm-entity.js';
 
 @Entity({ name: 'visits' })
 export class VisitOrmEntity {
@@ -7,6 +14,10 @@ export class VisitOrmEntity {
 
   @Column({ name: 'client_id', type: 'integer' })
   clientId: number;
+
+  @ManyToOne('ClientOrmEntity', { onDelete: 'RESTRICT' })
+  @JoinColumn({ name: 'client_id' })
+  client?: ClientOrmEntity;
 
   @Column({ name: 'advisor_id', type: 'integer' })
   advisorId: number;
