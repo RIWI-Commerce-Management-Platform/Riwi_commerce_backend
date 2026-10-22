@@ -34,7 +34,7 @@ export class RolesGuard implements CanActivate {
     const userId = request.user?.id;
     if (!userId) {
       throw new UnauthorizedException(
-        'No autorizado: sesión inválida o no iniciada',
+        'Unauthorized: invalid or missing session',
       );
     }
 
@@ -44,7 +44,7 @@ export class RolesGuard implements CanActivate {
     });
 
     if (!user) {
-      throw new UnauthorizedException('No autorizado: usuario inexistente');
+      throw new UnauthorizedException('Unauthorized: user does not exist');
     }
 
     request.user = {
@@ -54,7 +54,7 @@ export class RolesGuard implements CanActivate {
     };
     if (!requiredRoles.includes(user.role)) {
       throw new ForbiddenException(
-        'No tienes permisos para acceder a este recurso',
+        'You do not have permission to access this resource',
       );
     }
 

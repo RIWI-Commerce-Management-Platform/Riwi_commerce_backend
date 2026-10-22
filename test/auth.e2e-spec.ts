@@ -26,8 +26,8 @@ describe('Auth Module (e2e)', () => {
     await app.close();
   });
 
-  describe('1. Registro e inicio de sesión', () => {
-    it('debe registrar un nuevo usuario con éxito', async () => {
+  describe('1. Registration and sign-in', () => {
+    it('should successfully register a new user', async () => {
       const response = await request(app.getHttpServer())
         .post('/auth/register')
         .send(testUser)
@@ -38,7 +38,7 @@ describe('Auth Module (e2e)', () => {
       expect(response.body.user.role).toBe('ASESOR');
     });
 
-    it('debe rechazar credenciales incorrectas con status 401 y mensaje de error', async () => {
+    it('should reject incorrect credentials with status 401 and an error message', async () => {
       const response = await request(app.getHttpServer())
         .post('/auth/login')
         .send({
@@ -48,10 +48,10 @@ describe('Auth Module (e2e)', () => {
         .expect(401);
 
       expect(response.body).toHaveProperty('message');
-      expect(response.body.message).toMatch(/incorrect|invalid|credenciales/i);
+      expect(response.body.message).toMatch(/incorrect|invalid/i);
     });
 
-    it('debe iniciar sesión con credenciales correctas y rememberMe=true (cookie persistente con Max-Age)', async () => {
+    it('should sign in with rememberMe=true and set a persistent cookie with Max-Age', async () => {
       const response = await request(app.getHttpServer())
         .post('/auth/login')
         .send({
@@ -74,7 +74,7 @@ describe('Auth Module (e2e)', () => {
       expect(sessionCookie).toMatch(/Max-Age=/i);
     });
 
-    it('debe iniciar sesión con credenciales correctas y rememberMe=false (cookie de sesión sin Max-Age)', async () => {
+    it('should sign in with rememberMe=false and set a session cookie without Max-Age', async () => {
       const response = await request(app.getHttpServer())
         .post('/auth/login')
         .send({
@@ -97,8 +97,8 @@ describe('Auth Module (e2e)', () => {
     });
   });
 
-  describe('2. Guard de sesión en backend (endpoints protegidos)', () => {
-    it('un endpoint protegido sin sesión debe devolver 401 Unauthorized', async () => {
+  describe('2. Backend session guard (protected endpoints)', () => {
+    it('should return 401 Unauthorized for a protected endpoint without a session', async () => {
       const response = await request(app.getHttpServer())
         .get('/auth/me')
         .expect(401);
@@ -106,7 +106,7 @@ describe('Auth Module (e2e)', () => {
       expect(response.body).toHaveProperty('statusCode', 401);
     });
 
-    it('el endpoint /auth/protected sin sesión debe devolver 401 Unauthorized', async () => {
+    it('should return 401 Unauthorized for /auth/protected without a session', async () => {
       const response = await request(app.getHttpServer())
         .get('/auth/protected')
         .expect(401);
@@ -114,7 +114,7 @@ describe('Auth Module (e2e)', () => {
       expect(response.body).toHaveProperty('statusCode', 401);
     });
 
-    it('con sesión iniciada, debe acceder al endpoint protegido con 200', async () => {
+    it('should access the protected endpoint with status 200 when signed in', async () => {
       const loginRes = await request(app.getHttpServer())
         .post('/auth/login')
         .send({
@@ -143,13 +143,13 @@ describe('Auth Module (e2e)', () => {
         .set('Cookie', sessionTokenCookie || '')
         .expect(200);
 
-      expect(protectedRes.body).toHaveProperty('message', 'Acceso autorizado');
+      expect(protectedRes.body).toHaveProperty('message', 'Access granted');
       expect(protectedRes.body.user.email).toBe(testUser.email);
     });
   });
 
-  describe('3. Logout e invalidación de sesión', () => {
-    it('al cerrar sesión, la sesión se invalida y los endpoints protegidos devuelven 401', async () => {
+  describe('3. Sign-out and session invalidation', () => {
+    it('should invalidate the session on sign-out and return 401 for protected endpoints', async () => {
       const loginRes = await request(app.getHttpServer())
         .post('/auth/login')
         .send({
@@ -183,8 +183,8 @@ describe('Auth Module (e2e)', () => {
     });
   });
 
-  describe('4. Compatibilidad con endpoints nativos de Better Auth (/api/auth/*)', () => {
-    it('debe permitir iniciar sesión a través del endpoint nativo /api/auth/sign-in/email', async () => {
+  describe('4. Better Auth native endpoint compatibility (/api/auth/*)', () => {
+    it('should allow sign-in through the native /api/auth/sign-in/email endpoint', async () => {
       const response = await request(app.getHttpServer())
         .post('/api/auth/sign-in/email')
         .send({

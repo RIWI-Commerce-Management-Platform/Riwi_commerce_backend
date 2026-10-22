@@ -61,15 +61,14 @@ export class AuthController {
 
   @Post('login')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Iniciar sesión con correo y contraseña' })
+  @ApiOperation({ summary: 'Sign in with email and password' })
   @ApiResponse({
     status: 200,
-    description:
-      'Sesión iniciada correctamente. Se establece la cookie de sesión.',
+    description: 'Signed in successfully. A session cookie has been set.',
   })
   @ApiResponse({
     status: 401,
-    description: 'Credenciales inválidas (correo o contraseña incorrectos).',
+    description: 'Invalid credentials (incorrect email or password).',
   })
   async login(
     @Body() dto: LoginDto,
@@ -94,7 +93,7 @@ export class AuthController {
         throw new UnauthorizedException(
           errorData?.message ||
             errorData?.statusText ||
-            'Correo o contraseña incorrectos',
+            'Incorrect email or password',
         );
       }
 
@@ -105,9 +104,7 @@ export class AuthController {
         throw error;
       }
       throw new UnauthorizedException(
-        error?.body?.message ||
-          error?.message ||
-          'Correo o contraseña incorrectos',
+        error?.body?.message || error?.message || 'Incorrect email or password',
       );
     }
   }
@@ -115,15 +112,15 @@ export class AuthController {
   @Post('register')
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({
-    summary: 'Registrar un nuevo usuario con correo y contraseña',
+    summary: 'Register a new user with email and password',
   })
   @ApiResponse({
     status: 201,
-    description: 'Usuario registrado e inicio de sesión automático.',
+    description: 'User registered and signed in automatically.',
   })
   @ApiResponse({
     status: 400,
-    description: 'Datos inválidos o el usuario ya existe.',
+    description: 'Invalid input or the user already exists.',
   })
   async register(
     @Body() dto: RegisterDto,
@@ -148,7 +145,7 @@ export class AuthController {
         throw new BadRequestException(
           errorData?.message ||
             errorData?.statusText ||
-            'Error al registrar el usuario',
+            'Failed to register user',
         );
       }
 
@@ -159,9 +156,7 @@ export class AuthController {
         throw error;
       }
       throw new BadRequestException(
-        error?.body?.message ||
-          error?.message ||
-          'Error al registrar el usuario',
+        error?.body?.message || error?.message || 'Failed to register user',
       );
     }
   }
@@ -169,9 +164,9 @@ export class AuthController {
   @Post('logout')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
-    summary: 'Cerrar sesión e invalidar la cookie/sesión activa',
+    summary: 'Sign out and invalidate the active cookie/session',
   })
-  @ApiResponse({ status: 200, description: 'Sesión cerrada exitosamente.' })
+  @ApiResponse({ status: 200, description: 'Signed out successfully.' })
   async logout(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
     const authResponse = await auth.api.signOut({
       headers: fromNodeHeaders(req.headers),
@@ -182,19 +177,19 @@ export class AuthController {
 
     return {
       success: true,
-      message: 'Sesión finalizada exitosamente',
+      message: 'Session ended successfully',
     };
   }
 
   @Get('me')
   @UseGuards(SessionGuard)
   @ApiOperation({
-    summary: 'Obtener información de la sesión y usuario actual',
+    summary: 'Get the current session and user information',
   })
-  @ApiResponse({ status: 200, description: 'Información de la sesión activa.' })
+  @ApiResponse({ status: 200, description: 'Active session information.' })
   @ApiResponse({
     status: 401,
-    description: 'No autorizado / Sesión no iniciada.',
+    description: 'Unauthorized / No active session.',
   })
   async getMe(@CurrentUser() user: any, @CurrentSession() session: any) {
     const currentUser = await this.userRepository.findOne({
@@ -202,7 +197,7 @@ export class AuthController {
       select: { id: true, role: true, zoneId: true },
     });
     if (!currentUser) {
-      throw new UnauthorizedException('No autorizado: usuario inexistente');
+      throw new UnauthorizedException('Unauthorized: user does not exist');
     }
 
     return {
@@ -213,18 +208,18 @@ export class AuthController {
 
   @Get('protected')
   @UseGuards(SessionGuard)
-  @ApiOperation({ summary: 'Endpoint de prueba protegido por Guard de sesión' })
+  @ApiOperation({ summary: 'Session-guarded test endpoint' })
   @ApiResponse({
     status: 200,
-    description: 'Acceso autorizado al recurso protegido.',
+    description: 'Authorized to access the protected resource.',
   })
   @ApiResponse({
     status: 401,
-    description: 'No autorizado: falta sesión o sesión inválida.',
+    description: 'Unauthorized: session is missing or invalid.',
   })
   protectedEndpoint(@CurrentUser() user: any) {
     return {
-      message: 'Acceso autorizado',
+      message: 'Access granted',
       user,
     };
   }
@@ -233,43 +228,43 @@ export class AuthController {
   @UseGuards(SessionGuard, RolesGuard)
   @Roles(UserRole.ADMIN)
   @ApiOperation({
-    summary: 'Asignar o cambiar el rol de un usuario (solo Admin)',
+    summary: 'Assign or change a user role (Admin only)',
   })
-  @ApiResponse({ status: 200, description: 'Rol actualizado correctamente.' })
-  @ApiResponse({ status: 400, description: 'Rol o zona inválidos.' })
-  @ApiResponse({ status: 401, description: 'Sesión no iniciada.' })
-  @ApiResponse({ status: 403, description: 'Se requiere el rol Admin.' })
-  @ApiResponse({ status: 404, description: 'Usuario o zona no encontrados.' })
+  @ApiResponse({ status: 200, description: 'Role updated successfully.' })
+  @ApiResponse({ status: 400, description: 'Invalid role or zone.' })
+  @ApiResponse({ status: 401, description: 'No active session.' })
+  @ApiResponse({ status: 403, description: 'The Admin role is required.' })
+  @ApiResponse({ status: 404, description: 'User or zone not found.' })
   async assignRole(
     @Param('userId') userId: string,
     @Body() dto: AssignUserRoleDto,
   ): Promise<{ id: string; role: UserRole; zoneId: string | null }> {
     if (!Object.values(UserRole).includes(dto.role)) {
-      throw new BadRequestException('El rol indicado no es válido');
+      throw new BadRequestException('The specified role is invalid');
     }
 
     let zoneId: string | null = null;
     if (dto.role === UserRole.DIRECTOR_REGIONAL) {
       if (!dto.zoneId || !this.isUuid(dto.zoneId)) {
         throw new BadRequestException(
-          'Debe indicar un zoneId válido para el Director Regional',
+          'A valid zoneId must be provided for a Regional Director',
         );
       }
 
       const zone = await this.zoneRepository.findOneBy({ id: dto.zoneId });
       if (!zone) {
-        throw new NotFoundException('La zona indicada no existe');
+        throw new NotFoundException('The specified zone does not exist');
       }
       zoneId = zone.id;
     } else if (dto.zoneId) {
       throw new BadRequestException(
-        'Solo un Director Regional puede tener una zona asignada',
+        'Only a Regional Director can be assigned to a zone',
       );
     }
 
     const user = await this.userRepository.findOneBy({ id: userId });
     if (!user) {
-      throw new NotFoundException('El usuario indicado no existe');
+      throw new NotFoundException('The specified user does not exist');
     }
 
     user.role = dto.role;

@@ -65,28 +65,26 @@ Each module keeps its own migrations under `src/modules/<module>/infrastructure/
 
 ## Roles
 
-Los usuarios nuevos reciben el rol `ASESOR`. Los roles disponibles son `ADMIN`,
-`DIRECTOR_REGIONAL` y `ASESOR`; un director regional debe tener una zona asignada.
-Solo un Admin puede cambiar el rol mediante `PATCH /auth/users/:userId/role`:
+New users are assigned the `ASESOR` role by default. Available roles are `ADMIN`,
+`DIRECTOR_REGIONAL`, and `ASESOR`; a regional director must be assigned to a zone.
+Only an Admin can change a user's role through `PATCH /auth/users/:userId/role`:
 
 ```json
 { "role": "DIRECTOR_REGIONAL", "zoneId": "<uuid-de-la-zona>" }
 ```
 
-Para `ADMIN` y `ASESOR`, omite `zoneId`. Después de ejecutar las migraciones y
-registrar el primer usuario administrador, promuévelo una sola vez directamente
-en PostgreSQL:
+Omit `zoneId` for `ADMIN` and `ASESOR`. After running the migrations and
+registering the first administrator account, promote it once directly in PostgreSQL:
 
 ```sql
 UPDATE "user" SET "role" = 'ADMIN' WHERE "email" = 'admin@ejemplo.com';
 ```
 
-El decorador `@Roles(...)` y `RolesGuard` protegen los endpoints que lo declaren;
-la sesión se sigue validando con Better Auth y los roles se consultan en la base
-de datos para no confiar en datos de sesión obsoletos. El filtrado de rutas,
-visitas y cotizaciones por asesor/zona, la asociación a un registro ASESOR y la
-visibilidad de menús del frontend quedan pendientes: esos módulos y el frontend
-no existen en este repositorio.
+The `@Roles(...)` decorator and `RolesGuard` protect endpoints that declare them.
+Sessions are validated through Better Auth, and roles are read from the database
+to avoid trusting stale session data. Filtering routes, visits, and quotes by
+advisor/zone, linking users to an `ASESOR` record, and role-based frontend menus
+remain out of scope because those modules and the frontend are not in this repository.
 
 ## Architecture
 

@@ -29,7 +29,9 @@ export class SessionGuard implements CanActivate {
     const session = await auth.api.getSession({ headers });
 
     if (!session || !session.session || !session.user) {
-      throw new UnauthorizedException('No autorizado: sesión inválida o no iniciada');
+      throw new UnauthorizedException(
+        'Unauthorized: invalid or missing session',
+      );
     }
 
     request.session = session.session;

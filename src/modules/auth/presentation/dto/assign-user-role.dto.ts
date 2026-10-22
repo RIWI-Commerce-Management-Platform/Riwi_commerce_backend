@@ -7,7 +7,7 @@ export class AssignUserRoleDto {
 
   @ApiPropertyOptional({
     format: 'uuid',
-    description: 'Obligatoria cuando el rol es DIRECTOR_REGIONAL',
+    description: 'Required when the role is DIRECTOR_REGIONAL',
   })
   zoneId?: string;
 }
