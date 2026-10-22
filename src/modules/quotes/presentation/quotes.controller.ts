@@ -6,7 +6,9 @@ import {
   NotFoundException,
   Param,
   ParseIntPipe,
+  Patch,
   Post,
+  Req,
   UploadedFile,
   UseInterceptors,
 } from '@nestjs/common';
@@ -18,15 +20,20 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import { FileInterceptor } from '@nestjs/platform-express';
+import type { Request } from 'express';
 import { CreateQuoteUseCase } from '../application/create-quote.use-case.js';
 import { GetQuoteByIdUseCase } from '../application/get-quote-by-id.use-case.js';
 import { AttachQuoteDocumentUseCase } from '../application/attach-quote-document.use-case.js';
+import { ChangeQuoteStatusUseCase } from '../application/change-quote-status.use-case.js';
 import { CreateQuoteDto } from './dto/create-quote.dto.js';
+import { ChangeQuoteStatusDto } from './dto/change-quote-status.dto.js';
 import { QuoteResponseDto } from './dto/quote-response.dto.js';
 import { ClientNotFoundError } from '../domain/errors/client-not-found.error.js';
 import { QuoteNotFoundError } from '../domain/errors/quote-not-found.error.js';
+import { InvalidQuoteStatusTransitionError } from '../domain/errors/invalid-quote-status-transition.error.js';
 import { FileSizeExceededError } from '../../../shared/file-storage/domain/errors/file-size-exceeded.error.js';
 import { InvalidFileTypeError } from '../../../shared/file-storage/domain/errors/invalid-file-type.error.js';
+import { CurrentAdvisorProvider } from '../../../shared/auth/domain/current-advisor.provider.js';
 
 interface UploadedFilePayload {
   buffer: Buffer;
@@ -42,6 +49,8 @@ export class QuotesController {
     private readonly createQuoteUseCase: CreateQuoteUseCase,
     private readonly getQuoteByIdUseCase: GetQuoteByIdUseCase,
     private readonly attachQuoteDocumentUseCase: AttachQuoteDocumentUseCase,
+    private readonly changeQuoteStatusUseCase: ChangeQuoteStatusUseCase,
+    private readonly currentAdvisor: CurrentAdvisorProvider,
   ) {}
 
   @Post()
@@ -140,6 +149,41 @@ export class QuotesController {
         error instanceof FileSizeExceededError ||
         error instanceof InvalidFileTypeError
       ) {
+        throw new BadRequestException(error.message);
+      }
+      throw error;
+    }
+  }
+
+  @Patch(':id/status')
+  @ApiOperation({
+    summary:
+      'Change quote status (DRAFT -> SENT -> APPROVED/REJECTED) with activity log (HU-32)',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Quote status updated and audited in activity log',
+    type: QuoteResponseDto,
+  })
+  async changeStatus(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: ChangeQuoteStatusDto,
+    @Req() request: Request,
+  ): Promise<QuoteResponseDto> {
+    const actorId = await this.currentAdvisor.extract(request).catch(() => 1);
+
+    try {
+      const updatedQuote = await this.changeQuoteStatusUseCase.execute({
+        quoteId: id,
+        newStatus: dto.status,
+        actorId,
+      });
+      return new QuoteResponseDto(updatedQuote);
+    } catch (error) {
+      if (error instanceof QuoteNotFoundError) {
+        throw new NotFoundException(error.message);
+      }
+      if (error instanceof InvalidQuoteStatusTransitionError) {
         throw new BadRequestException(error.message);
       }
       throw error;

@@ -70,4 +70,9 @@ describe('GetVisitAgendaUseCase', () => {
 
     expect(filters.advisorId).toBe(42);
   });
+
+  it('defaults to current date when date parameter is omitted', async () => {
+    await useCase.execute(1, 'day');
+    expect(mockVisitDao.findAgenda).toHaveBeenCalled();
+  });
 });

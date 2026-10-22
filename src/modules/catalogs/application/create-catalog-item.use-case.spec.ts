@@ -2,7 +2,13 @@ import { describe, expect, it, vi } from 'vitest';
 import { CreateCatalogItemUseCase } from './create-catalog-item.use-case.js';
 import { CatalogRepository } from '../domain/catalog.repository.js';
 import { InvalidCatalogTypeError } from '../domain/catalog-errors.js';
-import { ClientType } from '../domain/catalog-item.entity.js';
+import {
+  ClientStatus,
+  ClientType,
+  Portfolio,
+  Potential,
+  VisitResult,
+} from '../domain/catalog-item.entity.js';
 
 describe('CreateCatalogItemUseCase', () => {
   const setup = () => {
@@ -29,6 +35,66 @@ describe('CreateCatalogItemUseCase', () => {
     expect(result.name).toBe('Supermercado');
     expect(result.id).toBeUndefined();
     expect(repository.saveClientType).toHaveBeenCalled();
+  });
+
+  it('should create a potential successfully with default order and explicit order', async () => {
+    const { useCase, repository } = setup();
+
+    const res1 = (await useCase.execute({
+      type: 'potentials',
+      name: 'Alto',
+    })) as Potential;
+    expect(res1.name).toBe('Alto');
+    expect(res1.order).toBe(1);
+
+    const res2 = (await useCase.execute({
+      type: 'potentials',
+      name: 'Bajo',
+      order: 3,
+    })) as Potential;
+    expect(res2.order).toBe(3);
+  });
+
+  it('should create a client status successfully', async () => {
+    const { useCase, repository } = setup();
+
+    const result = (await useCase.execute({
+      type: 'client-statuses',
+      name: 'Activo',
+    })) as ClientStatus;
+
+    expect(result.name).toBe('Activo');
+    expect(repository.saveClientStatus).toHaveBeenCalled();
+  });
+
+  it('should create a portfolio successfully with description and without', async () => {
+    const { useCase, repository } = setup();
+
+    const res1 = (await useCase.execute({
+      type: 'portfolios',
+      name: 'Lácteos',
+      description: 'Leches y quesos',
+    })) as Portfolio;
+    expect(res1.name).toBe('Lácteos');
+    expect(res1.description).toBe('Leches y quesos');
+
+    const res2 = (await useCase.execute({
+      type: 'portfolios',
+      name: 'Carnes',
+    })) as Portfolio;
+    expect(res2.description).toBe('');
+  });
+
+  it('should create a visit result successfully', async () => {
+    const { useCase, repository } = setup();
+
+    const result = (await useCase.execute({
+      type: 'visit-results',
+      name: 'Venta',
+    })) as VisitResult;
+
+    expect(result.name).toBe('Venta');
+    expect(repository.saveVisitResult).toHaveBeenCalled();
   });
 
   it('should throw InvalidCatalogTypeError for unknown catalog type', async () => {

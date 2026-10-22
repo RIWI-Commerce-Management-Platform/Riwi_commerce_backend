@@ -1,5 +1,6 @@
 import { QuoteItem } from './quote-item.entity.js';
 import { QuoteStatus } from './quote-status.enum.js';
+import { InvalidQuoteStatusTransitionError } from './errors/invalid-quote-status-transition.error.js';
 
 export interface QuoteProps {
   id?: number;
@@ -44,6 +45,27 @@ export class Quote {
 
   attachDocument(key: string): void {
     this.documentKey = key;
+    this.updatedAt = new Date();
+  }
+
+  changeStatus(newStatus: QuoteStatus): void {
+    if (this.status === newStatus) {
+      return;
+    }
+
+    const allowedTransitions: Record<QuoteStatus, QuoteStatus[]> = {
+      [QuoteStatus.DRAFT]: [QuoteStatus.SENT, QuoteStatus.REJECTED],
+      [QuoteStatus.SENT]: [QuoteStatus.APPROVED, QuoteStatus.REJECTED],
+      [QuoteStatus.APPROVED]: [],
+      [QuoteStatus.REJECTED]: [],
+    };
+
+    const validNextStatuses = allowedTransitions[this.status] ?? [];
+    if (!validNextStatuses.includes(newStatus)) {
+      throw new InvalidQuoteStatusTransitionError(this.status, newStatus);
+    }
+
+    this.status = newStatus;
     this.updatedAt = new Date();
   }
 }

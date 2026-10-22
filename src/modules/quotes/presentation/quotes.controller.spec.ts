@@ -4,18 +4,23 @@ import { QuotesController } from './quotes.controller.js';
 import { CreateQuoteUseCase } from '../application/create-quote.use-case.js';
 import { GetQuoteByIdUseCase } from '../application/get-quote-by-id.use-case.js';
 import { AttachQuoteDocumentUseCase } from '../application/attach-quote-document.use-case.js';
+import { ChangeQuoteStatusUseCase } from '../application/change-quote-status.use-case.js';
+import { CurrentAdvisorProvider } from '../../../shared/auth/domain/current-advisor.provider.js';
 import { Quote } from '../domain/quote.entity.js';
 import { QuoteStatus } from '../domain/quote-status.enum.js';
 import { QuoteNotFoundError } from '../domain/errors/quote-not-found.error.js';
 import { ClientNotFoundError } from '../domain/errors/client-not-found.error.js';
+import { InvalidQuoteStatusTransitionError } from '../domain/errors/invalid-quote-status-transition.error.js';
 import { FileSizeExceededError } from '../../../shared/file-storage/domain/errors/file-size-exceeded.error.js';
 import { InvalidFileTypeError } from '../../../shared/file-storage/domain/errors/invalid-file-type.error.js';
 
-describe('QuotesController (Presentation - HU-31)', () => {
+describe('QuotesController (Presentation)', () => {
   let controller: QuotesController;
   let createQuoteUseCase: Partial<CreateQuoteUseCase>;
   let getQuoteByIdUseCase: Partial<GetQuoteByIdUseCase>;
   let attachQuoteDocumentUseCase: Partial<AttachQuoteDocumentUseCase>;
+  let changeQuoteStatusUseCase: Partial<ChangeQuoteStatusUseCase>;
+  let currentAdvisor: Partial<CurrentAdvisorProvider>;
 
   const mockQuote = new Quote({
     id: 1,
@@ -49,10 +54,20 @@ describe('QuotesController (Presentation - HU-31)', () => {
       }),
     };
 
+    changeQuoteStatusUseCase = {
+      execute: vi.fn().mockResolvedValue(mockQuote),
+    };
+
+    currentAdvisor = {
+      extract: vi.fn().mockResolvedValue(15),
+    };
+
     controller = new QuotesController(
       createQuoteUseCase as CreateQuoteUseCase,
       getQuoteByIdUseCase as GetQuoteByIdUseCase,
       attachQuoteDocumentUseCase as AttachQuoteDocumentUseCase,
+      changeQuoteStatusUseCase as ChangeQuoteStatusUseCase,
+      currentAdvisor as CurrentAdvisorProvider,
     );
   });
 
@@ -177,6 +192,84 @@ describe('QuotesController (Presentation - HU-31)', () => {
       await expect(controller.attachDocument(1, mockFile)).rejects.toThrow(
         BadRequestException,
       );
+    });
+  });
+
+  describe('PATCH /quotes/:id/status (HU-32)', () => {
+    it('successfully changes status and returns updated QuoteResponseDto', async () => {
+      const req = { headers: { 'x-user-id': '15' } } as any;
+      const response = await controller.changeStatus(
+        1,
+        { status: QuoteStatus.SENT },
+        req,
+      );
+
+      expect(changeQuoteStatusUseCase.execute).toHaveBeenCalledWith({
+        quoteId: 1,
+        newStatus: QuoteStatus.SENT,
+        actorId: 15,
+      });
+      expect(response.quoteNumber).toBe('COT-0001');
+    });
+
+    it('defaults actorId to 1 when currentAdvisor extraction fails', async () => {
+      vi.mocked(currentAdvisor.extract!).mockRejectedValue(new Error('no auth'));
+
+      const req = { headers: {} } as any;
+      const response = await controller.changeStatus(
+        1,
+        { status: QuoteStatus.SENT },
+        req,
+      );
+
+      expect(changeQuoteStatusUseCase.execute).toHaveBeenCalledWith({
+        quoteId: 1,
+        newStatus: QuoteStatus.SENT,
+        actorId: 1,
+      });
+      expect(response.quoteNumber).toBe('COT-0001');
+    });
+
+    it('translates InvalidQuoteStatusTransitionError to BadRequestException', async () => {
+      vi.mocked(changeQuoteStatusUseCase.execute!).mockRejectedValue(
+        new InvalidQuoteStatusTransitionError(
+          QuoteStatus.APPROVED,
+          QuoteStatus.DRAFT,
+        ),
+      );
+
+      const req = { headers: {} } as any;
+      await expect(
+        controller.changeStatus(1, { status: QuoteStatus.DRAFT }, req),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('translates QuoteNotFoundError to NotFoundException', async () => {
+      vi.mocked(changeQuoteStatusUseCase.execute!).mockRejectedValue(
+        new QuoteNotFoundError(999),
+      );
+
+      const req = { headers: {} } as any;
+      await expect(
+        controller.changeStatus(999, { status: QuoteStatus.SENT }, req),
+      ).rejects.toThrow(NotFoundException);
+    });
+
+    it('rethrows unexpected errors across all controller methods', async () => {
+      const dbError = new Error('Database down');
+      const req = { headers: {} } as any;
+
+      vi.mocked(createQuoteUseCase.execute!).mockRejectedValueOnce(dbError);
+      await expect(controller.create({ clientId: 1, items: [] }, req)).rejects.toThrow(dbError);
+
+      vi.mocked(getQuoteByIdUseCase.execute!).mockRejectedValueOnce(dbError);
+      await expect(controller.getById(1)).rejects.toThrow(dbError);
+
+      vi.mocked(attachQuoteDocumentUseCase.execute!).mockRejectedValueOnce(dbError);
+      await expect(controller.attachDocument(1, { originalname: 'doc.pdf', buffer: Buffer.from('') } as any, req)).rejects.toThrow(dbError);
+
+      vi.mocked(changeQuoteStatusUseCase.execute!).mockRejectedValueOnce(dbError);
+      await expect(controller.changeStatus(1, { status: QuoteStatus.SENT }, req)).rejects.toThrow(dbError);
     });
   });
 });
