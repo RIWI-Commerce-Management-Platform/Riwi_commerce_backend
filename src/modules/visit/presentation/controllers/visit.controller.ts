@@ -15,6 +15,7 @@ import type { Request } from 'express';
 
 import {
   ApiHeader,
+  ApiBody,
   ApiOperation,
   ApiParam,
   ApiQuery,
@@ -33,9 +34,15 @@ import { StartVisitUseCase } from '../../application/use-cases/start-visit.use-c
 
 import { RegisterVisitResultUseCase } from '../../application/use-cases/register-visit-result.use-case.js';
 
+import { RescheduleVisitUseCase } from '../../application/use-cases/reschedule-visit.use-case.js';
+
+import { MarkVisitNotVisitedUseCase } from '../../application/use-cases/mark-visit-not-visited.use-case.js';
+
 import { VisitAgendaQueryDto } from '../dtos/visit-agenda-query.dto.js';
 
 import { RegisterVisitResultDto } from '../dtos/register-visit-result.dto.js';
+
+import { RescheduleVisitDto } from '../dtos/reschedule-visit.dto.js';
 
 import { VisitSummaryResponseDto } from '../dtos/visit-summary-response.dto.js';
 
@@ -64,6 +71,8 @@ export class VisitsController {
     private readonly getVisitById: GetVisitByIdUseCase,
     private readonly startVisit: StartVisitUseCase,
     private readonly registerVisitResult: RegisterVisitResultUseCase,
+    private readonly rescheduleVisit: RescheduleVisitUseCase,
+    private readonly markVisitNotVisited: MarkVisitNotVisitedUseCase,
     private readonly currentAdvisor: CurrentAdvisorProvider,
   ) {}
 
@@ -175,6 +184,58 @@ export class VisitsController {
       observations: body.observations,
       results: body.results,
     });
+
+    return new VisitDetailResponseDto(visit);
+  }
+
+  @Patch(':id/reschedule')
+  @ApiOperation({ summary: 'Reschedule a pending visit' })
+  @ApiParam({ name: 'id', description: 'Visit ID' })
+  @ApiBody({ type: RescheduleVisitDto })
+  @ApiResponse({
+    status: 200,
+    description: 'Visit rescheduled and reflected in the advisor agenda.',
+    type: VisitDetailResponseDto,
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Invalid scheduled date or visit status transition.',
+  })
+  @ApiResponse({ status: 404, description: 'Visit not found for this advisor.' })
+  async reschedule(
+    @Param('id', ParseIntPipe) id: number,
+    @Req() request: Request,
+    @Body() body: RescheduleVisitDto,
+  ): Promise<VisitDetailResponseDto> {
+    const advisorId = await this.currentAdvisor.extract(request);
+    const visit = await this.rescheduleVisit.execute(
+      id,
+      advisorId,
+      body.scheduledAt,
+    );
+
+    return new VisitDetailResponseDto(visit);
+  }
+
+  @Patch(':id/not-visited')
+  @ApiOperation({ summary: 'Mark a visit as not visited' })
+  @ApiParam({ name: 'id', description: 'Visit ID' })
+  @ApiResponse({
+    status: 200,
+    description: 'Visit marked as NOT_VISITED.',
+    type: VisitDetailResponseDto,
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Visit status does not allow this transition.',
+  })
+  @ApiResponse({ status: 404, description: 'Visit not found for this advisor.' })
+  async markNotVisited(
+    @Param('id', ParseIntPipe) id: number,
+    @Req() request: Request,
+  ): Promise<VisitDetailResponseDto> {
+    const advisorId = await this.currentAdvisor.extract(request);
+    const visit = await this.markVisitNotVisited.execute(id, advisorId);
 
     return new VisitDetailResponseDto(visit);
   }

@@ -12,6 +12,8 @@ import { InvalidVisitObservationsError } from './errors/invalid-visit-observatio
 
 import { EmptyVisitResultsError } from './errors/empty-visit-results.error.js';
 
+import { InvalidVisitScheduledAtError } from './errors/invalid-visit-scheduled-at.error.js';
+
 function buildVisit(overrides: Partial<ConstructorParameters<typeof Visit>[0]> = {}) {
   return new Visit({
     id: 1,
@@ -47,6 +49,81 @@ describe('Visit (domain entity)', () => {
     const visit = buildVisit({ status: VisitStatus.VISITED });
 
     expect(() => visit.start()).toThrow(InvalidVisitStatusError);
+  });
+
+  it('starts a rescheduled visit without changing its scheduled date', () => {
+    const scheduledAt = new Date(2026, 9, 22, 14, 30, 0);
+    const visit = buildVisit({
+      status: VisitStatus.RESCHEDULE,
+      scheduledAt,
+    });
+
+    const started = visit.start();
+
+    expect(started.status).toBe(VisitStatus.IN_PROGRESS);
+    expect(started.scheduledAt).toEqual(scheduledAt);
+  });
+
+  it('reschedules a pending visit and preserves actual visit fields', () => {
+    const visit = buildVisit({
+      actualDate: new Date(2026, 9, 19),
+      startTime: '08:00:00',
+      endTime: '08:30:00',
+      observations: 'Existing observation',
+      results: [{ id: 1, name: 'Existing result' }],
+    });
+    const scheduledAt = new Date(2026, 9, 22, 14, 30, 0);
+
+    const rescheduled = visit.reschedule(scheduledAt);
+
+    expect(rescheduled.status).toBe(VisitStatus.RESCHEDULE);
+    expect(rescheduled.scheduledAt).toBe(scheduledAt);
+    expect(rescheduled.actualDate).toEqual(visit.actualDate);
+    expect(rescheduled.startTime).toBe(visit.startTime);
+    expect(rescheduled.endTime).toBe(visit.endTime);
+    expect(rescheduled.observations).toBe(visit.observations);
+    expect(rescheduled.results).toEqual(visit.results);
+  });
+
+  it('rejects an invalid scheduled date', () => {
+    expect(() => buildVisit().reschedule(new Date('invalid'))).toThrow(
+      InvalidVisitScheduledAtError,
+    );
+  });
+
+  it('rejects rescheduling a visit that has started or been completed', () => {
+    expect(() =>
+      buildVisit({ status: VisitStatus.IN_PROGRESS }).reschedule(new Date()),
+    ).toThrow(InvalidVisitStatusError);
+    expect(() =>
+      buildVisit({ status: VisitStatus.VISITED }).reschedule(new Date()),
+    ).toThrow(InvalidVisitStatusError);
+  });
+
+  it('marks a non-completed visit as not visited without changing its history', () => {
+    const actualDate = new Date(2026, 9, 20);
+    const visit = buildVisit({
+      status: VisitStatus.IN_PROGRESS,
+      actualDate,
+      startTime: '09:00:00',
+      observations: 'Could not meet the client.',
+    });
+
+    const notVisited = visit.markNotVisited();
+
+    expect(notVisited.status).toBe(VisitStatus.NOT_VISITED);
+    expect(notVisited.actualDate).toBe(actualDate);
+    expect(notVisited.startTime).toBe('09:00:00');
+    expect(notVisited.observations).toBe('Could not meet the client.');
+  });
+
+  it('rejects marking a completed or already not-visited visit again', () => {
+    expect(() =>
+      buildVisit({ status: VisitStatus.VISITED }).markNotVisited(),
+    ).toThrow(InvalidVisitStatusError);
+    expect(() =>
+      buildVisit({ status: VisitStatus.NOT_VISITED }).markNotVisited(),
+    ).toThrow(InvalidVisitStatusError);
   });
 
   it('registers a result and moves an in-progress visit to VISITED', () => {

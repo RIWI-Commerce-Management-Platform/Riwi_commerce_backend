@@ -12,6 +12,10 @@ import { StartVisitUseCase } from '../../application/use-cases/start-visit.use-c
 
 import { RegisterVisitResultUseCase } from '../../application/use-cases/register-visit-result.use-case.js';
 
+import { RescheduleVisitUseCase } from '../../application/use-cases/reschedule-visit.use-case.js';
+
+import { MarkVisitNotVisitedUseCase } from '../../application/use-cases/mark-visit-not-visited.use-case.js';
+
 import { Visit, VisitStatus } from '../../domain/visit.entity.js';
 
 import { CurrentAdvisorProvider } from '../../../../shared/auth/domain/current-advisor.provider.js';
@@ -45,6 +49,8 @@ describe('VisitsController', () => {
   let mockGetById: { execute: ReturnType<typeof vi.fn> };
   let mockStart: { execute: ReturnType<typeof vi.fn> };
   let mockRegisterResult: { execute: ReturnType<typeof vi.fn> };
+  let mockReschedule: { execute: ReturnType<typeof vi.fn> };
+  let mockMarkNotVisited: { execute: ReturnType<typeof vi.fn> };
   let mockCurrentAdvisor: { extract: ReturnType<typeof vi.fn> };
 
   beforeEach(() => {
@@ -58,6 +64,12 @@ describe('VisitsController', () => {
     mockRegisterResult = {
       execute: vi.fn().mockResolvedValue(buildVisit(VisitStatus.VISITED)),
     };
+    mockReschedule = {
+      execute: vi.fn().mockResolvedValue(buildVisit(VisitStatus.RESCHEDULE)),
+    };
+    mockMarkNotVisited = {
+      execute: vi.fn().mockResolvedValue(buildVisit(VisitStatus.NOT_VISITED)),
+    };
     mockCurrentAdvisor = { extract: vi.fn().mockResolvedValue(20) };
 
     controller = new VisitsController(
@@ -65,6 +77,8 @@ describe('VisitsController', () => {
       mockGetById as unknown as GetVisitByIdUseCase,
       mockStart as unknown as StartVisitUseCase,
       mockRegisterResult as unknown as RegisterVisitResultUseCase,
+      mockReschedule as unknown as RescheduleVisitUseCase,
+      mockMarkNotVisited as unknown as MarkVisitNotVisitedUseCase,
       mockCurrentAdvisor as unknown as CurrentAdvisorProvider,
     );
   });
@@ -109,5 +123,27 @@ describe('VisitsController', () => {
       results: [{ id: 1 }],
     });
     expect(result).toBeInstanceOf(VisitDetailResponseDto);
+  });
+
+  it('reschedules a visit through the use case for the current advisor', async () => {
+    const result = await controller.reschedule(1, buildRequest(), {
+      scheduledAt: '2026-10-22T14:30:00-05:00',
+    });
+
+    expect(mockCurrentAdvisor.extract).toHaveBeenCalledTimes(1);
+    expect(mockReschedule.execute).toHaveBeenCalledWith(
+      1,
+      20,
+      '2026-10-22T14:30:00-05:00',
+    );
+    expect(result.status).toBe(VisitStatus.RESCHEDULE);
+  });
+
+  it('marks a visit as not visited through the use case for the current advisor', async () => {
+    const result = await controller.markNotVisited(1, buildRequest());
+
+    expect(mockCurrentAdvisor.extract).toHaveBeenCalledTimes(1);
+    expect(mockMarkNotVisited.execute).toHaveBeenCalledWith(1, 20);
+    expect(result.status).toBe(VisitStatus.NOT_VISITED);
   });
 });

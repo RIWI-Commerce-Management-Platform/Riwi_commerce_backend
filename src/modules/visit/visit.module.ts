@@ -30,6 +30,10 @@ import { StartVisitUseCase } from './application/use-cases/start-visit.use-case.
 
 import { RegisterVisitResultUseCase } from './application/use-cases/register-visit-result.use-case.js';
 
+import { RescheduleVisitUseCase } from './application/use-cases/reschedule-visit.use-case.js';
+
+import { MarkVisitNotVisitedUseCase } from './application/use-cases/mark-visit-not-visited.use-case.js';
+
 import { VisitsController } from './presentation/controllers/visit.controller.js';
 
 // TEMPORARY: hardcoded test users while Better Auth is not integrated
@@ -61,6 +65,8 @@ import { TestUsersController } from './presentation/controllers/test-users.contr
     GetVisitByIdUseCase,
     StartVisitUseCase,
     RegisterVisitResultUseCase,
+    RescheduleVisitUseCase,
+    MarkVisitNotVisitedUseCase,
   ],
   exports: [VisitDao, VisitResultCatalogDao],
 })

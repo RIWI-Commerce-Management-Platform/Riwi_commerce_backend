@@ -1,6 +1,7 @@
 import { EmptyVisitResultsError } from './errors/empty-visit-results.error.js';
 import { InvalidVisitObservationsError } from './errors/invalid-visit-observations.error.js';
 import { InvalidVisitStatusError } from './errors/invalid-visit-status.error.js';
+import { InvalidVisitScheduledAtError } from './errors/invalid-visit-scheduled-at.error.js';
 
 export enum VisitStatus {
   PENDING = 'PENDING',
@@ -100,7 +101,10 @@ export class Visit {
   }
 
   start(): Visit {
-    if (this.props.status !== VisitStatus.PENDING) {
+    if (
+      this.props.status !== VisitStatus.PENDING &&
+      this.props.status !== VisitStatus.RESCHEDULE
+    ) {
       throw new InvalidVisitStatusError(this.props.status, 'started');
     }
 
@@ -111,6 +115,43 @@ export class Visit {
       status: VisitStatus.IN_PROGRESS,
       actualDate: now,
       startTime: now.toTimeString().slice(0, 8),
+    });
+  }
+
+  reschedule(scheduledAt: Date): Visit {
+    if (
+      this.props.status !== VisitStatus.PENDING &&
+      this.props.status !== VisitStatus.RESCHEDULE
+    ) {
+      throw new InvalidVisitStatusError(this.props.status, 'rescheduled');
+    }
+
+    if (
+      !(scheduledAt instanceof Date) ||
+      Number.isNaN(scheduledAt.getTime())
+    ) {
+      throw new InvalidVisitScheduledAtError();
+    }
+
+    return new Visit({
+      ...this.props,
+      scheduledAt,
+      status: VisitStatus.RESCHEDULE,
+    });
+  }
+
+  markNotVisited(): Visit {
+    if (
+      this.props.status !== VisitStatus.PENDING &&
+      this.props.status !== VisitStatus.RESCHEDULE &&
+      this.props.status !== VisitStatus.IN_PROGRESS
+    ) {
+      throw new InvalidVisitStatusError(this.props.status, 'marked not visited');
+    }
+
+    return new Visit({
+      ...this.props,
+      status: VisitStatus.NOT_VISITED,
     });
   }
 
