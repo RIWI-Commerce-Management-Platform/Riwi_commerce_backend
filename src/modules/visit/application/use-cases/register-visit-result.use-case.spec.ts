@@ -212,4 +212,20 @@ describe('RegisterVisitResultUseCase', () => {
     ).rejects.toThrow('database unavailable');
     expect(mockActivityLog.record).not.toHaveBeenCalled();
   });
+
+  it('rethrows unexpected error thrown inside registerResult', async () => {
+    const visit = buildVisit();
+    vi.spyOn(visit, 'registerResult').mockImplementation(() => {
+      throw new Error('Unexpected domain error');
+    });
+    (mockVisitDao.findByIdAndAdvisor as any).mockResolvedValue(visit);
+
+    await expect(
+      useCase.execute(1, 20, {
+        endTime: '10:30:00',
+        observations: 'obs',
+        results: [{ id: 1 }],
+      }),
+    ).rejects.toThrow('Unexpected domain error');
+  });
 });

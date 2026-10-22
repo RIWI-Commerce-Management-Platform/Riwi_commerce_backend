@@ -6,7 +6,7 @@ export interface BaseCatalogProps {
   updatedAt: Date;
 }
 
-export class ClientType {
+export class BaseCatalogItem {
   readonly id?: number;
   name: string;
   isActive: boolean;
@@ -31,6 +31,8 @@ export class ClientType {
     this.updatedAt = new Date();
   }
 }
+
+export class ClientType extends BaseCatalogItem {}
 
 export interface PotentialProps extends BaseCatalogProps {
   order: number;
@@ -65,31 +67,7 @@ export class Potential {
   }
 }
 
-export class ClientStatus {
-  readonly id?: number;
-  name: string;
-  isActive: boolean;
-  readonly createdAt: Date;
-  updatedAt: Date;
-
-  constructor(props: BaseCatalogProps) {
-    this.id = props.id;
-    this.name = props.name;
-    this.isActive = props.isActive;
-    this.createdAt = props.createdAt;
-    this.updatedAt = props.updatedAt;
-  }
-
-  deactivate(): void {
-    this.isActive = false;
-    this.updatedAt = new Date();
-  }
-
-  updateName(name: string): void {
-    this.name = name;
-    this.updatedAt = new Date();
-  }
-}
+export class ClientStatus extends BaseCatalogItem {}
 
 export interface PortfolioProps extends BaseCatalogProps {
   description: string;
@@ -124,28 +102,4 @@ export class Portfolio {
   }
 }
 
-export class VisitResult {
-  readonly id?: number;
-  name: string;
-  isActive: boolean;
-  readonly createdAt: Date;
-  updatedAt: Date;
-
-  constructor(props: BaseCatalogProps) {
-    this.id = props.id;
-    this.name = props.name;
-    this.isActive = props.isActive;
-    this.createdAt = props.createdAt;
-    this.updatedAt = props.updatedAt;
-  }
-
-  deactivate(): void {
-    this.isActive = false;
-    this.updatedAt = new Date();
-  }
-
-  updateName(name: string): void {
-    this.name = name;
-    this.updatedAt = new Date();
-  }
-}
+export class VisitResult extends BaseCatalogItem {}

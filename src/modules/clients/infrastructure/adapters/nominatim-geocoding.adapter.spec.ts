@@ -41,6 +41,26 @@ describe('NominatimGeocodingAdapter', () => {
     expect(result).toBeNull();
   });
 
+  it('should return null when first result is missing lat or lon', async () => {
+    global.fetch = vi.fn().mockResolvedValueOnce({
+      ok: true,
+      json: async () => [{ display_name: 'Medellín' }],
+    });
+
+    const result = await adapter.geocode('Calle 50', 'Medellín');
+    expect(result).toBeNull();
+  });
+
+  it('should return null when lat or lon is NaN', async () => {
+    global.fetch = vi.fn().mockResolvedValueOnce({
+      ok: true,
+      json: async () => [{ lat: 'invalid', lon: 'invalid' }],
+    });
+
+    const result = await adapter.geocode('Calle 50', 'Medellín');
+    expect(result).toBeNull();
+  });
+
   it('should return null without throwing when response is not ok', async () => {
     global.fetch = vi.fn().mockResolvedValueOnce({
       ok: false,
@@ -60,4 +80,3 @@ describe('NominatimGeocodingAdapter', () => {
     expect(result).toBeNull();
   });
 });
-

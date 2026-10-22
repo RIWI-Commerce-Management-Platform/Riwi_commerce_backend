@@ -53,6 +53,12 @@ export class QuoteResponseDto {
   })
   documentKey?: string | null;
 
+  @ApiPropertyOptional({
+    description: 'Presigned URL for viewing or downloading the commercial document',
+    example: 'https://comercial-360-bucket.s3.amazonaws.com/quotes/1730000000-soporte.pdf?...',
+  })
+  documentUrl?: string | null;
+
   @ApiProperty({
     description: 'List of product items in the quote',
     type: [QuoteItemResponseDto],
@@ -71,7 +77,7 @@ export class QuoteResponseDto {
   })
   updatedAt: Date;
 
-  constructor(quote: Quote) {
+  constructor(quote: Quote, documentUrl?: string | null) {
     this.id = quote.id!;
     this.quoteNumber = quote.quoteNumber;
     this.clientId = quote.clientId;
@@ -80,6 +86,7 @@ export class QuoteResponseDto {
     this.total = quote.total;
     this.notes = quote.notes;
     this.documentKey = quote.documentKey;
+    this.documentUrl = documentUrl ?? null;
     this.items = (quote.items ?? []).map(
       (item) => new QuoteItemResponseDto(item),
     );
