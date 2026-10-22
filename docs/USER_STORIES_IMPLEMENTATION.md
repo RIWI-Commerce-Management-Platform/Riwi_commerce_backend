@@ -168,7 +168,46 @@ Before detailing individual user stories, the foundation for the module was esta
 
 ---
 
-## 6. Summary Table of Implemented Endpoints
+## 6. User Story HU-15: Activity Log & Client History (Bitácora)
+
+### What was done?
+- **Domain Layer (`src/modules/clients/domain/`):**
+  - Created `ClientHistory` entity (`id`, `clientId`, `action`, `description`, `userId`, `entityType`, `entityId`, `metadata`, `createdAt`) with strict invariant validations.
+  - Defined abstract port `ClientHistoryRepository` (`save`, `findByClientId`, `findRecent`, `findById`).
+  - Created `ClientHistoryFilterCriteria` for chronological and action filtering.
+  - Defined explicit domain error `ClientHistoryNotFoundError`.
+- **Application Layer (`src/modules/clients/application/`):**
+  - Implemented `RecordClientActivityUseCase`: Enforces parent client validation and persists interaction entries.
+  - Implemented `GetClientHistoryUseCase`: Fetches paginated activity logs for a specific client.
+  - Implemented `GetRecentInteractionsUseCase`: Fetches system-wide recent activity to support dashboard feeds ("Últimas interacciones").
+  - Integrated audit recording into `CreateClientUseCase`, `UpdateClientUseCase`, and `ToggleClientStatusUseCase`.
+- **Shared Activity Log (`src/shared/activity-log/`):**
+  - Enhanced `ActivityLogService` port to support both `record(entry)` (consumed by visits/quotes) and `register(clientId, action, description, user, metadata)`.
+  - Implemented `TypeOrmActivityLogService` backed by `ClientHistoryOrmEntity`, replacing `NoopActivityLogService`.
+  - Configured and exported `ActivityLogModule`.
+- **Infrastructure Layer (`src/modules/clients/infrastructure/`):**
+  - Created `ClientHistoryOrmEntity` mapped to `client_histories` with Postgres foreign key to `clients(id)` (`ON DELETE CASCADE`).
+  - Implemented `ClientHistoryMapper` for clean domain/ORM translation.
+  - Implemented `TypeOrmClientHistoryRepository` using TypeORM `SelectQueryBuilder` with pagination and date range filters.
+  - Created database migration `CreateClientHistoriesTable1792650000003` with indexing on `client_id` and `created_at`.
+- **Presentation Layer (`src/modules/clients/presentation/`):**
+  - Created DTOs: `CreateClientHistoryDto`, `ClientHistoryResponseDto`, `FindClientHistoryQueryDto`, and `PaginatedClientHistoryResponseDto`.
+  - Implemented `ClientHistoryController` (`/clients`):
+    - `GET /clients/interactions/recent`: Returns recent interaction feed.
+    - `GET /clients/:clientId/history`: Returns paginated interaction history for client.
+    - `POST /clients/:clientId/history`: Manually registers an interaction or observation.
+
+### Why was it done?
+- **Commercial Traceability & Accountability:** In commercial operations, customer relationships depend on chronological memory (visits completed, quotes issued, status changes, follow-up calls). A centralized, append-only bitácora provides complete transparency without modifying core client records.
+- **Cross-Module Decoupling:** Different teams (Visits, Quotes, Orders) need to log events without directly depending on the client module's internal repositories. The `ActivityLogService` port provides a clean, abstract boundary.
+
+### What was it done for?
+- Powers the "Últimas interacciones" view on client detail cards and sales dashboards.
+- Gives sales advisors and regional directors immediate visibility into all touchpoints across the customer lifecycle.
+
+---
+
+## 7. Summary Table of Implemented Endpoints
 
 | HTTP Method | Path | Description | Associated Story |
 |---|---|---|---|
@@ -187,11 +226,14 @@ Before detailing individual user stories, the foundation for the module was esta
 | `POST` | `/catalogs/:type` | Create a new catalog item (Admin) | HU-14 |
 | `PATCH` | `/catalogs/:type/:id` | Update a catalog item using PATCH (Admin) | HU-14 |
 | `POST` | `/catalogs/seed/run` | Trigger initial seed (Barranquilla, Soledad, etc.) | HU-14 |
+| `GET` | `/clients/interactions/recent` | Get recent interactions across all clients (feed) | HU-15 |
+| `GET` | `/clients/:clientId/history` | Get paginated activity history for a client | HU-15 |
+| `POST` | `/clients/:clientId/history` | Manually record an interaction / note on a client | HU-15 |
 
 ---
 
-## 7. Quality & Verification Metrics
+## 8. Quality & Verification Metrics
 - **TypeScript strict mode:** 0 errors under NodeNext ESM.
-- **Static code analysis (`oxlint`):** 0 errors, 0 warnings across all files.
-- **Unit test suite (`vitest`):** Fully isolated test coverage across domain entities, use cases, mappers, and controllers.
+- **Static code analysis (`oxlint`):** 0 errors across all files.
+- **Unit test suite (`vitest`):** 177 passing tests with 100% success rate across domain entities, use cases, mappers, repositories, and controllers.
 - **OpenAPI / Swagger:** Full schema definitions, parameter documentation, and response statuses available at `/docs`.

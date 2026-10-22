@@ -12,6 +12,7 @@ import { QuotesModule } from './modules/quotes/quotes.module.js';
 import { ClientsModule } from './modules/clients/clients.module.js';
 import { CatalogsModule } from './modules/catalogs/catalogs.module.js';
 import { AuthModule } from './modules/auth/auth.module.js';
+import { ActivityLogModule } from './shared/activity-log/activity-log.module.js';
 
 export const { ObserveModule, ObserveInstrument } = createObserveModule();
 
@@ -51,6 +52,7 @@ export const { ObserveModule, ObserveInstrument } = createObserveModule();
     FileStorageModule,
     QuotesModule,
     AuthModule,
+    ActivityLogModule,
   ],
   controllers: [AppController],
   providers: [AppService],
