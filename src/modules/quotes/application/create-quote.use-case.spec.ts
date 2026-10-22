@@ -4,21 +4,46 @@ import { QuoteRepository } from '../domain/quote.repository.js';
 import { QuoteStatus } from '../domain/quote-status.enum.js';
 import { EmptyQuoteItemsError } from '../domain/errors/empty-quote-items.error.js';
 import { InvalidQuoteItemValuesError } from '../domain/errors/invalid-quote-item-values.error.js';
+import { ClientNotFoundError } from '../domain/errors/client-not-found.error.js';
 import { Quote } from '../domain/quote.entity.js';
+import { ClientReader } from '../../../shared/clients/domain/client-reader.js';
 
 describe('CreateQuoteUseCase', () => {
   let useCase: CreateQuoteUseCase;
   let mockQuoteRepository: Partial<QuoteRepository>;
+  let mockClientReader: Partial<ClientReader>;
 
   beforeEach(() => {
     mockQuoteRepository = {
       generateNextQuoteNumber: vi.fn().mockResolvedValue('COT-0001'),
       save: vi.fn().mockImplementation((quote: Quote) => Promise.resolve(quote)),
     };
+    mockClientReader = {
+      findById: vi.fn().mockResolvedValue({
+        id: 123,
+        name: 'Client 123',
+        contactName: null,
+        potential: null,
+      }),
+    };
 
     useCase = new CreateQuoteUseCase(
       mockQuoteRepository as QuoteRepository,
+      mockClientReader as ClientReader,
     );
+  });
+
+  it('should throw ClientNotFoundError when the client does not exist', async () => {
+    (mockClientReader.findById as ReturnType<typeof vi.fn>).mockResolvedValue(
+      null,
+    );
+
+    await expect(
+      useCase.execute({
+        clientId: 999,
+        items: [{ productName: 'Monitor 27"', quantity: 1, unitPrice: 200 }],
+      }),
+    ).rejects.toThrow(ClientNotFoundError);
   });
 
   it('should throw EmptyQuoteItemsError when items array is empty', async () => {

@@ -5,14 +5,24 @@ import { QuoteStatus } from '../domain/quote-status.enum.js';
 import { QuoteRepository } from '../domain/quote.repository.js';
 import { EmptyQuoteItemsError } from '../domain/errors/empty-quote-items.error.js';
 import { InvalidQuoteItemValuesError } from '../domain/errors/invalid-quote-item-values.error.js';
+import { ClientNotFoundError } from '../domain/errors/client-not-found.error.js';
 import { CreateQuoteCommand } from './dto/create-quote.command.js';
+import { ClientReader } from '../../../shared/clients/domain/client-reader.js';
 
 @Injectable()
 export class CreateQuoteUseCase {
-  constructor(private readonly quoteRepository: QuoteRepository) {}
+  constructor(
+    private readonly quoteRepository: QuoteRepository,
+    private readonly clientReader: ClientReader,
+  ) {}
 
   async execute(command: CreateQuoteCommand): Promise<Quote> {
     this.validateCommand(command);
+
+    const client = await this.clientReader.findById(command.clientId);
+    if (!client) {
+      throw new ClientNotFoundError(command.clientId);
+    }
 
     const nextQuoteNumber = await this.quoteRepository.generateNextQuoteNumber();
 

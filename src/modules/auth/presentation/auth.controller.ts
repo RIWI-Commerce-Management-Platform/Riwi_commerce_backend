@@ -1,6 +1,6 @@
 import {
-  Body,
   BadRequestException,
+  Body,
   Controller,
   Get,
   HttpCode,
@@ -13,52 +13,58 @@ import {
   Res,
   UnauthorizedException,
   UseGuards,
+  UsePipes,
+  ValidationPipe,
 } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import type { Request, Response } from 'express';
-import { fromNodeHeaders } from 'better-auth/node';
-import { Repository } from 'typeorm';
-import { auth } from '../auth.js';
 import { CurrentSession } from '../decorators/current-session.decorator.js';
 import { CurrentUser } from '../decorators/current-user.decorator.js';
+import { Public } from '../decorators/public.decorator.js';
 import { Roles } from '../decorators/roles.decorator.js';
-import { SessionGuard } from '../guards/session.guard.js';
 import { RolesGuard } from '../guards/roles.guard.js';
 import { UserRole } from '../domain/user-role.enum.js';
-import { UserOrmEntity } from '../infrastructure/user.orm-entity.js';
-import { ZoneOrmEntity } from '../../zones/infrastructure/zone.orm-entity.js';
 import { AssignUserRoleDto } from './dto/assign-user-role.dto.js';
 import { LoginDto } from './dto/login.dto.js';
 import { RegisterDto } from './dto/register.dto.js';
+import { LoginUseCase } from '../application/login.use-case.js';
+import { RegisterUseCase } from '../application/register.use-case.js';
+import { LogoutUseCase } from '../application/logout.use-case.js';
+import { GetCurrentUserUseCase } from '../application/get-current-user.use-case.js';
+import { AssignUserRoleUseCase } from '../application/assign-user-role.use-case.js';
+import { SetCookieHeaders } from '../application/extract-set-cookies.js';
+import { InvalidCredentialsError } from '../domain/errors/invalid-credentials.error.js';
+import { RegistrationFailedError } from '../domain/errors/registration-failed.error.js';
+import { InvalidRoleError } from '../domain/errors/invalid-role.error.js';
+import { ZoneRequiredError } from '../domain/errors/zone-required.error.js';
+import { UnexpectedZoneError } from '../domain/errors/unexpected-zone.error.js';
+import { ZoneNotFoundError } from '../domain/errors/zone-not-found.error.js';
+import { UserNotFoundError } from '../domain/errors/user-not-found.error.js';
 
 @ApiTags('Auth')
+@UsePipes(
+  new ValidationPipe({
+    whitelist: true,
+    transform: true,
+  }),
+)
 @Controller('auth')
 export class AuthController {
   constructor(
-    @InjectRepository(UserOrmEntity)
-    private readonly userRepository: Repository<UserOrmEntity>,
-    @InjectRepository(ZoneOrmEntity)
-    private readonly zoneRepository: Repository<ZoneOrmEntity>,
+    private readonly loginUseCase: LoginUseCase,
+    private readonly registerUseCase: RegisterUseCase,
+    private readonly logoutUseCase: LogoutUseCase,
+    private readonly getCurrentUserUseCase: GetCurrentUserUseCase,
+    private readonly assignUserRoleUseCase: AssignUserRoleUseCase,
   ) {}
 
-  /**
-   * Helper to forward Set-Cookie headers from Better Auth response to Express response.
-   */
-  private forwardCookies(
-    sourceResponse: globalThis.Response,
-    targetResponse: Response,
-  ): void {
-    const cookies =
-      typeof sourceResponse.headers.getSetCookie === 'function'
-        ? sourceResponse.headers.getSetCookie()
-        : sourceResponse.headers.get('set-cookie');
-
-    if (cookies && (Array.isArray(cookies) ? cookies.length > 0 : true)) {
-      targetResponse.setHeader('set-cookie', cookies);
+  private forwardCookies(res: Response, setCookieHeaders: SetCookieHeaders): void {
+    if (setCookieHeaders) {
+      res.setHeader('set-cookie', setCookieHeaders);
     }
   }
 
+  @Public()
   @Post('login')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Sign in with email and password' })
@@ -76,39 +82,23 @@ export class AuthController {
     @Res({ passthrough: true }) res: Response,
   ) {
     try {
-      const authResponse = await auth.api.signInEmail({
-        body: {
-          email: dto.email,
-          password: dto.password,
-          rememberMe: dto.rememberMe ?? false,
-        },
-        headers: fromNodeHeaders(req.headers),
-        asResponse: true,
+      const result = await this.loginUseCase.execute({
+        email: dto.email,
+        password: dto.password,
+        rememberMe: dto.rememberMe ?? false,
+        headers: req.headers,
       });
-
-      this.forwardCookies(authResponse, res);
-
-      if (!authResponse.ok) {
-        const errorData = await authResponse.json().catch(() => ({}));
-        throw new UnauthorizedException(
-          errorData?.message ||
-            errorData?.statusText ||
-            'Incorrect email or password',
-        );
+      this.forwardCookies(res, result.setCookieHeaders);
+      return result.data;
+    } catch (error) {
+      if (error instanceof InvalidCredentialsError) {
+        throw new UnauthorizedException(error.message);
       }
-
-      const data = await authResponse.json();
-      return data;
-    } catch (error: any) {
-      if (error instanceof UnauthorizedException) {
-        throw error;
-      }
-      throw new UnauthorizedException(
-        error?.body?.message || error?.message || 'Incorrect email or password',
-      );
+      throw error;
     }
   }
 
+  @Public()
   @Post('register')
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({
@@ -128,39 +118,23 @@ export class AuthController {
     @Res({ passthrough: true }) res: Response,
   ) {
     try {
-      const authResponse = await auth.api.signUpEmail({
-        body: {
-          name: dto.name,
-          email: dto.email,
-          password: dto.password,
-        },
-        headers: fromNodeHeaders(req.headers),
-        asResponse: true,
+      const result = await this.registerUseCase.execute({
+        name: dto.name,
+        email: dto.email,
+        password: dto.password,
+        headers: req.headers,
       });
-
-      this.forwardCookies(authResponse, res);
-
-      if (!authResponse.ok) {
-        const errorData = await authResponse.json().catch(() => ({}));
-        throw new BadRequestException(
-          errorData?.message ||
-            errorData?.statusText ||
-            'Failed to register user',
-        );
+      this.forwardCookies(res, result.setCookieHeaders);
+      return result.data;
+    } catch (error) {
+      if (error instanceof RegistrationFailedError) {
+        throw new BadRequestException(error.message);
       }
-
-      const data = await authResponse.json();
-      return data;
-    } catch (error: any) {
-      if (error instanceof BadRequestException) {
-        throw error;
-      }
-      throw new BadRequestException(
-        error?.body?.message || error?.message || 'Failed to register user',
-      );
+      throw error;
     }
   }
 
+  @Public()
   @Post('logout')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
@@ -168,12 +142,8 @@ export class AuthController {
   })
   @ApiResponse({ status: 200, description: 'Signed out successfully.' })
   async logout(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
-    const authResponse = await auth.api.signOut({
-      headers: fromNodeHeaders(req.headers),
-      asResponse: true,
-    });
-
-    this.forwardCookies(authResponse, res);
+    const result = await this.logoutUseCase.execute(req.headers);
+    this.forwardCookies(res, result.setCookieHeaders);
 
     return {
       success: true,
@@ -182,7 +152,6 @@ export class AuthController {
   }
 
   @Get('me')
-  @UseGuards(SessionGuard)
   @ApiOperation({
     summary: 'Get the current session and user information',
   })
@@ -192,22 +161,21 @@ export class AuthController {
     description: 'Unauthorized / No active session.',
   })
   async getMe(@CurrentUser() user: any, @CurrentSession() session: any) {
-    const currentUser = await this.userRepository.findOne({
-      where: { id: user.id },
-      select: { id: true, role: true, zoneId: true },
-    });
-    if (!currentUser) {
-      throw new UnauthorizedException('Unauthorized: user does not exist');
+    try {
+      const currentUser = await this.getCurrentUserUseCase.execute(user.id);
+      return {
+        user: { ...user, role: currentUser.role, zoneId: currentUser.zoneId },
+        session,
+      };
+    } catch (error) {
+      if (error instanceof UserNotFoundError) {
+        throw new UnauthorizedException(error.message);
+      }
+      throw error;
     }
-
-    return {
-      user: { ...user, role: currentUser.role, zoneId: currentUser.zoneId },
-      session,
-    };
   }
 
   @Get('protected')
-  @UseGuards(SessionGuard)
   @ApiOperation({ summary: 'Session-guarded test endpoint' })
   @ApiResponse({
     status: 200,
@@ -225,7 +193,7 @@ export class AuthController {
   }
 
   @Patch('users/:userId/role')
-  @UseGuards(SessionGuard, RolesGuard)
+  @UseGuards(RolesGuard)
   @Roles(UserRole.ADMIN)
   @ApiOperation({
     summary: 'Assign or change a user role (Admin only)',
@@ -239,38 +207,27 @@ export class AuthController {
     @Param('userId') userId: string,
     @Body() dto: AssignUserRoleDto,
   ): Promise<{ id: string; role: UserRole; zoneId: number | null }> {
-    if (!Object.values(UserRole).includes(dto.role)) {
-      throw new BadRequestException('The specified role is invalid');
-    }
-
-    let zoneId: number | null = null;
-    if (dto.role === UserRole.DIRECTOR_REGIONAL) {
-      if (!dto.zoneId || !Number.isInteger(dto.zoneId)) {
-        throw new BadRequestException(
-          'A valid zoneId must be provided for a Regional Director',
-        );
+    try {
+      return await this.assignUserRoleUseCase.execute({
+        userId,
+        role: dto.role,
+        zoneId: dto.zoneId,
+      });
+    } catch (error) {
+      if (
+        error instanceof InvalidRoleError ||
+        error instanceof ZoneRequiredError ||
+        error instanceof UnexpectedZoneError
+      ) {
+        throw new BadRequestException(error.message);
       }
-
-      const zone = await this.zoneRepository.findOneBy({ id: dto.zoneId });
-      if (!zone) {
-        throw new NotFoundException('The specified zone does not exist');
+      if (
+        error instanceof ZoneNotFoundError ||
+        error instanceof UserNotFoundError
+      ) {
+        throw new NotFoundException(error.message);
       }
-      zoneId = zone.id;
-    } else if (dto.zoneId) {
-      throw new BadRequestException(
-        'Only a Regional Director can be assigned to a zone',
-      );
+      throw error;
     }
-
-    const user = await this.userRepository.findOneBy({ id: userId });
-    if (!user) {
-      throw new NotFoundException('The specified user does not exist');
-    }
-
-    user.role = dto.role;
-    user.zoneId = zoneId;
-    await this.userRepository.save(user);
-
-    return { id: user.id, role: user.role, zoneId: user.zoneId };
   }
 }

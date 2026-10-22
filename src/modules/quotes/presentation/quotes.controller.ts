@@ -2,6 +2,7 @@ import {
   Body,
   Controller,
   Get,
+  NotFoundException,
   Param,
   ParseIntPipe,
   Post,
@@ -11,6 +12,7 @@ import { CreateQuoteUseCase } from '../application/create-quote.use-case.js';
 import { GetQuoteByIdUseCase } from '../application/get-quote-by-id.use-case.js';
 import { CreateQuoteDto } from './dto/create-quote.dto.js';
 import { QuoteResponseDto } from './dto/quote-response.dto.js';
+import { ClientNotFoundError } from '../domain/errors/client-not-found.error.js';
 
 @ApiTags('Quotes')
 @Controller('quotes')
@@ -29,13 +31,20 @@ export class QuotesController {
     type: QuoteResponseDto,
   })
   async create(@Body() dto: CreateQuoteDto): Promise<QuoteResponseDto> {
-    const quote = await this.createQuoteUseCase.execute({
-      clientId: dto.clientId,
-      notes: dto.notes,
-      documentKey: dto.documentKey,
-      items: dto.items,
-    });
-    return new QuoteResponseDto(quote);
+    try {
+      const quote = await this.createQuoteUseCase.execute({
+        clientId: dto.clientId,
+        notes: dto.notes,
+        documentKey: dto.documentKey,
+        items: dto.items,
+      });
+      return new QuoteResponseDto(quote);
+    } catch (error) {
+      if (error instanceof ClientNotFoundError) {
+        throw new NotFoundException(error.message);
+      }
+      throw error;
+    }
   }
 
   @Get(':id')

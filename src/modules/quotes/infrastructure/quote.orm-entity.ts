@@ -2,11 +2,14 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  JoinColumn,
+  ManyToOne,
   OneToMany,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
 import { QuoteItemOrmEntity } from './quote-item.orm-entity.js';
+import type { ClientOrmEntity } from '../../clients/infrastructure/client.orm-entity.js';
 
 @Entity('quotes')
 export class QuoteOrmEntity {
@@ -18,6 +21,10 @@ export class QuoteOrmEntity {
 
   @Column({ name: 'client_id', type: 'int' })
   clientId!: number;
+
+  @ManyToOne('ClientOrmEntity', { onDelete: 'RESTRICT' })
+  @JoinColumn({ name: 'client_id' })
+  client?: ClientOrmEntity;
 
   @Column({ type: 'varchar', length: 30 })
   status!: string;

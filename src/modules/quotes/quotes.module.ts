@@ -7,9 +7,13 @@ import { QuoteOrmEntity } from './infrastructure/quote.orm-entity.js';
 import { QuoteItemOrmEntity } from './infrastructure/quote-item.orm-entity.js';
 import { TypeOrmQuoteRepository } from './infrastructure/typeorm-quote.repository.js';
 import { QuotesController } from './presentation/quotes.controller.js';
+import { ClientsModule } from '../../shared/clients/clients.module.js';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([QuoteOrmEntity, QuoteItemOrmEntity])],
+  imports: [
+    TypeOrmModule.forFeature([QuoteOrmEntity, QuoteItemOrmEntity]),
+    ClientsModule,
+  ],
   controllers: [QuotesController],
   providers: [
     CreateQuoteUseCase,

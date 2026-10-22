@@ -11,6 +11,7 @@ export class DashboardFiltersDto {
   @ApiPropertyOptional({
     example: 1,
     description: 'Territory identifier',
+    type: Number,
   })
   territoryId?: number | string;
 

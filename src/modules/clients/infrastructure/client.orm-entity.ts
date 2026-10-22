@@ -2,9 +2,15 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  JoinColumn,
+  ManyToOne,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
+import type { ZoneOrmEntity } from '../../zones/infrastructure/zone.orm-entity.js';
+import type { ClientTypeOrmEntity } from '../../catalogs/infrastructure/client-type.orm-entity.js';
+import type { PotentialOrmEntity } from '../../catalogs/infrastructure/potential.orm-entity.js';
+import type { ClientStatusOrmEntity } from '../../catalogs/infrastructure/client-status.orm-entity.js';
 
 @Entity('clients')
 export class ClientOrmEntity {
@@ -41,14 +47,30 @@ export class ClientOrmEntity {
   @Column({ name: 'zone_id', type: 'int' })
   zoneId!: number;
 
+  @ManyToOne('ZoneOrmEntity', { onDelete: 'RESTRICT' })
+  @JoinColumn({ name: 'zone_id' })
+  zone?: ZoneOrmEntity;
+
   @Column({ name: 'client_type_id', type: 'int' })
   clientTypeId!: number;
+
+  @ManyToOne('ClientTypeOrmEntity', { onDelete: 'RESTRICT' })
+  @JoinColumn({ name: 'client_type_id' })
+  clientType?: ClientTypeOrmEntity;
 
   @Column({ name: 'potential_id', type: 'int' })
   potentialId!: number;
 
+  @ManyToOne('PotentialOrmEntity', { onDelete: 'RESTRICT' })
+  @JoinColumn({ name: 'potential_id' })
+  potential?: PotentialOrmEntity;
+
   @Column({ name: 'client_status_id', type: 'int' })
   clientStatusId!: number;
+
+  @ManyToOne('ClientStatusOrmEntity', { onDelete: 'RESTRICT' })
+  @JoinColumn({ name: 'client_status_id' })
+  clientStatus?: ClientStatusOrmEntity;
 
   @Column({ name: 'visit_frequency_days', type: 'int' })
   visitFrequencyDays!: number;
