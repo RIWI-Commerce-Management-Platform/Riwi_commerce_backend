@@ -98,7 +98,7 @@ export class ListFollowUpsUseCase {
     startDate.setUTCHours(0, 0, 0, 0);
 
     const endDate = new Date(startDate);
-    endDate.setUTCDate(startDate.getUTCDate() + 7);
+    endDate.setUTCDate(startDate.getUTCDate() + 6);
     endDate.setUTCHours(23, 59, 59, 999);
 
     return { startDate, endDate };

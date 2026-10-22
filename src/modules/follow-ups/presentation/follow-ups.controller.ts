@@ -30,6 +30,7 @@ import { CompleteFollowUpUseCase } from '../application/complete-follow-up.use-c
 import { ListFollowUpsUseCase } from '../application/list-follow-ups.use-case.js';
 import { CreateFollowUpDto } from './dto/create-follow-up.dto.js';
 import { FollowUpResponseDto } from './dto/follow-up-response.dto.js';
+import { VisitAgendaQueryDto } from '../../visit/presentation/dtos/visit-agenda-query.dto.js';
 
 @ApiTags('Follow-ups')
 @ApiHeader({
@@ -97,14 +98,13 @@ export class FollowUpsController {
   })
   async agenda(
     @Req() request: Request,
-    @Query('date') date?: string,
-    @Query('period') period?: 'day' | 'week',
+    @Query() query: VisitAgendaQueryDto,
   ): Promise<FollowUpResponseDto[]> {
     const advisorId = await this.currentAdvisor.extract(request);
     const followUps = await this.listFollowUpsUseCase.getAgenda(
       advisorId,
-      date,
-      period ?? 'day',
+      query.date,
+      query.period ?? 'day',
     );
 
     return followUps.map((followUp) => new FollowUpResponseDto(followUp));

@@ -1,9 +1,10 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Optional } from '@nestjs/common';
 import { Client } from '../domain/client.entity.js';
 import { ClientRepository } from '../domain/client.repository.js';
 import { ClientNotFoundError } from '../domain/client-not-found.error.js';
 import { ClientNitAlreadyExistsError } from '../domain/client-nit-already-exists.error.js';
 import { GeocodingPort } from './ports/geocoding.port.js';
+import { ActivityLogService } from '../../../shared/activity-log/domain/activity-log.service.js';
 
 export interface UpdateClientInput {
   id: number;
@@ -30,6 +31,7 @@ export class UpdateClientUseCase {
   constructor(
     private readonly clientRepository: ClientRepository,
     private readonly geocodingPort: GeocodingPort,
+    @Optional() private readonly activityLog?: ActivityLogService,
   ) {}
 
   async execute(input: UpdateClientInput): Promise<Client> {
@@ -96,6 +98,19 @@ export class UpdateClientUseCase {
       longitude: lng,
     });
 
-    return this.clientRepository.save(client);
+    const saved = await this.clientRepository.save(client);
+
+    if (this.activityLog && saved.id) {
+      await this.activityLog.record({
+        clientId: saved.id,
+        action: 'client.updated',
+        entityType: 'client',
+        entityId: saved.id,
+        actorId: 'system',
+        description: `Client '${saved.commercialName}' updated`,
+      });
+    }
+
+    return saved;
   }
 }

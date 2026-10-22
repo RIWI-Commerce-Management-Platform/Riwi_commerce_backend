@@ -3,9 +3,12 @@ services:
     build: ./
     env_file:
       - .env
-    container_name: ${CONTAINER_NAME}
+    environment:
+      POSTGRES_HOST: db
+      POSTGRES_PORT: 5432
+    container_name: ${CONTAINER_NAME:-commerce_api}
     ports: 
-      - ${PORT}:${PORT}
+      - ${PORT:-3015}:${PORT:-3015}
     depends_on:
       db:
         condition: service_healthy
@@ -15,17 +18,17 @@ services:
     image: postgres:15.3-alpine
     env_file:
       - .env
-    container_name: ${POSTGRES_NAME}
+    container_name: ${POSTGRES_NAME:-commerce_db}
     ports:
-      - "${POSTGRES_PORT}:${POSTGRES_PORT}"
+      - "${POSTGRES_HOST_PORT:-5432}:5432"
     environment:
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER:-test}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-test}
+      POSTGRES_DB: ${POSTGRES_DB:-commerce_db}
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-test} -d ${POSTGRES_DB:-commerce_db}"]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -36,7 +39,7 @@ services:
     container_name: sonarqube
     profiles: ["quality"]
     ports:
-      - "${SONARQUBE_PORT}:${SONARQUBE_PORT}"
+      - "${SONARQUBE_PORT:-9000}:9000"
     environment:
       - SONAR_ES_BOOTSTRAP_CHECKS_DISABLE=true
     volumes:
@@ -45,7 +48,7 @@ services:
       - sonarqube_logs:/opt/sonarqube/logs
     restart: unless-stopped
     healthcheck:
-      test: ["CMD-SHELL", "curl -sf http://localhost:${SONARQUBE_PORT}/api/system/status | grep -q '\"status\":\"UP\"'"]
+      test: ["CMD-SHELL", "curl -sf http://localhost:9000/api/system/status | grep -q '\"status\":\"UP\"'"]
       interval: 10s
       timeout: 5s
       retries: 10

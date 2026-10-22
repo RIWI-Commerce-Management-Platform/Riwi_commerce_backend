@@ -126,6 +126,15 @@ describe('FollowUpsController (e2e)', () => {
     expect(listUseCase.getAgenda).toHaveBeenCalledWith(7, '2026-10-25', 'week');
   });
 
+  it('rejects unsupported agenda periods', async () => {
+    await request(app.getHttpServer())
+      .get('/follow-ups/agenda?period=month')
+      .set('x-user-id', '7')
+      .expect(400);
+
+    expect(listUseCase.getAgenda).not.toHaveBeenCalled();
+  });
+
   it('marks a follow-up as completed', async () => {
     await request(app.getHttpServer())
       .patch('/follow-ups/12/complete')

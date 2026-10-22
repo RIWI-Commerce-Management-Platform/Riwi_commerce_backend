@@ -12,8 +12,12 @@ import {
 // 1. Replace this adapter with one that persists to the real activity log.
 // 2. Keep ActivityLogService as the port so use cases do not change.
 @Injectable()
-export class NoopActivityLogService implements ActivityLogService {
+export class NoopActivityLogService extends ActivityLogService {
   private readonly logger = new Logger(NoopActivityLogService.name);
+
+  constructor() {
+    super();
+  }
 
   async record(entry: ActivityLogEntry): Promise<void> {
     this.logger.log(

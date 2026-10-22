@@ -67,6 +67,7 @@ export class CreateFollowUpUseCase {
       entityType: 'follow_up',
       entityId: saved.id,
       actorId: advisorId,
+      clientId: visit.clientId,
       metadata: {
         visitId: saved.visitId,
         responsibleAdvisorId: saved.responsibleAdvisorId,

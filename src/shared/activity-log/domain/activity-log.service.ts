@@ -2,7 +2,8 @@ export interface ActivityLogEntry {
   action: string;
   entityType: string;
   entityId: number | string;
-  actorId: number;
+  actorId: number | string;
+  clientId?: number;
   description?: string;
   metadata?: Record<string, unknown>;
 }
@@ -13,4 +14,22 @@ export interface ActivityLogEntry {
  */
 export abstract class ActivityLogService {
   abstract record(entry: ActivityLogEntry): Promise<void>;
+
+  async register(
+    clientId: number,
+    action: string,
+    description: string,
+    user: string | number,
+    metadata?: Record<string, unknown>,
+  ): Promise<void> {
+    await this.record({
+      clientId,
+      action,
+      description,
+      actorId: user,
+      entityType: 'client',
+      entityId: clientId,
+      metadata,
+    });
+  }
 }
