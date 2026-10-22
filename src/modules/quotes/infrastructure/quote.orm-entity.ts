@@ -10,6 +10,7 @@ import {
 } from 'typeorm';
 import { QuoteItemOrmEntity } from './quote-item.orm-entity.js';
 import type { ClientOrmEntity } from '../../clients/infrastructure/client.orm-entity.js';
+import type { AdvisorOrmEntity } from '../../advisors/infrastructure/advisor.orm-entity.js';
 
 @Entity('quotes')
 export class QuoteOrmEntity {
@@ -25,6 +26,13 @@ export class QuoteOrmEntity {
   @ManyToOne('ClientOrmEntity', { onDelete: 'RESTRICT' })
   @JoinColumn({ name: 'client_id' })
   client?: ClientOrmEntity;
+
+  @Column({ name: 'advisor_id', type: 'int', nullable: true })
+  advisorId!: number | null;
+
+  @ManyToOne('AdvisorOrmEntity', { nullable: true, onDelete: 'RESTRICT' })
+  @JoinColumn({ name: 'advisor_id', referencedColumnName: 'idAsesor' })
+  advisor?: AdvisorOrmEntity | null;
 
   @Column({ type: 'varchar', length: 30 })
   status!: string;

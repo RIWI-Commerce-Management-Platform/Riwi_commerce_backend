@@ -1,7 +1,7 @@
 import { Visit } from '../visit.entity.js';
 
 export interface VisitAgendaFilters {
-  advisorId: number;
+  advisorId: number | null;
   startDate: Date;
   endDate: Date;
 }
@@ -15,6 +15,6 @@ export abstract class VisitDao {
 
   abstract findByIdAndAdvisor(
     id: number,
-    advisorId: number,
+    advisorId: number | null,
   ): Promise<Visit | null>;
 }

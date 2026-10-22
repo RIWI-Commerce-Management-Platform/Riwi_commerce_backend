@@ -13,8 +13,11 @@ export class GetVisitByIdUseCase {
     private readonly clientReader: ClientReader,
   ) {}
 
-  async execute(id: number, advisorId: number) {
-    const visit = await this.visitDao.findByIdAndAdvisor(id, advisorId);
+  async execute(id: number, advisorId: number | null) {
+    const visit =
+      advisorId === null
+        ? await this.visitDao.findById(id)
+        : await this.visitDao.findByIdAndAdvisor(id, advisorId);
 
     if (!visit) {
       throw new NotFoundException('Visit not found.');

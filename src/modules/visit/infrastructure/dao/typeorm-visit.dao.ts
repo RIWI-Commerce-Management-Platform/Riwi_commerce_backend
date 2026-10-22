@@ -30,7 +30,7 @@ export class TypeOrmVisitDao implements VisitDao {
   async findAgenda(filters: VisitAgendaFilters): Promise<Visit[]> {
     const visits = await this.repository.find({
       where: {
-        advisorId: filters.advisorId,
+        ...(filters.advisorId === null ? {} : { advisorId: filters.advisorId }),
         scheduledAt: Between(filters.startDate, filters.endDate),
       },
       order: {
@@ -57,12 +57,12 @@ export class TypeOrmVisitDao implements VisitDao {
 
   async findByIdAndAdvisor(
     id: number,
-    advisorId: number,
+    advisorId: number | null,
   ): Promise<Visit | null> {
     const visit = await this.repository.findOne({
       where: {
         id,
-        advisorId,
+        ...(advisorId === null ? {} : { advisorId }),
       },
     });
 

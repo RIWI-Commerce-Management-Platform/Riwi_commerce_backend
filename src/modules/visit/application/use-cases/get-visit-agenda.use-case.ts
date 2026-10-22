@@ -10,7 +10,11 @@ const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 export class GetVisitAgendaUseCase {
   constructor(private readonly visitDao: VisitDao) {}
 
-  async execute(advisorId: number, period: AgendaPeriod, date?: string) {
+  async execute(
+    advisorId: number | null,
+    period: AgendaPeriod,
+    date?: string,
+  ) {
     const reference = this.parseDate(date);
     const { startDate, endDate } = this.resolveRange(period, reference);
 

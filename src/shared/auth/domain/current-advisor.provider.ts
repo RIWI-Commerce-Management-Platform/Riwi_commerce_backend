@@ -1,5 +1,8 @@
 export interface CurrentAdvisorRequest {
-  headers: Record<string, unknown>;
+  user?: {
+    role?: string;
+    idAsesor?: number | null;
+  };
 }
 
 /**
@@ -7,5 +10,5 @@ export interface CurrentAdvisorRequest {
  * Consumed by controllers so modules never read auth headers directly.
  */
 export abstract class CurrentAdvisorProvider {
-  abstract extract(request: CurrentAdvisorRequest): Promise<number>;
+  abstract extract(request: CurrentAdvisorRequest): Promise<number | null>;
 }

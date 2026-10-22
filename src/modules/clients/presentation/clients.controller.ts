@@ -2,6 +2,7 @@ import {
   Body,
   ConflictException,
   Controller,
+  ForbiddenException,
   Get,
   HttpCode,
   HttpStatus,
@@ -35,6 +36,10 @@ import { ClientResponseDto } from './dto/client-response.dto.js';
 import { FindClientsQueryDto } from './dto/find-clients-query.dto.js';
 import { PaginatedClientResponseDto } from './dto/paginated-client-response.dto.js';
 import { PaginatedResponseDto } from '../../../shared/pagination/paginated-response.dto.js';
+import { CurrentUser } from '../../auth/decorators/current-user.decorator.js';
+import { Roles } from '../../auth/decorators/roles.decorator.js';
+import { UserRole } from '../../auth/domain/user-role.enum.js';
+import { UserOrmEntity } from '../../auth/infrastructure/user.orm-entity.js';
 
 @ApiTags('Clients')
 @Controller('clients')
@@ -48,6 +53,7 @@ export class ClientsController {
   ) {}
 
   @Get()
+  @Roles(UserRole.ADMINISTRADOR, UserRole.ASESOR, UserRole.CLIENTE)
   @ApiOperation({
     summary: 'Search and filter clients with pagination and coordinates',
   })
@@ -57,8 +63,11 @@ export class ClientsController {
   })
   async findClients(
     @Query() query: FindClientsQueryDto,
+    @CurrentUser() user: UserOrmEntity,
   ): Promise<PaginatedClientResponseDto> {
     const result = await this.findClientsUseCase.execute({
+      clientId:
+        user.role === UserRole.CLIENTE ? user.idCliente! : undefined,
       search: query.search,
       zoneId: query.parsedZoneId,
       clientTypeId: query.parsedClientTypeId,
@@ -76,6 +85,7 @@ export class ClientsController {
   }
 
   @Get(':id')
+  @Roles(UserRole.ADMINISTRADOR, UserRole.ASESOR, UserRole.CLIENTE)
   @ApiOperation({ summary: 'Get client details by ID' })
   @ApiParam({ name: 'id', type: Number, example: 1 })
   @ApiOkResponse({
@@ -85,7 +95,11 @@ export class ClientsController {
   @ApiNotFoundResponse({ description: 'Client not found.' })
   async getClientById(
     @Param('id', ParseIntPipe) id: number,
+    @CurrentUser() user: UserOrmEntity,
   ): Promise<ClientResponseDto> {
+    if (user.role === UserRole.CLIENTE && user.idCliente !== id) {
+      throw new ForbiddenException('Clients can only access their own record');
+    }
     try {
       const client = await this.getClientByIdUseCase.execute(id);
       return new ClientResponseDto(client);
@@ -98,6 +112,7 @@ export class ClientsController {
   }
 
   @Post()
+  @Roles(UserRole.ADMINISTRADOR)
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({ summary: 'Register a new client' })
   @ApiResponse({
@@ -139,6 +154,7 @@ export class ClientsController {
   }
 
   @Patch(':id')
+  @Roles(UserRole.ADMINISTRADOR)
   @ApiOperation({ summary: 'Update an existing client' })
   @ApiParam({ name: 'id', type: Number, example: 1 })
   @ApiOkResponse({
@@ -187,6 +203,7 @@ export class ClientsController {
   }
 
   @Patch(':id/status')
+  @Roles(UserRole.ADMINISTRADOR)
   @ApiOperation({ summary: 'Activate or deactivate a client' })
   @ApiParam({ name: 'id', type: Number, example: 1 })
   @ApiOkResponse({

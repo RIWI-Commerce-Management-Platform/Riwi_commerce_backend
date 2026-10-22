@@ -2,7 +2,7 @@ export interface ActivityLogEntry {
   action: string;
   entityType: string;
   entityId: number | string;
-  actorId: number;
+  actorId: number | string;
   description?: string;
   metadata?: Record<string, unknown>;
 }

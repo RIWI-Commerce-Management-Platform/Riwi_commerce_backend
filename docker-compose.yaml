@@ -5,11 +5,15 @@ services:
       - .env
     container_name: ${CONTAINER_NAME}
     ports: 
-      - ${PORT}:${PORT}
+      - "${PORT}:${PORT}"
     depends_on:
       db:
         condition: service_healthy
-    restart: always
+      redis:
+        condition: service_healthy
+      mailpit:
+        condition: service_started
+    restart: "on-failure:3"
 
   db:
     image: postgres:15.3-alpine
@@ -17,7 +21,7 @@ services:
       - .env
     container_name: ${POSTGRES_NAME}
     ports:
-      - "${POSTGRES_PORT}:${POSTGRES_PORT}"
+      - "${POSTGRES_HOST_PORT:-5432}:5432"
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
@@ -51,8 +55,32 @@ services:
       retries: 10
       start_period: 45s
 
+  redis:
+    image: redis:7-alpine
+    container_name: ${REDIS_NAME:-commerce_redis}
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  mailpit:
+    image: axllent/mailpit:latest
+    container_name: ${MAILPIT_NAME:-commerce_mailpit}
+    ports:
+      - "1025:1025"
+      - "${MAILPIT_UI_PORT:-8025}:8025"
+    environment:
+      MP_SMTP_AUTH_ACCEPT_ANY: "1"
+      MP_SMTP_AUTH_ALLOW_INSECURE: "1"
+
 volumes:
   postgres_data:
+  redis_data:
   sonarqube_data:
   sonarqube_extensions:
   sonarqube_logs:

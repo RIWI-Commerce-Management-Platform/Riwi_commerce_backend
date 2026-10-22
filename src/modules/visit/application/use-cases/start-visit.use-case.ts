@@ -17,8 +17,15 @@ export class StartVisitUseCase {
     private readonly activityLog: ActivityLogService,
   ) {}
 
-  async execute(id: number, advisorId: number) {
-    const visit = await this.visitDao.findByIdAndAdvisor(id, advisorId);
+  async execute(
+    id: number,
+    advisorId: number | null,
+    actorId: number | string = advisorId ?? 0,
+  ) {
+    const visit =
+      advisorId === null
+        ? await this.visitDao.findById(id)
+        : await this.visitDao.findByIdAndAdvisor(id, advisorId);
 
     if (!visit) {
       throw new NotFoundException('Visit not found.');
@@ -42,7 +49,7 @@ export class StartVisitUseCase {
       action: 'visit.started',
       entityType: 'visit',
       entityId: saved.id,
-      actorId: advisorId,
+      actorId,
       metadata: { clientId: saved.clientId },
     });
 

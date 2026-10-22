@@ -1,4 +1,5 @@
 export interface ClientFilterCriteria {
+  clientId?: number;
   search?: string;
   zoneId?: number;
   clientTypeId?: number;
@@ -8,4 +9,3 @@ export interface ClientFilterCriteria {
   page: number;
   limit: number;
 }
-

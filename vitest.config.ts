@@ -24,5 +24,10 @@ export default defineConfig({
         'src/shared/config/**',
       ],
     },
+    env: {
+      BETTER_AUTH_SECRET:
+        process.env.BETTER_AUTH_SECRET ??
+        'unit-test-better-auth-secret-at-least-thirty-two-characters',
+    },
   },
 });

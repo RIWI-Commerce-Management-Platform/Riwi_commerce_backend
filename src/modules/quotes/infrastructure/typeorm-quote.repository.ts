@@ -28,6 +28,25 @@ export class TypeOrmQuoteRepository implements QuoteRepository {
     return found ? QuoteMapper.toDomain(found) : null;
   }
 
+  async findByIdAndAdvisor(
+    id: number,
+    advisorId: number,
+  ): Promise<Quote | null> {
+    const found = await this.ormRepository.findOne({
+      where: { id, advisorId },
+      relations: { items: true },
+    });
+    return found ? QuoteMapper.toDomain(found) : null;
+  }
+
+  async findByIdAndClient(id: number, clientId: number): Promise<Quote | null> {
+    const found = await this.ormRepository.findOne({
+      where: { id, clientId },
+      relations: { items: true },
+    });
+    return found ? QuoteMapper.toDomain(found) : null;
+  }
+
   async findByQuoteNumber(quoteNumber: string): Promise<Quote | null> {
     const found = await this.ormRepository.findOne({
       where: { quoteNumber },

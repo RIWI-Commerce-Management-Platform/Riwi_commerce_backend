@@ -30,6 +30,10 @@ export class UserOrmEntity {
   @Column('integer', { name: 'zoneId', nullable: true })
   zoneId!: number | null;
 
+  idAsesor?: number | null;
+
+  idCliente?: number | null;
+
   @CreateDateColumn({ name: 'createdAt', type: 'timestamptz' })
   createdAt!: Date;
 

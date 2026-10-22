@@ -19,7 +19,7 @@ describe('RolesGuard', () => {
 
   function createGuard(role: UserRole | null) {
     const reflector = {
-      getAllAndOverride: vi.fn().mockReturnValue([UserRole.ADMIN]),
+      getAllAndOverride: vi.fn().mockReturnValue([UserRole.ADMINISTRADOR]),
     } as unknown as Reflector;
     const userRepository = {
       findOne: vi
@@ -35,7 +35,7 @@ describe('RolesGuard', () => {
   it('returns 401 when no authenticated user is present', async () => {
     request.user = {} as typeof request.user;
     await expect(
-      createGuard(UserRole.ADMIN).canActivate(context),
+      createGuard(UserRole.ADMINISTRADOR).canActivate(context),
     ).rejects.toBeInstanceOf(UnauthorizedException);
     request.user = { id: 'user-1' };
   });
@@ -48,8 +48,11 @@ describe('RolesGuard', () => {
 
   it('allows a user with the required role', async () => {
     await expect(
-      createGuard(UserRole.ADMIN).canActivate(context),
+      createGuard(UserRole.ADMINISTRADOR).canActivate(context),
     ).resolves.toBe(true);
-    expect(request.user).toMatchObject({ role: UserRole.ADMIN, zoneId: null });
+    expect(request.user).toMatchObject({
+      role: UserRole.ADMINISTRADOR,
+      zoneId: null,
+    });
   });
 });
