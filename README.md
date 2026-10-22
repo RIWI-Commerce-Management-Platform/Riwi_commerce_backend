@@ -105,8 +105,30 @@ UPDATE "user" SET "role" = 'ADMIN' WHERE "email" = 'admin@example.com';
 The `@Roles(...)` decorator and `RolesGuard` protect endpoints that declare them.
 JWT sessions are validated through Redis, and roles are read from PostgreSQL
 to avoid trusting stale token data. Filtering routes, visits, and quotes by
-advisor/zone, linking users to an `ASESOR` record, and role-based frontend menus
-remain out of scope because those modules and the frontend are not in this repository.
+advisor/zone and role-based frontend menus remain out of scope because those
+modules and the frontend are not in this repository.
+
+## Advisors
+
+Advisor management is restricted to Admin users and uses the `asesor` table
+(`id_asesor`, `nombre`, `correo`, `telefono`, `estado`, `id_usuario`). The linked
+user must exist and have the `ASESOR` role. Advisor email uniqueness is
+case-insensitive.
+
+- `POST /advisors`: create an advisor with `nombre`, `correo`, `telefono`, and
+  `idUsuario`.
+- `GET /advisors`: list advisors, including inactive advisors by default.
+  Use `?includeInactive=false` to list active advisors only.
+- `GET /advisors/:id`: get an advisor.
+- `PATCH /advisors/:id`: edit advisor details or change the linked user.
+- `PATCH /advisors/:id/status`: set `{ "estado": true|false }`.
+- `DELETE /advisors/:id`: deactivate the advisor; this never deletes the row.
+- `GET /advisors/available-for-routes`: list active advisors for route assignment.
+
+`AdvisorService.getActiveForRouteAssignment(id)` is exported for route-creation
+use cases to reject inactive advisors. This repository does not yet contain a
+route module, so no route-creation endpoint can call it yet. There is also no
+frontend application in this repository, so advisor screens are not included.
 
 ## Architecture
 

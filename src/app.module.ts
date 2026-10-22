@@ -7,6 +7,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import configuration from './shared/config/configuration.js';
 import { ZonesModule } from './modules/zones/zones.module.js';
 import { AuthModule } from './modules/auth/auth.module.js';
+import { AdvisorsModule } from './modules/advisors/advisors.module.js';
 
 export const { ObserveModule, ObserveInstrument } = createObserveModule();
 
@@ -41,6 +42,7 @@ export const { ObserveModule, ObserveInstrument } = createObserveModule();
     }),
     ZonesModule,
     AuthModule,
+    AdvisorsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

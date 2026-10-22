@@ -9,10 +9,11 @@ import { ClientOrmEntity } from '../../modules/client/infrastructure/client.orm-
 import { CreateZonesTable1792430815281 } from '../../modules/zones/infrastructure/migrations/1792430815281-CreateZonesTable.js';
 import { CreateAuthTables1792598977478 } from '../../modules/auth/infrastructure/migrations/1792598977478-CreateAuthTables.js';
 import { AddUserRoles1792641000000 } from '../../modules/auth/infrastructure/migrations/1792641000000-AddUserRoles.js';
+import { AdvisorOrmEntity } from '../../modules/advisors/infrastructure/advisor.orm-entity.js';
+import { CreateAdvisors1792661000000 } from '../../modules/advisors/infrastructure/migrations/1792661000000-CreateAdvisors.js';
 
 /**
- * Standalone DataSource for the TypeORM CLI (migration:generate/run/revert)
- * and for Better Auth's typeormAdapter.
+ * Standalone DataSource for the TypeORM CLI (migration:generate/run/revert).
  */
 const dataSource = new DataSource({
   type: 'postgres',
@@ -29,11 +30,13 @@ const dataSource = new DataSource({
     VerificationOrmEntity,
     ZoneOrmEntity,
     ClientOrmEntity,
+    AdvisorOrmEntity,
   ],
   migrations: [
     CreateZonesTable1792430815281,
     CreateAuthTables1792598977478,
     AddUserRoles1792641000000,
+    CreateAdvisors1792661000000,
   ],
 });
 
