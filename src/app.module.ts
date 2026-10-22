@@ -11,6 +11,7 @@ import { FileStorageModule } from './shared/file-storage/file-storage.module.js'
 import { QuotesModule } from './modules/quotes/quotes.module.js';
 import { ClientsModule } from './modules/clients/clients.module.js';
 import { CatalogsModule } from './modules/catalogs/catalogs.module.js';
+import { AuthModule } from './modules/auth/auth.module.js';
 
 export const { ObserveModule, ObserveInstrument } = createObserveModule();
 
@@ -29,7 +30,7 @@ export const { ObserveModule, ObserveInstrument } = createObserveModule();
     VisitsModule,
     ConfigModule.forRoot({
       isGlobal: true,
-      load: [configuration]
+      load: [configuration],
     }),
     TypeOrmModule.forRootAsync({
       inject: [ConfigService],
@@ -40,7 +41,7 @@ export const { ObserveModule, ObserveInstrument } = createObserveModule();
         username: config.get<string>('database.username'),
         password: config.get<string>('database.password'),
         database: config.get<string>('database.name'),
-        autoLoadEntities: true, 
+        autoLoadEntities: true,
         synchronize: false,
       }),
     }),
@@ -49,6 +50,7 @@ export const { ObserveModule, ObserveInstrument } = createObserveModule();
     CatalogsModule,
     FileStorageModule,
     QuotesModule,
+    AuthModule,
   ],
   controllers: [AppController],
   providers: [AppService],

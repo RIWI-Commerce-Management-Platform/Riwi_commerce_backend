@@ -2,10 +2,14 @@ import 'reflect-metadata';
 import { DataSource } from 'typeorm';
 
 /**
- * Standalone DataSource for the TypeORM CLI (migration:generate/run/revert).
- * Separate from the runtime connection in app.module.ts because the CLI runs
- * outside Nest's DI and ConfigModule — run it via `npm run typeorm`, which
- * loads .env with Node's --env-file flag before this file executes.
+ * Standalone DataSource for the TypeORM CLI (migration:generate/run/revert)
+ * and for Better Auth's typeormAdapter. Separate from the runtime connection
+ * in app.module.ts because the CLI runs outside Nest's DI and ConfigModule —
+ * run it via `npm run typeorm`, which loads .env with Node's --env-file flag
+ * before this file executes. Entities/migrations are globbed so every
+ * module's infrastructure layer is picked up automatically — don't replace
+ * this with an explicit per-module import list, it silently drops whichever
+ * module's migrations you forget to add.
  */
 const dataSource = new DataSource({
   type: 'postgres',
@@ -20,4 +24,3 @@ const dataSource = new DataSource({
 });
 
 export default dataSource;
-
