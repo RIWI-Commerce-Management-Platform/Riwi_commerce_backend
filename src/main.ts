@@ -11,11 +11,12 @@ async function bootstrap() {
     .setDescription('RIwi Commerce Management Platform')
     .setVersion('1.0')
     .addTag('Commerce API')
+    .addBearerAuth()
     .build();
   const documentFactory = () => SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('docs', app, documentFactory);
 
-  const port = process.env.PORT ?? 3000
+  const port = process.env.PORT ?? 3000;
 
   await app.listen(port);
 

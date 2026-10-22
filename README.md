@@ -5,7 +5,7 @@ Comercial 360 API (clients, routes, visits, follow-ups, quotes, orders, and KPIs
 ## Requirements
 
 - Node.js 24+
-- Docker (to run Postgres locally)
+- Docker (to run PostgreSQL and Redis locally)
 
 ## Getting started
 
@@ -27,7 +27,8 @@ Comercial 360 API (clients, routes, visits, follow-ups, quotes, orders, and KPIs
    docker compose up
    ```
 
-   Or, if you'd rather run the app outside Docker against your own Postgres, set `POSTGRES_*` in `.env` and start with:
+   Or, if you'd rather run the app outside Docker, set `POSTGRES_*`, `REDIS_URL`,
+   and a strong `JWT_SECRET` in `.env`, then start with:
 
    ```bash
    npm run start:dev
@@ -63,6 +64,27 @@ The API is available at `http://localhost:${PORT}` and the Swagger docs at `http
 
 Each module keeps its own migrations under `src/modules/<module>/infrastructure/migrations/`.
 
+## Authentication
+
+Authentication uses short-lived HS256 access JWTs and rotating refresh JWTs.
+Redis stores active sessions and one-time refresh-token hashes; it is required
+for login, refresh, and all protected endpoints. Set `JWT_SECRET` to a
+cryptographically random value of at least 32 characters (for example,
+`openssl rand -base64 48`).
+
+- `POST /auth/register` and `POST /auth/login` return `accessToken`,
+  `refreshToken`, `tokenType`, `expiresIn`, and the user.
+- Send the access token as `Authorization: Bearer <accessToken>` to protected
+  endpoints.
+- `POST /auth/refresh` accepts `{ "refreshToken": "..." }` and returns a new
+  token pair. Each refresh token is single-use.
+- `POST /auth/logout` requires a valid bearer access token and revokes its
+  Redis session.
+
+The former Better Auth cookie and `/api/auth/*` endpoints are no longer served.
+Existing account password hashes remain compatible; the legacy Better Auth
+session tables may remain in PostgreSQL but are no longer used for authentication.
+
 ## Roles
 
 New users are assigned the `ASESOR` role by default. Available roles are `ADMIN`,
@@ -77,12 +99,12 @@ Omit `zoneId` for `ADMIN` and `ASESOR`. After running the migrations and
 registering the first administrator account, promote it once directly in PostgreSQL:
 
 ```sql
-UPDATE "user" SET "role" = 'ADMIN' WHERE "email" = 'admin@ejemplo.com';
+UPDATE "user" SET "role" = 'ADMIN' WHERE "email" = 'admin@example.com';
 ```
 
 The `@Roles(...)` decorator and `RolesGuard` protect endpoints that declare them.
-Sessions are validated through Better Auth, and roles are read from the database
-to avoid trusting stale session data. Filtering routes, visits, and quotes by
+JWT sessions are validated through Redis, and roles are read from PostgreSQL
+to avoid trusting stale token data. Filtering routes, visits, and quotes by
 advisor/zone, linking users to an `ASESOR` record, and role-based frontend menus
 remain out of scope because those modules and the frontend are not in this repository.
 
@@ -106,16 +128,16 @@ src/
 
 ## Scripts
 
-| Command | Description |
-|---|---|
-| `npm run start:dev` | Start the app in watch mode |
-| `npm run build` | Compile with `nest build` |
-| `npm run start:prod` | Run the compiled build (`dist/main`) |
-| `npm run lint` | `oxlint --type-aware` over `src/` and `test/` |
-| `npm run format` | Format with Prettier |
-| `npm run test` | Unit tests (Vitest) |
-| `npm run test:e2e` | End-to-end tests |
-| `npm run test:cov` | Unit tests with coverage |
-| `npm run migration:generate` | Generate a migration from entity changes |
-| `npm run migration:run` | Run pending migrations |
-| `npm run migration:revert` | Revert the last migration |
+| Command                      | Description                                   |
+| ---------------------------- | --------------------------------------------- |
+| `npm run start:dev`          | Start the app in watch mode                   |
+| `npm run build`              | Compile with `nest build`                     |
+| `npm run start:prod`         | Run the compiled build (`dist/main`)          |
+| `npm run lint`               | `oxlint --type-aware` over `src/` and `test/` |
+| `npm run format`             | Format with Prettier                          |
+| `npm run test`               | Unit tests (Vitest)                           |
+| `npm run test:e2e`           | End-to-end tests                              |
+| `npm run test:cov`           | Unit tests with coverage                      |
+| `npm run migration:generate` | Generate a migration from entity changes      |
+| `npm run migration:run`      | Run pending migrations                        |
+| `npm run migration:revert`   | Revert the last migration                     |

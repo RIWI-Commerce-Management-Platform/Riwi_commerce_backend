@@ -1,4 +1,4 @@
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { ApiProperty } from '@nestjs/swagger';
 
 export class LoginDto {
   @ApiProperty({
@@ -12,12 +12,4 @@ export class LoginDto {
     description: 'The user’s password',
   })
   password!: string;
-
-  @ApiPropertyOptional({
-    example: true,
-    description:
-      'When true, the session persists after the browser closes (persistent cookie). When false, it expires when the browsing session ends.',
-    default: false,
-  })
-  rememberMe?: boolean;
 }
