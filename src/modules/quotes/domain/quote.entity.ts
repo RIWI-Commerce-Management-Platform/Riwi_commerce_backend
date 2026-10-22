@@ -41,4 +41,9 @@ export class Quote {
     this.createdAt = props.createdAt;
     this.updatedAt = props.updatedAt;
   }
+
+  attachDocument(key: string): void {
+    this.documentKey = key;
+    this.updatedAt = new Date();
+  }
 }
