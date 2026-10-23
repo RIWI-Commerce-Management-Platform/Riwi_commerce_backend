@@ -7,6 +7,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { CreateQuoteFromVisitUseCase } from '../src/modules/quotes/application/create-quote-from-visit.use-case.js';
 import { CreateQuoteUseCase } from '../src/modules/quotes/application/create-quote.use-case.js';
 import { GetQuoteByIdUseCase } from '../src/modules/quotes/application/get-quote-by-id.use-case.js';
+import { AttachQuoteDocumentUseCase } from '../src/modules/quotes/application/attach-quote-document.use-case.js';
+import { ChangeQuoteStatusUseCase } from '../src/modules/quotes/application/change-quote-status.use-case.js';
+import { ListQuotesUseCase } from '../src/modules/quotes/application/list-quotes.use-case.js';
 import { Quote } from '../src/modules/quotes/domain/quote.entity.js';
 import { QuoteStatus } from '../src/modules/quotes/domain/quote-status.enum.js';
 import { QuotesController } from '../src/modules/quotes/presentation/quotes.controller.js';
@@ -48,6 +51,18 @@ describe('QuotesController from-visit flow (e2e)', () => {
         },
         {
           provide: GetQuoteByIdUseCase,
+          useValue: { execute: vi.fn() },
+        },
+        {
+          provide: AttachQuoteDocumentUseCase,
+          useValue: { execute: vi.fn() },
+        },
+        {
+          provide: ChangeQuoteStatusUseCase,
+          useValue: { execute: vi.fn() },
+        },
+        {
+          provide: ListQuotesUseCase,
           useValue: { execute: vi.fn() },
         },
         {

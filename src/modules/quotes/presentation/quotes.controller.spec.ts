@@ -1,68 +1,360 @@
+import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { QuotesController } from './quotes.controller.js';
 import type { Request } from 'express';
-
-import { CurrentAdvisorProvider } from '../../../shared/auth/domain/current-advisor.provider.js';
 import { CreateQuoteFromVisitUseCase } from '../application/create-quote-from-visit.use-case.js';
 import { CreateQuoteUseCase } from '../application/create-quote.use-case.js';
 import { GetQuoteByIdUseCase } from '../application/get-quote-by-id.use-case.js';
+import { AttachQuoteDocumentUseCase } from '../application/attach-quote-document.use-case.js';
+import { ChangeQuoteStatusUseCase } from '../application/change-quote-status.use-case.js';
+import { ListQuotesUseCase } from '../application/list-quotes.use-case.js';
+import { CurrentAdvisorProvider } from '../../../shared/auth/domain/current-advisor.provider.js';
 import { Quote } from '../domain/quote.entity.js';
 import { QuoteStatus } from '../domain/quote-status.enum.js';
-import { QuotesController } from './quotes.controller.js';
+import { QuoteNotFoundError } from '../domain/errors/quote-not-found.error.js';
+import { ClientNotFoundError } from '../domain/errors/client-not-found.error.js';
+import { InvalidQuoteStatusTransitionError } from '../domain/errors/invalid-quote-status-transition.error.js';
+import { FileSizeExceededError } from '../../../shared/file-storage/domain/errors/file-size-exceeded.error.js';
+import { InvalidFileTypeError } from '../../../shared/file-storage/domain/errors/invalid-file-type.error.js';
+import { ListQuotesQueryDto } from './dto/list-quotes-query.dto.js';
 
-function buildQuote(clientId = 12) {
-  return new Quote({
+describe('QuotesController (Presentation)', () => {
+  let controller: QuotesController;
+  let createQuoteUseCase: Partial<CreateQuoteUseCase>;
+  let createQuoteFromVisitUseCase: Partial<CreateQuoteFromVisitUseCase>;
+  let getQuoteByIdUseCase: Partial<GetQuoteByIdUseCase>;
+  let attachQuoteDocumentUseCase: Partial<AttachQuoteDocumentUseCase>;
+  let changeQuoteStatusUseCase: Partial<ChangeQuoteStatusUseCase>;
+  let listQuotesUseCase: Partial<ListQuotesUseCase>;
+  let currentAdvisor: Partial<CurrentAdvisorProvider>;
+
+  const mockQuote = new Quote({
     id: 1,
     quoteNumber: 'COT-0001',
-    clientId,
+    clientId: 10,
     status: QuoteStatus.DRAFT,
-    subtotal: 25,
-    total: 25,
-    notes: null,
-    documentKey: null,
+    subtotal: 150,
+    total: 150,
+    documentKey: 'quotes/173000-doc.pdf',
     items: [],
-    createdAt: new Date('2026-10-22T12:00:00.000Z'),
-    updatedAt: new Date('2026-10-22T12:00:00.000Z'),
+    createdAt: new Date(),
+    updatedAt: new Date(),
   });
-}
-
-describe('QuotesController', () => {
-  let controller: QuotesController;
-  let createQuote: { execute: ReturnType<typeof vi.fn> };
-  let createQuoteFromVisit: { execute: ReturnType<typeof vi.fn> };
-  let getQuoteById: { execute: ReturnType<typeof vi.fn> };
-  let currentAdvisor: { extract: ReturnType<typeof vi.fn> };
 
   beforeEach(() => {
-    createQuote = { execute: vi.fn().mockResolvedValue(buildQuote()) };
-    createQuoteFromVisit = {
-      execute: vi.fn().mockResolvedValue(buildQuote()),
+    createQuoteUseCase = {
+      execute: vi.fn().mockResolvedValue(mockQuote),
     };
-    getQuoteById = { execute: vi.fn() };
-    currentAdvisor = { extract: vi.fn().mockResolvedValue(20) };
+
+    createQuoteFromVisitUseCase = {
+      execute: vi.fn().mockResolvedValue(mockQuote),
+    };
+
+    getQuoteByIdUseCase = {
+      execute: vi.fn().mockResolvedValue({
+        quote: mockQuote,
+        documentUrl: 'https://s3.amazonaws.com/quotes/173000-doc.pdf',
+      }),
+    };
+
+    attachQuoteDocumentUseCase = {
+      execute: vi.fn().mockResolvedValue({
+        quote: mockQuote,
+        documentUrl: 'https://s3.amazonaws.com/quotes/173000-doc.pdf',
+      }),
+    };
+
+    changeQuoteStatusUseCase = {
+      execute: vi.fn().mockResolvedValue(mockQuote),
+    };
+
+    listQuotesUseCase = {
+      execute: vi.fn().mockResolvedValue({
+        data: [mockQuote],
+        meta: {
+          total: 1,
+          page: 1,
+          limit: 10,
+          totalPages: 1,
+          hasNextPage: false,
+          hasPreviousPage: false,
+        },
+      }),
+    };
+
+    currentAdvisor = {
+      extract: vi.fn().mockResolvedValue(15),
+    };
 
     controller = new QuotesController(
-      createQuote as unknown as CreateQuoteUseCase,
-      createQuoteFromVisit as unknown as CreateQuoteFromVisitUseCase,
-      getQuoteById as unknown as GetQuoteByIdUseCase,
-      currentAdvisor as unknown as CurrentAdvisorProvider,
+      createQuoteUseCase as CreateQuoteUseCase,
+      createQuoteFromVisitUseCase as CreateQuoteFromVisitUseCase,
+      getQuoteByIdUseCase as GetQuoteByIdUseCase,
+      attachQuoteDocumentUseCase as AttachQuoteDocumentUseCase,
+      changeQuoteStatusUseCase as ChangeQuoteStatusUseCase,
+      listQuotesUseCase as ListQuotesUseCase,
+      currentAdvisor as CurrentAdvisorProvider,
     );
   });
 
-  it('creates a quote from the authorized visit without accepting a client ID', async () => {
-    const request = {
-      headers: { 'x-user-id': '20' },
-    } as unknown as Request;
-    const result = await controller.createFromVisit(45, request, {
-      notes: 'Visit quote',
-      items: [{ productName: 'Product', quantity: 1, unitPrice: 25 }],
+  describe('POST /quotes/from-visits/:visitId (HU-27)', () => {
+    it('creates a quote using the client derived from the advisor-owned visit', async () => {
+      const request = {
+        headers: { 'x-user-id': '15' },
+      } as unknown as Request;
+      const response = await controller.createFromVisit(45, request, {
+        notes: 'Visit quote',
+        items: [{ productName: 'Laptop', quantity: 1, unitPrice: 150 }],
+      });
+
+      expect(currentAdvisor.extract).toHaveBeenCalledWith(request);
+      expect(createQuoteFromVisitUseCase.execute).toHaveBeenCalledWith(45, 15, {
+        notes: 'Visit quote',
+        documentKey: undefined,
+        items: [{ productName: 'Laptop', quantity: 1, unitPrice: 150 }],
+      });
+      expect(response.clientId).toBe(10);
+    });
+  });
+
+  describe('POST /quotes (HU-30)', () => {
+    it('creates a new quote and returns QuoteResponseDto', async () => {
+      const response = await controller.create({
+        clientId: 10,
+        items: [{ productName: 'Laptop', quantity: 1, unitPrice: 150 }],
+      });
+
+      expect(createQuoteUseCase.execute).toHaveBeenCalled();
+      expect(response.quoteNumber).toBe('COT-0001');
     });
 
-    expect(currentAdvisor.extract).toHaveBeenCalledWith(request);
-    expect(createQuoteFromVisit.execute).toHaveBeenCalledWith(45, 20, {
-      notes: 'Visit quote',
-      documentKey: undefined,
-      items: [{ productName: 'Product', quantity: 1, unitPrice: 25 }],
+    it('translates ClientNotFoundError to NotFoundException', async () => {
+      vi.mocked(createQuoteUseCase.execute!).mockRejectedValue(
+        new ClientNotFoundError(999),
+      );
+
+      await expect(
+        controller.create({
+          clientId: 999,
+          items: [{ productName: 'Laptop', quantity: 1, unitPrice: 150 }],
+        }),
+      ).rejects.toThrow(NotFoundException);
     });
-    expect(result.clientId).toBe(12);
+  });
+
+  describe('GET /quotes (HU-34)', () => {
+    it('returns paginated list of quotes', async () => {
+      const query = new ListQuotesQueryDto();
+      query.page = 1;
+      query.limit = 10;
+      query.clientId = 10;
+      query.status = QuoteStatus.DRAFT;
+
+      const result = await controller.list(query);
+
+      expect(result.data).toHaveLength(1);
+      expect(result.meta.total).toBe(1);
+      expect(listQuotesUseCase.execute).toHaveBeenCalledWith(
+        expect.objectContaining({
+          clientId: 10,
+          status: QuoteStatus.DRAFT,
+          page: 1,
+          limit: 10,
+        }),
+      );
+    });
+  });
+
+  describe('GET /quotes/:id', () => {
+    it('returns quote details with presigned url', async () => {
+      const response = await controller.getById(1);
+
+      expect(getQuoteByIdUseCase.execute).toHaveBeenCalledWith(1);
+      expect(response.id).toBe(1);
+      expect(response.documentUrl).toBe(
+        'https://s3.amazonaws.com/quotes/173000-doc.pdf',
+      );
+    });
+
+    it('translates QuoteNotFoundError to NotFoundException', async () => {
+      vi.mocked(getQuoteByIdUseCase.execute!).mockRejectedValue(
+        new QuoteNotFoundError(999),
+      );
+
+      await expect(controller.getById(999)).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  describe('POST /quotes/:id/attachment (HU-31)', () => {
+    it('throws BadRequestException if no file is provided', async () => {
+      await expect(controller.attachDocument(1, undefined)).rejects.toThrow(
+        BadRequestException,
+      );
+    });
+
+    it('attaches file to quote and returns response DTO with documentUrl', async () => {
+      const mockFile = {
+        buffer: Buffer.from('test'),
+        originalname: 'test.pdf',
+        mimetype: 'application/pdf',
+        size: 100,
+      } as any;
+
+      const response = await controller.attachDocument(1, mockFile);
+
+      expect(attachQuoteDocumentUseCase.execute).toHaveBeenCalledWith(
+        1,
+        mockFile,
+      );
+      expect(response.id).toBe(1);
+      expect(response.documentUrl).toBe(
+        'https://s3.amazonaws.com/quotes/173000-doc.pdf',
+      );
+    });
+
+    it('translates QuoteNotFoundError to NotFoundException', async () => {
+      vi.mocked(attachQuoteDocumentUseCase.execute!).mockRejectedValue(
+        new QuoteNotFoundError(999),
+      );
+
+      const mockFile = {
+        buffer: Buffer.from('test'),
+        originalname: 'test.pdf',
+        mimetype: 'application/pdf',
+        size: 100,
+      } as any;
+
+      await expect(controller.attachDocument(999, mockFile)).rejects.toThrow(
+        NotFoundException,
+      );
+    });
+
+    it('translates FileSizeExceededError to BadRequestException', async () => {
+      vi.mocked(attachQuoteDocumentUseCase.execute!).mockRejectedValue(
+        new FileSizeExceededError(1024),
+      );
+
+      const mockFile = {
+        buffer: Buffer.from('huge'),
+        originalname: 'big.pdf',
+        mimetype: 'application/pdf',
+        size: 2048,
+      } as any;
+
+      await expect(controller.attachDocument(1, mockFile)).rejects.toThrow(
+        BadRequestException,
+      );
+    });
+
+    it('translates InvalidFileTypeError to BadRequestException', async () => {
+      vi.mocked(attachQuoteDocumentUseCase.execute!).mockRejectedValue(
+        new InvalidFileTypeError('application/exe', ['application/pdf']),
+      );
+
+      const mockFile = {
+        buffer: Buffer.from('bad'),
+        originalname: 'virus.exe',
+        mimetype: 'application/exe',
+        size: 100,
+      } as any;
+
+      await expect(controller.attachDocument(1, mockFile)).rejects.toThrow(
+        BadRequestException,
+      );
+    });
+  });
+
+  describe('PATCH /quotes/:id/status (HU-32)', () => {
+    it('successfully changes status and returns updated QuoteResponseDto', async () => {
+      const req = { headers: { 'x-user-id': '15' } } as any;
+      const response = await controller.changeStatus(
+        1,
+        { status: QuoteStatus.SENT },
+        req,
+      );
+
+      expect(changeQuoteStatusUseCase.execute).toHaveBeenCalledWith({
+        quoteId: 1,
+        newStatus: QuoteStatus.SENT,
+        actorId: 15,
+      });
+      expect(response.quoteNumber).toBe('COT-0001');
+    });
+
+    it('defaults actorId to 1 when currentAdvisor extraction fails', async () => {
+      vi.mocked(currentAdvisor.extract!).mockRejectedValue(
+        new Error('no auth'),
+      );
+
+      const req = { headers: {} } as any;
+      const response = await controller.changeStatus(
+        1,
+        { status: QuoteStatus.SENT },
+        req,
+      );
+
+      expect(changeQuoteStatusUseCase.execute).toHaveBeenCalledWith({
+        quoteId: 1,
+        newStatus: QuoteStatus.SENT,
+        actorId: 1,
+      });
+      expect(response.quoteNumber).toBe('COT-0001');
+    });
+
+    it('translates InvalidQuoteStatusTransitionError to BadRequestException', async () => {
+      vi.mocked(changeQuoteStatusUseCase.execute!).mockRejectedValue(
+        new InvalidQuoteStatusTransitionError(
+          QuoteStatus.APPROVED,
+          QuoteStatus.DRAFT,
+        ),
+      );
+
+      const req = { headers: {} } as any;
+      await expect(
+        controller.changeStatus(1, { status: QuoteStatus.DRAFT }, req),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('translates QuoteNotFoundError to NotFoundException', async () => {
+      vi.mocked(changeQuoteStatusUseCase.execute!).mockRejectedValue(
+        new QuoteNotFoundError(999),
+      );
+
+      const req = { headers: {} } as any;
+      await expect(
+        controller.changeStatus(999, { status: QuoteStatus.SENT }, req),
+      ).rejects.toThrow(NotFoundException);
+    });
+
+    it('rethrows unexpected errors across all controller methods', async () => {
+      const dbError = new Error('Database down');
+      const req = { headers: {} } as any;
+
+      vi.mocked(createQuoteUseCase.execute!).mockRejectedValueOnce(dbError);
+      await expect(
+        controller.create({ clientId: 1, items: [] }, req),
+      ).rejects.toThrow(dbError);
+
+      vi.mocked(getQuoteByIdUseCase.execute!).mockRejectedValueOnce(dbError);
+      await expect(controller.getById(1)).rejects.toThrow(dbError);
+
+      vi.mocked(attachQuoteDocumentUseCase.execute!).mockRejectedValueOnce(
+        dbError,
+      );
+      await expect(
+        controller.attachDocument(
+          1,
+          { originalname: 'doc.pdf', buffer: Buffer.from('') } as any,
+          req,
+        ),
+      ).rejects.toThrow(dbError);
+
+      vi.mocked(changeQuoteStatusUseCase.execute!).mockRejectedValueOnce(
+        dbError,
+      );
+      await expect(
+        controller.changeStatus(1, { status: QuoteStatus.SENT }, req),
+      ).rejects.toThrow(dbError);
+    });
   });
 });
