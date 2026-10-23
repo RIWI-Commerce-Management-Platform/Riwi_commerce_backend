@@ -1,21 +1,28 @@
 import {
   Body,
+  BadRequestException,
   Controller,
   Get,
   Param,
   ParseIntPipe,
   Patch,
+  Post,
   Query,
   Req,
+  UploadedFile,
+  UseInterceptors,
   UsePipes,
   ValidationPipe,
 } from '@nestjs/common';
 
+import { FileInterceptor } from '@nestjs/platform-express';
 import type { Request } from 'express';
 
 import {
   ApiHeader,
   ApiBody,
+  ApiConsumes,
+  ApiCreatedResponse,
   ApiOperation,
   ApiParam,
   ApiQuery,
@@ -38,7 +45,13 @@ import { RescheduleVisitUseCase } from '../../application/use-cases/reschedule-v
 
 import { MarkVisitNotVisitedUseCase } from '../../application/use-cases/mark-visit-not-visited.use-case.js';
 
+import { GetVisitAttachmentsUseCase } from '../../application/use-cases/get-visit-attachments.use-case.js';
+
+import { UploadVisitAttachmentUseCase } from '../../application/use-cases/upload-visit-attachment.use-case.js';
+
 import { VisitAgendaQueryDto } from '../dtos/visit-agenda-query.dto.js';
+
+import { VisitAttachmentResponseDto } from '../dtos/visit-attachment-response.dto.js';
 
 import { RegisterVisitResultDto } from '../dtos/register-visit-result.dto.js';
 
@@ -47,6 +60,14 @@ import { RescheduleVisitDto } from '../dtos/reschedule-visit.dto.js';
 import { VisitSummaryResponseDto } from '../dtos/visit-summary-response.dto.js';
 
 import { VisitDetailResponseDto } from '../dtos/visit-detail-response.dto.js';
+
+import { FILE_STORAGE_MAX_FILE_SIZE_BYTES } from '../../../../shared/file-storage/domain/file-storage.constants.js';
+
+interface UploadedVisitFile {
+  buffer: Buffer;
+  originalname: string;
+  mimetype: string;
+}
 
 @ApiTags('Visits')
 @ApiHeader({
@@ -74,6 +95,8 @@ export class VisitsController {
     private readonly rescheduleVisit: RescheduleVisitUseCase,
     private readonly markVisitNotVisited: MarkVisitNotVisitedUseCase,
     private readonly currentAdvisor: CurrentAdvisorProvider,
+    private readonly getVisitAttachments: GetVisitAttachmentsUseCase,
+    private readonly uploadVisitAttachment: UploadVisitAttachmentUseCase,
   ) {}
 
   @Get('agenda')
@@ -112,6 +135,83 @@ export class VisitsController {
     return visits.map((visit) => new VisitSummaryResponseDto(visit));
   }
 
+  @Post(':id/attachments')
+  @UseInterceptors(
+    FileInterceptor('file', {
+      limits: { fileSize: FILE_STORAGE_MAX_FILE_SIZE_BYTES },
+    }),
+  )
+  @ApiOperation({ summary: 'Attach a photo or document to a visit' })
+  @ApiParam({ name: 'id', description: 'Visit ID' })
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      required: ['file'],
+      properties: {
+        file: { type: 'string', format: 'binary' },
+      },
+    },
+  })
+  @ApiCreatedResponse({
+    description: 'Attachment stored and available through a temporary URL.',
+    type: VisitAttachmentResponseDto,
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Missing file or unsupported file type.',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Visit not found for this advisor.',
+  })
+  @ApiResponse({
+    status: 413,
+    description: 'File exceeds the 10 MiB limit.',
+  })
+  async uploadAttachment(
+    @Param('id', ParseIntPipe) id: number,
+    @Req() request: Request,
+    @UploadedFile() file?: UploadedVisitFile,
+  ): Promise<VisitAttachmentResponseDto> {
+    const advisorId = await this.currentAdvisor.extract(request);
+
+    if (!file) {
+      throw new BadRequestException('A file is required.');
+    }
+
+    const attachment = await this.uploadVisitAttachment.execute(id, advisorId, {
+      buffer: file.buffer,
+      filename: file.originalname,
+      mimetype: file.mimetype,
+    });
+    return new VisitAttachmentResponseDto(attachment);
+  }
+
+  @Get(':id/attachments')
+  @ApiOperation({ summary: 'List visit attachments with temporary URLs' })
+  @ApiParam({ name: 'id', description: 'Visit ID' })
+  @ApiResponse({
+    status: 200,
+    description: 'Attachments ordered by upload time.',
+    type: [VisitAttachmentResponseDto],
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Visit not found for this advisor.',
+  })
+  async listAttachments(
+    @Param('id', ParseIntPipe) id: number,
+    @Req() request: Request,
+  ): Promise<VisitAttachmentResponseDto[]> {
+    const advisorId = await this.currentAdvisor.extract(request);
+    const attachments = await this.getVisitAttachments.execute(id, advisorId);
+
+    return attachments.map(
+      (attachment) => new VisitAttachmentResponseDto(attachment),
+    );
+  }
+
   @Get(':id')
   @ApiOperation({ summary: 'Get visit details for the authenticated advisor' })
   @ApiParam({ name: 'id', description: 'Visit ID' })
@@ -121,7 +221,10 @@ export class VisitsController {
       'Visit details including client/contact information when available.',
     type: VisitDetailResponseDto,
   })
-  @ApiResponse({ status: 404, description: 'Visit not found for this advisor.' })
+  @ApiResponse({
+    status: 404,
+    description: 'Visit not found for this advisor.',
+  })
   async getById(
     @Param('id', ParseIntPipe) id: number,
     @Req() request: Request,
@@ -145,7 +248,10 @@ export class VisitsController {
     status: 400,
     description: 'Visit is not in the PENDING status.',
   })
-  @ApiResponse({ status: 404, description: 'Visit not found for this advisor.' })
+  @ApiResponse({
+    status: 404,
+    description: 'Visit not found for this advisor.',
+  })
   async start(
     @Param('id', ParseIntPipe) id: number,
     @Req() request: Request,
@@ -171,7 +277,10 @@ export class VisitsController {
     description:
       'Invalid payload, invalid result ids, observations over 500 characters or invalid status transition.',
   })
-  @ApiResponse({ status: 404, description: 'Visit not found for this advisor.' })
+  @ApiResponse({
+    status: 404,
+    description: 'Visit not found for this advisor.',
+  })
   async registerResult(
     @Param('id', ParseIntPipe) id: number,
     @Req() request: Request,
@@ -201,7 +310,10 @@ export class VisitsController {
     status: 400,
     description: 'Invalid scheduled date or visit status transition.',
   })
-  @ApiResponse({ status: 404, description: 'Visit not found for this advisor.' })
+  @ApiResponse({
+    status: 404,
+    description: 'Visit not found for this advisor.',
+  })
   async reschedule(
     @Param('id', ParseIntPipe) id: number,
     @Req() request: Request,
@@ -229,7 +341,10 @@ export class VisitsController {
     status: 400,
     description: 'Visit status does not allow this transition.',
   })
-  @ApiResponse({ status: 404, description: 'Visit not found for this advisor.' })
+  @ApiResponse({
+    status: 404,
+    description: 'Visit not found for this advisor.',
+  })
   async markNotVisited(
     @Param('id', ParseIntPipe) id: number,
     @Req() request: Request,

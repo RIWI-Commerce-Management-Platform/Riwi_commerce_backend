@@ -16,6 +16,10 @@ import { RescheduleVisitUseCase } from '../../application/use-cases/reschedule-v
 
 import { MarkVisitNotVisitedUseCase } from '../../application/use-cases/mark-visit-not-visited.use-case.js';
 
+import { GetVisitAttachmentsUseCase } from '../../application/use-cases/get-visit-attachments.use-case.js';
+
+import { UploadVisitAttachmentUseCase } from '../../application/use-cases/upload-visit-attachment.use-case.js';
+
 import { Visit, VisitStatus } from '../../domain/visit.entity.js';
 
 import { CurrentAdvisorProvider } from '../../../../shared/auth/domain/current-advisor.provider.js';
@@ -51,15 +55,15 @@ describe('VisitsController', () => {
   let mockRegisterResult: { execute: ReturnType<typeof vi.fn> };
   let mockReschedule: { execute: ReturnType<typeof vi.fn> };
   let mockMarkNotVisited: { execute: ReturnType<typeof vi.fn> };
+  let mockGetAttachments: { execute: ReturnType<typeof vi.fn> };
+  let mockUploadAttachment: { execute: ReturnType<typeof vi.fn> };
   let mockCurrentAdvisor: { extract: ReturnType<typeof vi.fn> };
 
   beforeEach(() => {
     mockGetAgenda = { execute: vi.fn().mockResolvedValue([buildVisit()]) };
     mockGetById = { execute: vi.fn().mockResolvedValue(buildVisit()) };
     mockStart = {
-      execute: vi
-        .fn()
-        .mockResolvedValue(buildVisit(VisitStatus.IN_PROGRESS)),
+      execute: vi.fn().mockResolvedValue(buildVisit(VisitStatus.IN_PROGRESS)),
     };
     mockRegisterResult = {
       execute: vi.fn().mockResolvedValue(buildVisit(VisitStatus.VISITED)),
@@ -69,6 +73,32 @@ describe('VisitsController', () => {
     };
     mockMarkNotVisited = {
       execute: vi.fn().mockResolvedValue(buildVisit(VisitStatus.NOT_VISITED)),
+    };
+    mockGetAttachments = {
+      execute: vi.fn().mockResolvedValue([
+        {
+          id: 7,
+          visitId: 1,
+          key: 'visits/1/photo.png',
+          originalName: 'photo.png',
+          mimetype: 'image/png',
+          size: 4,
+          createdAt: new Date('2026-10-20T14:00:00.000Z'),
+          url: 'https://example.test/photo.png',
+        },
+      ]),
+    };
+    mockUploadAttachment = {
+      execute: vi.fn().mockResolvedValue({
+        id: 7,
+        visitId: 1,
+        key: 'visits/1/photo.png',
+        originalName: 'photo.png',
+        mimetype: 'image/png',
+        size: 4,
+        createdAt: new Date('2026-10-20T14:00:00.000Z'),
+        url: 'https://example.test/photo.png',
+      }),
     };
     mockCurrentAdvisor = { extract: vi.fn().mockResolvedValue(20) };
 
@@ -80,6 +110,8 @@ describe('VisitsController', () => {
       mockReschedule as unknown as RescheduleVisitUseCase,
       mockMarkNotVisited as unknown as MarkVisitNotVisitedUseCase,
       mockCurrentAdvisor as unknown as CurrentAdvisorProvider,
+      mockGetAttachments as unknown as GetVisitAttachmentsUseCase,
+      mockUploadAttachment as unknown as UploadVisitAttachmentUseCase,
     );
   });
 
@@ -145,5 +177,35 @@ describe('VisitsController', () => {
     expect(mockCurrentAdvisor.extract).toHaveBeenCalledTimes(1);
     expect(mockMarkNotVisited.execute).toHaveBeenCalledWith(1, 20);
     expect(result.status).toBe(VisitStatus.NOT_VISITED);
+  });
+
+  it('uploads an attachment for the current advisor and returns its response dto', async () => {
+    const result = await controller.uploadAttachment(1, buildRequest(), {
+      buffer: Buffer.from('data'),
+      originalname: 'photo.png',
+      mimetype: 'image/png',
+    });
+
+    expect(mockUploadAttachment.execute).toHaveBeenCalledWith(1, 20, {
+      buffer: Buffer.from('data'),
+      filename: 'photo.png',
+      mimetype: 'image/png',
+    });
+    expect(result.url).toBe('https://example.test/photo.png');
+  });
+
+  it('rejects an upload request with no file', async () => {
+    await expect(
+      controller.uploadAttachment(1, buildRequest(), undefined),
+    ).rejects.toThrow('A file is required.');
+    expect(mockUploadAttachment.execute).not.toHaveBeenCalled();
+  });
+
+  it('lists attachments for the current advisor', async () => {
+    const result = await controller.listAttachments(1, buildRequest());
+
+    expect(mockGetAttachments.execute).toHaveBeenCalledWith(1, 20);
+    expect(result).toHaveLength(1);
+    expect(result[0].url).toBe('https://example.test/photo.png');
   });
 });

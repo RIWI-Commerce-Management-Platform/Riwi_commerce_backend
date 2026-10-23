@@ -9,6 +9,7 @@ import {
 } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { FileStorageService } from '../domain/file-storage.service.js';
+import { FILE_STORAGE_MAX_FILE_SIZE_BYTES } from '../domain/file-storage.constants.js';
 import { UploadFileOptions } from '../domain/upload-file-options.interface.js';
 import { UploadedFileResult } from '../domain/uploaded-file-result.interface.js';
 import { FileSizeExceededError } from '../domain/errors/file-size-exceeded.error.js';
@@ -19,8 +20,6 @@ export class S3FileStorageService implements FileStorageService {
   private readonly logger = new Logger(S3FileStorageService.name);
   private readonly s3Client: S3Client;
   private readonly bucketName: string;
-  private readonly maxFileSizeInBytes = 10 * 1024 * 1024; // 10MB limit
-
   private readonly allowedMimeTypes = [
     'application/pdf',
     'image/jpeg',
@@ -34,10 +33,13 @@ export class S3FileStorageService implements FileStorageService {
   constructor(private readonly configService: ConfigService) {
     const region = this.configService.get<string>('aws.region') ?? 'us-east-1';
     this.bucketName =
-      this.configService.get<string>('aws.bucketName') ?? 'comercial-360-bucket';
+      this.configService.get<string>('aws.bucketName') ??
+      'comercial-360-bucket';
 
     const accessKeyId = this.configService.get<string>('aws.accessKeyId');
-    const secretAccessKey = this.configService.get<string>('aws.secretAccessKey');
+    const secretAccessKey = this.configService.get<string>(
+      'aws.secretAccessKey',
+    );
 
     this.s3Client = new S3Client({
       region,
@@ -96,8 +98,8 @@ export class S3FileStorageService implements FileStorageService {
   }
 
   private validateFile(options: UploadFileOptions): void {
-    if (options.buffer.length > this.maxFileSizeInBytes) {
-      throw new FileSizeExceededError(this.maxFileSizeInBytes);
+    if (options.buffer.length > FILE_STORAGE_MAX_FILE_SIZE_BYTES) {
+      throw new FileSizeExceededError(FILE_STORAGE_MAX_FILE_SIZE_BYTES);
     }
 
     if (!this.allowedMimeTypes.includes(options.mimetype)) {
