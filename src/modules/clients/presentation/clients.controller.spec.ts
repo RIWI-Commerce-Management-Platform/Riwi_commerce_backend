@@ -136,9 +136,7 @@ describe('ClientsController', () => {
     });
 
     it('should translate ClientNotFoundError to NotFoundException', async () => {
-      getClientByIdExecute.mockRejectedValueOnce(
-        new ClientNotFoundError(999),
-      );
+      getClientByIdExecute.mockRejectedValueOnce(new ClientNotFoundError(999));
 
       await expect(controller.getClientById(999, admin)).rejects.toThrow(
         NotFoundException,
@@ -217,9 +215,7 @@ describe('ClientsController', () => {
     });
 
     it('should translate ClientNotFoundError to NotFoundException', async () => {
-      updateExecute.mockRejectedValueOnce(
-        new ClientNotFoundError(999),
-      );
+      updateExecute.mockRejectedValueOnce(new ClientNotFoundError(999));
 
       await expect(controller.update(999, dto)).rejects.toThrow(
         NotFoundException,
@@ -231,7 +227,9 @@ describe('ClientsController', () => {
         new ClientNitAlreadyExistsError('900999999-9'),
       );
 
-      await expect(controller.update(1, dto)).rejects.toThrow(ConflictException);
+      await expect(controller.update(1, dto)).rejects.toThrow(
+        ConflictException,
+      );
     });
   });
 
@@ -247,13 +245,27 @@ describe('ClientsController', () => {
     });
 
     it('should translate ClientNotFoundError to NotFoundException', async () => {
-      toggleStatusExecute.mockRejectedValueOnce(
-        new ClientNotFoundError(999),
-      );
+      toggleStatusExecute.mockRejectedValueOnce(new ClientNotFoundError(999));
 
       await expect(
         controller.toggleStatus(999, { isActive: false }),
       ).rejects.toThrow(NotFoundException);
+    });
+
+    it('should rethrow unexpected errors', async () => {
+      const err = new Error('Database connection failed');
+
+      getClientByIdExecute.mockRejectedValueOnce(err);
+      await expect(controller.getClientById(1)).rejects.toThrow(err);
+
+      createExecute.mockRejectedValueOnce(err);
+      await expect(controller.create({} as any)).rejects.toThrow(err);
+
+      updateExecute.mockRejectedValueOnce(err);
+      await expect(controller.update(1, {} as any)).rejects.toThrow(err);
+
+      toggleStatusExecute.mockRejectedValueOnce(err);
+      await expect(controller.toggleStatus(1)).rejects.toThrow(err);
     });
   });
 });

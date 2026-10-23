@@ -108,8 +108,7 @@ export class ClientContactsController {
   ): Promise<ClientContactResponseDto[]> {
     this.assertClientAccess(clientId, user);
     try {
-      const contacts =
-        await this.listClientContactsUseCase.execute(clientId);
+      const contacts = await this.listClientContactsUseCase.execute(clientId);
       return contacts.map((c) => new ClientContactResponseDto(c));
     } catch (error) {
       if (error instanceof ClientNotFoundError) {
@@ -225,8 +224,8 @@ export class ClientContactsController {
     }
   }
 
-  private assertClientAccess(clientId: number, user: UserOrmEntity): void {
-    if (user.role === UserRole.CLIENTE && user.idCliente !== clientId) {
+  private assertClientAccess(clientId: number, user?: UserOrmEntity): void {
+    if (user?.role === UserRole.CLIENTE && user.idCliente !== clientId) {
       throw new ForbiddenException('Clients can only access their own record');
     }
   }

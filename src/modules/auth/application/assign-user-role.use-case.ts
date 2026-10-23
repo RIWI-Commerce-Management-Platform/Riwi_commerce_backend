@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Optional } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { UserOrmEntity } from '../infrastructure/user.orm-entity.js';
@@ -31,10 +31,12 @@ export class AssignUserRoleUseCase {
     private readonly userRepository: Repository<UserOrmEntity>,
     @InjectRepository(ZoneOrmEntity)
     private readonly zoneRepository: Repository<ZoneOrmEntity>,
+    @Optional()
     @InjectRepository(AdvisorOrmEntity)
-    private readonly advisorRepository: Repository<AdvisorOrmEntity>,
+    private readonly advisorRepository?: Repository<AdvisorOrmEntity>,
+    @Optional()
     @InjectRepository(ClientOrmEntity)
-    private readonly clientRepository: Repository<ClientOrmEntity>,
+    private readonly clientRepository?: Repository<ClientOrmEntity>,
   ) {}
 
   async execute(input: AssignUserRoleInput): Promise<AssignUserRoleResult> {
@@ -63,35 +65,47 @@ export class AssignUserRoleUseCase {
     }
 
     const [advisor, client] = await Promise.all([
-      this.advisorRepository.findOneBy({ idUsuario: user.id }),
-      this.clientRepository.findOneBy({ idUsuario: user.id }),
+      this.advisorRepository
+        ? this.advisorRepository.findOneBy({ idUsuario: user.id })
+        : Promise.resolve(null),
+      this.clientRepository
+        ? this.clientRepository.findOneBy({ idUsuario: user.id })
+        : Promise.resolve(null),
     ]);
 
-    if (input.role === UserRole.ADMINISTRADOR) {
-      if (advisor) {
+    const isAdmin =
+      input.role === UserRole.ADMINISTRADOR ||
+      (input.role as any) === UserRole.ADMIN;
+
+    if (isAdmin) {
+      if (advisor && this.advisorRepository) {
         advisor.idUsuario = null;
         advisor.usuario = null;
         await this.advisorRepository.save(advisor);
       }
-      if (client) {
+      if (client && this.clientRepository) {
         client.idUsuario = null;
         client.usuario = null;
         await this.clientRepository.save(client);
       }
     } else if (
       (input.role === UserRole.ASESOR &&
-        (!advisor || client || advisor.correo.toLowerCase() !== user.email.toLowerCase())) ||
+        (!advisor ||
+          client ||
+          advisor.correo.toLowerCase() !== user.email?.toLowerCase())) ||
       (input.role === UserRole.CLIENTE &&
-        (!client || advisor || client.email.toLowerCase() !== user.email.toLowerCase()))
+        (!client ||
+          advisor ||
+          client.email.toLowerCase() !== user.email?.toLowerCase()))
     ) {
       throw new InvalidRoleError();
     } else if (input.role === UserRole.DIRECTOR_REGIONAL) {
-      if (advisor) {
+      if (advisor && this.advisorRepository) {
         advisor.idUsuario = null;
         advisor.usuario = null;
         await this.advisorRepository.save(advisor);
       }
-      if (client) {
+      if (client && this.clientRepository) {
         client.idUsuario = null;
         client.usuario = null;
         await this.clientRepository.save(client);

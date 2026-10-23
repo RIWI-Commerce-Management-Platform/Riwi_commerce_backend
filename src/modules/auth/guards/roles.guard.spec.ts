@@ -17,9 +17,12 @@ describe('RolesGuard', () => {
     switchToHttp: () => ({ getRequest: () => request }),
   } as unknown as ExecutionContext;
 
-  function createGuard(role: UserRole | null) {
+  function createGuard(
+    role: UserRole | null,
+    requiredRoles: UserRole[] | null = [UserRole.ADMINISTRADOR],
+  ) {
     const reflector = {
-      getAllAndOverride: vi.fn().mockReturnValue([UserRole.ADMINISTRADOR]),
+      getAllAndOverride: vi.fn().mockReturnValue(requiredRoles),
     } as unknown as Reflector;
     const userRepository = {
       findOne: vi
@@ -32,12 +35,23 @@ describe('RolesGuard', () => {
     return new RolesGuard(reflector, userRepository);
   }
 
+  it('allows access when no required roles are specified', async () => {
+    const guard = createGuard(null, null);
+    await expect(guard.canActivate(context)).resolves.toBe(true);
+  });
+
   it('returns 401 when no authenticated user is present', async () => {
     request.user = {} as typeof request.user;
     await expect(
       createGuard(UserRole.ADMINISTRADOR).canActivate(context),
     ).rejects.toBeInstanceOf(UnauthorizedException);
     request.user = { id: 'user-1' };
+  });
+
+  it('returns 401 when user is not found in database', async () => {
+    await expect(createGuard(null).canActivate(context)).rejects.toBeInstanceOf(
+      UnauthorizedException,
+    );
   });
 
   it('returns 403 when the current role is not allowed', async () => {

@@ -63,11 +63,10 @@ export class ClientsController {
   })
   async findClients(
     @Query() query: FindClientsQueryDto,
-    @CurrentUser() user: UserOrmEntity,
+    @CurrentUser() user?: UserOrmEntity,
   ): Promise<PaginatedClientResponseDto> {
     const result = await this.findClientsUseCase.execute({
-      clientId:
-        user.role === UserRole.CLIENTE ? user.idCliente! : undefined,
+      clientId: user?.role === UserRole.CLIENTE ? user.idCliente! : undefined,
       search: query.search,
       zoneId: query.parsedZoneId,
       clientTypeId: query.parsedClientTypeId,
@@ -95,9 +94,9 @@ export class ClientsController {
   @ApiNotFoundResponse({ description: 'Client not found.' })
   async getClientById(
     @Param('id', ParseIntPipe) id: number,
-    @CurrentUser() user: UserOrmEntity,
+    @CurrentUser() user?: UserOrmEntity,
   ): Promise<ClientResponseDto> {
-    if (user.role === UserRole.CLIENTE && user.idCliente !== id) {
+    if (user?.role === UserRole.CLIENTE && user.idCliente !== id) {
       throw new ForbiddenException('Clients can only access their own record');
     }
     try {
@@ -125,24 +124,7 @@ export class ClientsController {
   })
   async create(@Body() dto: CreateClientDto): Promise<ClientResponseDto> {
     try {
-      const client = await this.createClientUseCase.execute({
-        nit: dto.nit,
-        businessName: dto.businessName,
-        commercialName: dto.commercialName,
-        address: dto.address,
-        department: dto.department,
-        municipality: dto.municipality,
-        neighborhood: dto.neighborhood,
-        phone: dto.phone,
-        email: dto.email,
-        zoneId: dto.zoneId,
-        clientTypeId: dto.clientTypeId,
-        potentialId: dto.potentialId,
-        clientStatusId: dto.clientStatusId,
-        visitFrequencyDays: dto.visitFrequencyDays,
-        latitude: dto.latitude,
-        longitude: dto.longitude,
-      });
+      const client = await this.createClientUseCase.execute({ ...dto });
 
       return new ClientResponseDto(client);
     } catch (error) {
@@ -170,25 +152,7 @@ export class ClientsController {
     @Body() dto: UpdateClientDto,
   ): Promise<ClientResponseDto> {
     try {
-      const client = await this.updateClientUseCase.execute({
-        id,
-        nit: dto.nit,
-        businessName: dto.businessName,
-        commercialName: dto.commercialName,
-        address: dto.address,
-        department: dto.department,
-        municipality: dto.municipality,
-        neighborhood: dto.neighborhood,
-        phone: dto.phone,
-        email: dto.email,
-        zoneId: dto.zoneId,
-        clientTypeId: dto.clientTypeId,
-        potentialId: dto.potentialId,
-        clientStatusId: dto.clientStatusId,
-        visitFrequencyDays: dto.visitFrequencyDays,
-        latitude: dto.latitude,
-        longitude: dto.longitude,
-      });
+      const client = await this.updateClientUseCase.execute({ id, ...dto });
 
       return new ClientResponseDto(client);
     } catch (error) {

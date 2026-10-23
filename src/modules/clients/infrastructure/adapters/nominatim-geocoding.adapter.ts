@@ -58,8 +58,8 @@ export class NominatimGeocodingAdapter implements GeocodingPort {
         return null;
       }
 
-      const lat = parseFloat(first.lat);
-      const lng = parseFloat(first.lon);
+      const lat = Number.parseFloat(first.lat);
+      const lng = Number.parseFloat(first.lon);
 
       if (Number.isNaN(lat) || Number.isNaN(lng)) {
         return null;
@@ -76,4 +76,3 @@ export class NominatimGeocodingAdapter implements GeocodingPort {
     }
   }
 }
-

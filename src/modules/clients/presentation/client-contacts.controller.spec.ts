@@ -76,14 +76,18 @@ describe('ClientContactsController', () => {
     const contact = createMockContact(1, true);
     vi.mocked(createUseCase.execute).mockResolvedValue(contact);
 
-    const result = await controller.create(10, {
-      name: 'Carlos Mendoza',
-      position: 'Gerente Comercial',
-      phone: '+576053001122',
-      mobile: '+573009876543',
-      email: 'carlos@empresa.com',
-      isPrimary: true,
-    }, admin);
+    const result = await controller.create(
+      10,
+      {
+        name: 'Carlos Mendoza',
+        position: 'Gerente Comercial',
+        phone: '+576053001122',
+        mobile: '+573009876543',
+        email: 'carlos@empresa.com',
+        isPrimary: true,
+      },
+      admin,
+    );
 
     expect(result.id).toBe(1);
     expect(result.clientId).toBe(10);
@@ -97,13 +101,17 @@ describe('ClientContactsController', () => {
     );
 
     await expect(
-      controller.create(999, {
-        name: 'Carlos',
-        position: 'Gerente',
-        phone: '1',
-        mobile: '2',
-        email: 'c@c.com',
-      }, admin),
+      controller.create(
+        999,
+        {
+          name: 'Carlos',
+          position: 'Gerente',
+          phone: '1',
+          mobile: '2',
+          email: 'c@c.com',
+        },
+        admin,
+      ),
     ).rejects.toThrow(NotFoundException);
   });
 
@@ -120,14 +128,47 @@ describe('ClientContactsController', () => {
     expect(result[1].id).toBe(2);
   });
 
+  it('should throw NotFoundException on list when client not found', async () => {
+    const { controller, listUseCase } = setup();
+    vi.mocked(listUseCase.execute).mockRejectedValue(
+      new ClientNotFoundError(999),
+    );
+
+    await expect(controller.list(999)).rejects.toThrow(NotFoundException);
+  });
+
   it('should update a contact successfully', async () => {
     const { controller, updateUseCase } = setup();
     const contact = createMockContact(1, false);
     contact.name = 'Updated Name';
     vi.mocked(updateUseCase.execute).mockResolvedValue(contact);
 
-    const result = await controller.update(10, 1, { name: 'Updated Name' }, admin);
+    const result = await controller.update(
+      10,
+      1,
+      { name: 'Updated Name' },
+      admin,
+    );
     expect(result.name).toBe('Updated Name');
+  });
+
+  it('should throw NotFoundException on update when client or contact not found', async () => {
+    const { controller, updateUseCase } = setup();
+    vi.mocked(updateUseCase.execute).mockRejectedValueOnce(
+      new ClientNotFoundError(10),
+    );
+
+    await expect(controller.update(10, 1, { name: 'X' })).rejects.toThrow(
+      NotFoundException,
+    );
+
+    vi.mocked(updateUseCase.execute).mockRejectedValueOnce(
+      new ClientContactNotFoundError(1),
+    );
+
+    await expect(controller.update(10, 1, { name: 'X' })).rejects.toThrow(
+      NotFoundException,
+    );
   });
 
   it('should set primary contact successfully', async () => {
@@ -139,6 +180,17 @@ describe('ClientContactsController', () => {
     expect(result.isPrimary).toBe(true);
   });
 
+  it('should throw NotFoundException on setPrimary when contact not found', async () => {
+    const { controller, setPrimaryUseCase } = setup();
+    vi.mocked(setPrimaryUseCase.execute).mockRejectedValue(
+      new ClientContactNotFoundError(999),
+    );
+
+    await expect(controller.setPrimary(10, 999)).rejects.toThrow(
+      NotFoundException,
+    );
+  });
+
   it('should delete (soft delete) contact successfully', async () => {
     const { controller, deleteUseCase } = setup();
     const contact = createMockContact(1, false);
@@ -147,5 +199,41 @@ describe('ClientContactsController', () => {
 
     const result = await controller.delete(10, 1, admin);
     expect(result.isActive).toBe(false);
+  });
+
+  it('should throw NotFoundException on delete when contact not found', async () => {
+    const { controller, deleteUseCase } = setup();
+    vi.mocked(deleteUseCase.execute).mockRejectedValue(
+      new ClientContactNotFoundError(999),
+    );
+
+    await expect(controller.delete(10, 999)).rejects.toThrow(NotFoundException);
+  });
+
+  it('should rethrow unexpected errors', async () => {
+    const {
+      controller,
+      createUseCase,
+      listUseCase,
+      updateUseCase,
+      setPrimaryUseCase,
+      deleteUseCase,
+    } = setup();
+    const err = new Error('Database crash');
+
+    vi.mocked(createUseCase.execute).mockRejectedValueOnce(err);
+    await expect(controller.create(1, {} as any)).rejects.toThrow(err);
+
+    vi.mocked(listUseCase.execute).mockRejectedValueOnce(err);
+    await expect(controller.list(1)).rejects.toThrow(err);
+
+    vi.mocked(updateUseCase.execute).mockRejectedValueOnce(err);
+    await expect(controller.update(1, 1, {} as any)).rejects.toThrow(err);
+
+    vi.mocked(setPrimaryUseCase.execute).mockRejectedValueOnce(err);
+    await expect(controller.setPrimary(1, 1)).rejects.toThrow(err);
+
+    vi.mocked(deleteUseCase.execute).mockRejectedValueOnce(err);
+    await expect(controller.delete(1, 1)).rejects.toThrow(err);
   });
 });

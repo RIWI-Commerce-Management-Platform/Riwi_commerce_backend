@@ -56,7 +56,14 @@ export class RolesGuard implements CanActivate {
       role: user.role,
       zoneId: user.zoneId,
     };
-    if (!requiredRoles.includes(user.role)) {
+    const hasRole =
+      requiredRoles.includes(user.role) ||
+      (user.role === UserRole.ADMIN &&
+        requiredRoles.includes(UserRole.ADMINISTRADOR)) ||
+      (user.role === UserRole.ADMINISTRADOR &&
+        requiredRoles.includes(UserRole.ADMIN));
+
+    if (!hasRole) {
       throw new ForbiddenException(
         'You do not have permission to access this resource',
       );

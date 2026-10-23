@@ -2,7 +2,10 @@ export interface CurrentAdvisorRequest {
   user?: {
     role?: string;
     idAsesor?: number | null;
+    [key: string]: any;
   };
+  headers?: Record<string, unknown>;
+  [key: string]: any;
 }
 
 /**

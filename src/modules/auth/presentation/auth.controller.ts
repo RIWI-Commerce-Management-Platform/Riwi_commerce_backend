@@ -114,7 +114,7 @@ export class AuthController {
   async forgotPassword(
     @Body() body: ForgotPasswordDto,
   ): Promise<{ status: boolean; message: string }> {
-    if (!body || typeof body.email !== 'string') {
+    if (!body || typeof body.email !== 'string' || !body.email.trim()) {
       throw new BadRequestException('A valid email address is required');
     }
 
@@ -125,7 +125,7 @@ export class AuthController {
     return {
       status: true,
       message:
-        response.message ??
+        response?.message ??
         'If this email exists in our system, check your email for the reset link',
     };
   }

@@ -9,10 +9,12 @@ import configuration from './shared/config/configuration.js';
 import { ZonesModule } from './modules/zones/zones.module.js';
 import { FileStorageModule } from './shared/file-storage/file-storage.module.js';
 import { QuotesModule } from './modules/quotes/quotes.module.js';
+import { OrdersModule } from './modules/orders/orders.module.js';
 import { ClientsModule } from './modules/clients/clients.module.js';
 import { CatalogsModule } from './modules/catalogs/catalogs.module.js';
 import { AuthModule } from './modules/auth/auth.module.js';
 import { AdvisorsModule } from './modules/advisors/advisors.module.js';
+import { RoutesModule } from './modules/routes/routes.module.js';
 
 export const { ObserveModule, ObserveInstrument } = createObserveModule();
 
@@ -51,8 +53,10 @@ export const { ObserveModule, ObserveInstrument } = createObserveModule();
     CatalogsModule,
     FileStorageModule,
     QuotesModule,
+    OrdersModule,
     AuthModule,
     AdvisorsModule,
+    RoutesModule,
   ],
   controllers: [AppController],
   providers: [AppService],

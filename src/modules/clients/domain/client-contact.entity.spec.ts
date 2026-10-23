@@ -44,12 +44,15 @@ describe('ClientContact Entity', () => {
     expect(contact.isPrimary).toBe(false);
   });
 
-  it('should deactivate contact and clear primary flag', () => {
+  it('should deactivate contact and clear primary flag, and activate again', () => {
     const contact = createBaseContact(true);
 
     contact.deactivate();
     expect(contact.isActive).toBe(false);
     expect(contact.isPrimary).toBe(false);
+
+    contact.activate();
+    expect(contact.isActive).toBe(true);
   });
 
   it('should update editable properties', () => {
@@ -59,14 +62,16 @@ describe('ClientContact Entity', () => {
       name: 'Carlos M. Mendoza',
       position: 'Director de Operaciones',
       phone: '+576053998877',
+      mobile: '+573001112233',
+      email: 'nuevo@empresa.com',
       isPrimary: true,
     });
 
     expect(contact.name).toBe('Carlos M. Mendoza');
     expect(contact.position).toBe('Director de Operaciones');
     expect(contact.phone).toBe('+576053998877');
+    expect(contact.mobile).toBe('+573001112233');
+    expect(contact.email).toBe('nuevo@empresa.com');
     expect(contact.isPrimary).toBe(true);
-    // Unchanged
-    expect(contact.email).toBe('carlos@empresa.com');
   });
 });
