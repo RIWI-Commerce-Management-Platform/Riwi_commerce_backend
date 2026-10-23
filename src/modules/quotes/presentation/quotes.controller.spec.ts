@@ -5,6 +5,7 @@ import { CreateQuoteUseCase } from '../application/create-quote.use-case.js';
 import { GetQuoteByIdUseCase } from '../application/get-quote-by-id.use-case.js';
 import { AttachQuoteDocumentUseCase } from '../application/attach-quote-document.use-case.js';
 import { ChangeQuoteStatusUseCase } from '../application/change-quote-status.use-case.js';
+import { ListQuotesUseCase } from '../application/list-quotes.use-case.js';
 import { CurrentAdvisorProvider } from '../../../shared/auth/domain/current-advisor.provider.js';
 import { Quote } from '../domain/quote.entity.js';
 import { QuoteStatus } from '../domain/quote-status.enum.js';
@@ -13,6 +14,7 @@ import { ClientNotFoundError } from '../domain/errors/client-not-found.error.js'
 import { InvalidQuoteStatusTransitionError } from '../domain/errors/invalid-quote-status-transition.error.js';
 import { FileSizeExceededError } from '../../../shared/file-storage/domain/errors/file-size-exceeded.error.js';
 import { InvalidFileTypeError } from '../../../shared/file-storage/domain/errors/invalid-file-type.error.js';
+import { ListQuotesQueryDto } from './dto/list-quotes-query.dto.js';
 
 describe('QuotesController (Presentation)', () => {
   let controller: QuotesController;
@@ -20,6 +22,7 @@ describe('QuotesController (Presentation)', () => {
   let getQuoteByIdUseCase: Partial<GetQuoteByIdUseCase>;
   let attachQuoteDocumentUseCase: Partial<AttachQuoteDocumentUseCase>;
   let changeQuoteStatusUseCase: Partial<ChangeQuoteStatusUseCase>;
+  let listQuotesUseCase: Partial<ListQuotesUseCase>;
   let currentAdvisor: Partial<CurrentAdvisorProvider>;
 
   const mockQuote = new Quote({
@@ -58,6 +61,20 @@ describe('QuotesController (Presentation)', () => {
       execute: vi.fn().mockResolvedValue(mockQuote),
     };
 
+    listQuotesUseCase = {
+      execute: vi.fn().mockResolvedValue({
+        data: [mockQuote],
+        meta: {
+          total: 1,
+          page: 1,
+          limit: 10,
+          totalPages: 1,
+          hasNextPage: false,
+          hasPreviousPage: false,
+        },
+      }),
+    };
+
     currentAdvisor = {
       extract: vi.fn().mockResolvedValue(15),
     };
@@ -67,6 +84,7 @@ describe('QuotesController (Presentation)', () => {
       getQuoteByIdUseCase as GetQuoteByIdUseCase,
       attachQuoteDocumentUseCase as AttachQuoteDocumentUseCase,
       changeQuoteStatusUseCase as ChangeQuoteStatusUseCase,
+      listQuotesUseCase as ListQuotesUseCase,
       currentAdvisor as CurrentAdvisorProvider,
     );
   });
@@ -93,6 +111,29 @@ describe('QuotesController (Presentation)', () => {
           items: [{ productName: 'Laptop', quantity: 1, unitPrice: 150 }],
         }),
       ).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  describe('GET /quotes (HU-34)', () => {
+    it('returns paginated list of quotes', async () => {
+      const query = new ListQuotesQueryDto();
+      query.page = 1;
+      query.limit = 10;
+      query.clientId = 10;
+      query.status = QuoteStatus.DRAFT;
+
+      const result = await controller.list(query);
+
+      expect(result.data).toHaveLength(1);
+      expect(result.meta.total).toBe(1);
+      expect(listQuotesUseCase.execute).toHaveBeenCalledWith(
+        expect.objectContaining({
+          clientId: 10,
+          status: QuoteStatus.DRAFT,
+          page: 1,
+          limit: 10,
+        }),
+      );
     });
   });
 

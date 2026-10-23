@@ -8,6 +8,7 @@ import {
   ParseIntPipe,
   Patch,
   Post,
+  Query,
   Req,
   UploadedFile,
   UseInterceptors,
@@ -25,9 +26,12 @@ import { CreateQuoteUseCase } from '../application/create-quote.use-case.js';
 import { GetQuoteByIdUseCase } from '../application/get-quote-by-id.use-case.js';
 import { AttachQuoteDocumentUseCase } from '../application/attach-quote-document.use-case.js';
 import { ChangeQuoteStatusUseCase } from '../application/change-quote-status.use-case.js';
+import { ListQuotesUseCase } from '../application/list-quotes.use-case.js';
 import { CreateQuoteDto } from './dto/create-quote.dto.js';
 import { ChangeQuoteStatusDto } from './dto/change-quote-status.dto.js';
 import { QuoteResponseDto } from './dto/quote-response.dto.js';
+import { ListQuotesQueryDto } from './dto/list-quotes-query.dto.js';
+import { PaginatedResponseDto } from '../../../shared/pagination/paginated-response.dto.js';
 import { ClientNotFoundError } from '../domain/errors/client-not-found.error.js';
 import { QuoteNotFoundError } from '../domain/errors/quote-not-found.error.js';
 import { InvalidQuoteStatusTransitionError } from '../domain/errors/invalid-quote-status-transition.error.js';
@@ -50,6 +54,7 @@ export class QuotesController {
     private readonly getQuoteByIdUseCase: GetQuoteByIdUseCase,
     private readonly attachQuoteDocumentUseCase: AttachQuoteDocumentUseCase,
     private readonly changeQuoteStatusUseCase: ChangeQuoteStatusUseCase,
+    private readonly listQuotesUseCase: ListQuotesUseCase,
     private readonly currentAdvisor: CurrentAdvisorProvider,
   ) {}
 
@@ -76,6 +81,31 @@ export class QuotesController {
       }
       throw error;
     }
+  }
+
+  @Get()
+  @ApiOperation({ summary: 'List quotes with pagination and filters (HU-34)' })
+  @ApiResponse({
+    status: 200,
+    description: 'Paginated list of quotes matching filter criteria',
+    type: PaginatedResponseDto<QuoteResponseDto>,
+  })
+  async list(
+    @Query() query: ListQuotesQueryDto,
+  ): Promise<PaginatedResponseDto<QuoteResponseDto>> {
+    const result = await this.listQuotesUseCase.execute({
+      clientId: query.clientId,
+      status: query.status,
+      startDate: query.startDate,
+      endDate: query.endDate,
+      page: query.parsedPage,
+      limit: query.parsedLimit,
+    });
+
+    return PaginatedResponseDto.create(
+      result,
+      (quote) => new QuoteResponseDto(quote),
+    );
   }
 
   @Get(':id')
