@@ -4,6 +4,15 @@ import request from 'supertest';
 import { App } from 'supertest/types.js';
 import { AppModule } from '../src/app.module.js';
 
+const findSessionCookie = (headers: unknown): string | undefined => {
+  const cookieHeaders = Array.isArray(headers) ? headers : [headers];
+  return cookieHeaders.find(
+    (header): header is string =>
+      typeof header === 'string' &&
+      header.includes('better-auth.session_token='),
+  );
+};
+
 describe('Auth Module (e2e)', () => {
   let app: INestApplication<App>;
   const randomSuffix = Math.random().toString(36).substring(7);
@@ -64,12 +73,7 @@ describe('Auth Module (e2e)', () => {
       expect(response.body).toHaveProperty('user');
       expect(response.body.user.email).toBe(testUser.email);
 
-      const setCookieHeaders = response.headers['set-cookie'];
-      expect(setCookieHeaders).toBeDefined();
-
-      const sessionCookie = (setCookieHeaders as string[]).find((c: string) =>
-        c.includes('better-auth.session_token='),
-      );
+      const sessionCookie = findSessionCookie(response.headers['set-cookie']);
       expect(sessionCookie).toBeDefined();
       expect(sessionCookie).toMatch(/Max-Age=/i);
     });
@@ -86,12 +90,7 @@ describe('Auth Module (e2e)', () => {
 
       expect(response.body).toHaveProperty('user');
 
-      const setCookieHeaders = response.headers['set-cookie'];
-      expect(setCookieHeaders).toBeDefined();
-
-      const sessionCookie = (setCookieHeaders as string[]).find((c: string) =>
-        c.includes('better-auth.session_token='),
-      );
+      const sessionCookie = findSessionCookie(response.headers['set-cookie']);
       expect(sessionCookie).toBeDefined();
       expect(sessionCookie).not.toMatch(/Max-Age=/i);
     });
@@ -124,10 +123,9 @@ describe('Auth Module (e2e)', () => {
         })
         .expect(200);
 
-      const setCookieHeaders = loginRes.headers['set-cookie'];
-      const sessionTokenCookie = (setCookieHeaders as string[])
-        .find((c: string) => c.includes('better-auth.session_token='))
-        ?.split(';')[0];
+      const sessionTokenCookie = findSessionCookie(
+        loginRes.headers['set-cookie'],
+      )?.split(';')[0];
 
       const meRes = await request(app.getHttpServer())
         .get('/auth/me')
@@ -159,10 +157,9 @@ describe('Auth Module (e2e)', () => {
         })
         .expect(200);
 
-      const setCookieHeaders = loginRes.headers['set-cookie'];
-      const sessionTokenCookie = (setCookieHeaders as string[])
-        .find((c: string) => c.includes('better-auth.session_token='))
-        ?.split(';')[0];
+      const sessionTokenCookie = findSessionCookie(
+        loginRes.headers['set-cookie'],
+      )?.split(';')[0];
 
       await request(app.getHttpServer())
         .get('/auth/me')

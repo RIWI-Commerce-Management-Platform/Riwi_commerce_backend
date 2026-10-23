@@ -60,6 +60,18 @@ describe('ToggleClientStatusUseCase', () => {
     expect(save).toHaveBeenCalledWith(client);
   });
 
+  it('should toggle from inactive to active when isActive is not specified', async () => {
+    const client = createActiveClient();
+    client.deactivate();
+    findById.mockResolvedValueOnce(client);
+
+    const useCase = new ToggleClientStatusUseCase(mockRepository);
+    const result = await useCase.execute({ id: 1 });
+
+    expect(result.isActive).toBe(true);
+    expect(save).toHaveBeenCalledWith(client);
+  });
+
   it('should explicitly activate client when isActive is true', async () => {
     const client = createActiveClient();
     client.deactivate();
@@ -69,5 +81,15 @@ describe('ToggleClientStatusUseCase', () => {
     const result = await useCase.execute({ id: 1, isActive: true });
 
     expect(result.isActive).toBe(true);
+  });
+
+  it('should explicitly deactivate client when isActive is false', async () => {
+    const client = createActiveClient();
+    findById.mockResolvedValueOnce(client);
+
+    const useCase = new ToggleClientStatusUseCase(mockRepository);
+    const result = await useCase.execute({ id: 1, isActive: false });
+
+    expect(result.isActive).toBe(false);
   });
 });

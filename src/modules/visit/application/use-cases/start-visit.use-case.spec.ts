@@ -102,4 +102,14 @@ describe('StartVisitUseCase', () => {
     await expect(useCase.execute(1, 20)).rejects.toThrow('database unavailable');
     expect(mockActivityLog.record).not.toHaveBeenCalled();
   });
+
+  it('rethrows unexpected error thrown inside visit.start', async () => {
+    const visit = buildVisit();
+    vi.spyOn(visit, 'start').mockImplementation(() => {
+      throw new Error('Unexpected domain start error');
+    });
+    (mockVisitDao.findByIdAndAdvisor as any).mockResolvedValue(visit);
+
+    await expect(useCase.execute(1, 20)).rejects.toThrow('Unexpected domain start error');
+  });
 });

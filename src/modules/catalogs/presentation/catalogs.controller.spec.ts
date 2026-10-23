@@ -61,6 +61,33 @@ describe('CatalogsController', () => {
     expect(result.clientTypes[0].name).toBe('Mayorista');
   });
 
+  it('should get seed status', async () => {
+    const { controller, listAll } = setup();
+    vi.mocked(listAll.execute).mockResolvedValue({
+      zones: [],
+      clientTypes: [],
+      potentials: [],
+      clientStatuses: [],
+      portfolios: [],
+      visitResults: [],
+    });
+
+    const result = await controller.getSeedStatus();
+    expect(listAll.execute).toHaveBeenCalled();
+    expect(result).toBeDefined();
+  });
+
+  it('should run seed', async () => {
+    const { controller, seed } = setup();
+    vi.mocked(seed.execute).mockResolvedValue({
+      zonesCreated: 5,
+    } as any);
+
+    const result = await controller.runSeed();
+    expect(seed.execute).toHaveBeenCalled();
+    expect(result).toEqual({ zonesCreated: 5 });
+  });
+
   it('should get items by type', async () => {
     const { controller, listByType } = setup();
     vi.mocked(listByType.execute).mockResolvedValue([
@@ -78,7 +105,7 @@ describe('CatalogsController', () => {
     expect(result[0].name).toBe('Mayorista');
   });
 
-  it('should throw BadRequestException when invalid type passed', async () => {
+  it('should throw BadRequestException when invalid type passed to getByType', async () => {
     const { controller, listByType } = setup();
     vi.mocked(listByType.execute).mockRejectedValue(
       new InvalidCatalogTypeError('bad-type'),
@@ -107,6 +134,17 @@ describe('CatalogsController', () => {
     expect(result.name).toBe('Distribuidor');
   });
 
+  it('should throw BadRequestException when invalid type passed to create', async () => {
+    const { controller, createItem } = setup();
+    vi.mocked(createItem.execute).mockRejectedValue(
+      new InvalidCatalogTypeError('bad-type'),
+    );
+
+    await expect(
+      controller.create('bad-type', { name: 'Invalid' }),
+    ).rejects.toThrow(BadRequestException);
+  });
+
   it('should update a catalog item using PATCH', async () => {
     const { controller, updateItem } = setup();
     vi.mocked(updateItem.execute).mockResolvedValue(
@@ -125,6 +163,17 @@ describe('CatalogsController', () => {
     expect(result.name).toBe('Distribuidor Plus');
   });
 
+  it('should throw BadRequestException when invalid type passed to update', async () => {
+    const { controller, updateItem } = setup();
+    vi.mocked(updateItem.execute).mockRejectedValue(
+      new InvalidCatalogTypeError('bad-type'),
+    );
+
+    await expect(
+      controller.update('bad-type', 1, { name: 'Invalid' }),
+    ).rejects.toThrow(BadRequestException);
+  });
+
   it('should throw NotFoundException if item to update not found', async () => {
     const { controller, updateItem } = setup();
     vi.mocked(updateItem.execute).mockRejectedValue(
@@ -134,5 +183,19 @@ describe('CatalogsController', () => {
     await expect(
       controller.update('client-types', 999, { name: 'X' }),
     ).rejects.toThrow(NotFoundException);
+  });
+
+  it('should rethrow unexpected errors', async () => {
+    const { controller, listByType, createItem, updateItem } = setup();
+    const err = new Error('Unexpected catalog error');
+
+    vi.mocked(listByType.execute).mockRejectedValueOnce(err);
+    await expect(controller.getByType('client-types')).rejects.toThrow(err);
+
+    vi.mocked(createItem.execute).mockRejectedValueOnce(err);
+    await expect(controller.create('client-types', { name: 'A' })).rejects.toThrow(err);
+
+    vi.mocked(updateItem.execute).mockRejectedValueOnce(err);
+    await expect(controller.update('client-types', 1, { name: 'A' })).rejects.toThrow(err);
   });
 });

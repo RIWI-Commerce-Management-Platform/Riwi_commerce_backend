@@ -144,10 +144,14 @@ describe('ClientHistoryController', () => {
       recordExecute.mockRejectedValueOnce(new ClientNotFoundError(404));
 
       await expect(
-        controller.recordActivity(404, {
-          action: 'note.added',
-          description: 'Note',
-        }),
+        controller.recordActivity(
+          404,
+          {
+            action: 'note.added',
+            description: 'Note',
+          },
+          'authenticated-user',
+        ),
       ).rejects.toThrow(NotFoundException);
     });
   });

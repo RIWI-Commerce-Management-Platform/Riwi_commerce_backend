@@ -10,7 +10,7 @@ import { VisitResultLinkOrmEntity } from '../visit-result-link.orm-entity.js';
 
 import { VisitResultOptionOrmEntity } from '../visit-result-option.orm-entity.js';
 
-import { VisitStatus } from '../../domain/visit.entity.js';
+import { Visit, VisitStatus } from '../../domain/visit.entity.js';
 
 type MockRepository = {
   find: ReturnType<typeof vi.fn>;
@@ -20,7 +20,9 @@ type MockRepository = {
   manager: { transaction: ReturnType<typeof vi.fn> };
 };
 
-function buildVisitEntity(overrides: Partial<VisitOrmEntity> = {}): VisitOrmEntity {
+function buildVisitEntity(
+  overrides: Partial<VisitOrmEntity> = {},
+): VisitOrmEntity {
   const entity = new VisitOrmEntity();
   entity.id = 1;
   entity.clientId = 10;
@@ -63,19 +65,29 @@ describe('TypeOrmVisitDao', () => {
   let mockManager: { transaction: ReturnType<typeof vi.fn> };
 
   beforeEach(() => {
-    mockManager = { transaction: vi.fn() };
+    mockManager = {
+      transaction: vi.fn((cb) => {
+        const mgr = {
+          getRepository: (entity: any) => {
+            if (entity === VisitOrmEntity) return mockRepository;
+            return mockLinkRepository;
+          },
+        };
+        return cb(mgr);
+      }),
+    };
     mockRepository = {
       find: vi.fn().mockResolvedValue([]),
       findOne: vi.fn().mockResolvedValue(null),
-      save: vi.fn(),
+      save: vi.fn((entity) => Promise.resolve(entity)),
       delete: vi.fn(),
       manager: mockManager,
     };
     mockLinkRepository = {
       find: vi.fn().mockResolvedValue([]),
       findOne: vi.fn(),
-      save: vi.fn(),
-      delete: vi.fn(),
+      save: vi.fn((entity) => Promise.resolve(entity)),
+      delete: vi.fn().mockResolvedValue(undefined),
       manager: mockManager,
     };
     mockOptionRepository = {
@@ -135,6 +147,17 @@ describe('TypeOrmVisitDao', () => {
     });
   });
 
+  it('findById returns domain visit when found and null when not found', async () => {
+    mockRepository.findOne.mockResolvedValueOnce(null);
+    expect(await dao.findById(99)).toBeNull();
+
+    mockRepository.findOne.mockResolvedValueOnce(buildVisitEntity());
+    mockLinkRepository.find.mockResolvedValueOnce([]);
+
+    const found = await dao.findById(1);
+    expect(found?.id).toBe(1);
+  });
+
   it('loads result links and catalog names explicitly (no ORM relations)', async () => {
     mockRepository.findOne.mockResolvedValue(buildVisitEntity());
     mockLinkRepository.find.mockResolvedValue([
@@ -152,7 +175,9 @@ describe('TypeOrmVisitDao', () => {
       { id: 1, name: 'Visita realizada', observation: undefined },
       { id: 2, name: 'Pedido capturado', observation: 'Con seguimiento' },
     ]);
-    expect(mockLinkRepository.find).toHaveBeenCalledWith({ where: { visitId: 1 } });
+    expect(mockLinkRepository.find).toHaveBeenCalledWith({
+      where: { visitId: 1 },
+    });
     expect(mockOptionRepository.find).toHaveBeenCalledTimes(1);
   });
 
@@ -164,5 +189,58 @@ describe('TypeOrmVisitDao', () => {
 
     expect(result?.results).toEqual([]);
     expect(mockOptionRepository.find).not.toHaveBeenCalled();
+  });
+
+  it('save should persist visit and its result links within transaction', async () => {
+    const visitDomain = new Visit({
+      id: 1,
+      clientId: 10,
+      advisorId: 20,
+      routeId: null,
+      scheduledAt: new Date('2026-10-20'),
+      status: VisitStatus.VISITED,
+      actualDate: new Date('2026-10-20'),
+      startTime: '09:00',
+      endTime: '10:00',
+      objective: 'Presentar catalogo',
+      observations: 'obs',
+      results: [{ id: 1, name: 'Visita realizada', observation: 'Nota' }],
+    });
+
+    mockRepository.save.mockResolvedValue(buildVisitEntity());
+    mockLinkRepository.find.mockResolvedValue([buildLink(1, 'Nota')]);
+    mockOptionRepository.find.mockResolvedValue([
+      buildOption(1, 'Visita realizada'),
+    ]);
+
+    const saved = await dao.save(visitDomain);
+    expect(saved.id).toBe(1);
+    expect(mockLinkRepository.delete).toHaveBeenCalledWith({ visitId: 1 });
+    expect(mockLinkRepository.save).toHaveBeenCalled();
+  });
+
+  it('save without results should persist without saving links', async () => {
+    const visitDomain = new Visit({
+      id: 2,
+      clientId: 10,
+      advisorId: 20,
+      routeId: null,
+      scheduledAt: new Date('2026-10-20'),
+      status: VisitStatus.PENDING,
+      actualDate: null,
+      startTime: null,
+      endTime: null,
+      objective: 'Presentar',
+      results: [],
+    });
+
+    mockRepository.save.mockResolvedValue(
+      buildVisitEntity({ id: 2, status: VisitStatus.PENDING }),
+    );
+    mockLinkRepository.find.mockResolvedValue([]);
+
+    const saved = await dao.save(visitDomain);
+    expect(saved.id).toBe(2);
+    expect(mockLinkRepository.delete).not.toHaveBeenCalled();
   });
 });

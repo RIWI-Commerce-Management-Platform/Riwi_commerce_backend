@@ -222,5 +222,21 @@ describe('ClientsController', () => {
         controller.toggleStatus(999, { isActive: false }),
       ).rejects.toThrow(NotFoundException);
     });
+
+    it('should rethrow unexpected errors', async () => {
+      const err = new Error('Database connection failed');
+
+      getClientByIdExecute.mockRejectedValueOnce(err);
+      await expect(controller.getClientById(1)).rejects.toThrow(err);
+
+      createExecute.mockRejectedValueOnce(err);
+      await expect(controller.create({} as any)).rejects.toThrow(err);
+
+      updateExecute.mockRejectedValueOnce(err);
+      await expect(controller.update(1, {} as any)).rejects.toThrow(err);
+
+      toggleStatusExecute.mockRejectedValueOnce(err);
+      await expect(controller.toggleStatus(1)).rejects.toThrow(err);
+    });
   });
 });
