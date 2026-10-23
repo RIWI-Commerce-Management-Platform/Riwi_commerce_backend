@@ -2,9 +2,14 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Order } from '../domain/order.entity.js';
-import { OrderRepository } from '../domain/order.repository.js';
+import { OrderRepository, ListOrdersFilter } from '../domain/order.repository.js';
 import { OrderOrmEntity } from './order.orm-entity.js';
 import { OrderMapper } from './order.mapper.js';
+import { PaginatedResult } from '../../../shared/pagination/paginated-result.interface.js';
+import {
+  applyCommercialFilters,
+  paginateQuery,
+} from '../../../shared/pagination/typeorm-paginator.js';
 
 @Injectable()
 export class TypeOrmOrderRepository implements OrderRepository {
@@ -71,5 +76,18 @@ export class TypeOrmOrderRepository implements OrderRepository {
       const nextSequential = Number.parseInt(matches[1], 10) + 1;
       return `PED-${String(nextSequential).padStart(4, '0')}`;
     }
+  }
+
+  async findPaginated(filter: ListOrdersFilter): Promise<PaginatedResult<Order>> {
+    const query = this.ormRepository.createQueryBuilder('order');
+    applyCommercialFilters(query, 'order', filter);
+    query.orderBy('order.createdAt', 'DESC');
+
+    return paginateQuery({
+      query,
+      page: filter.page,
+      limit: filter.limit,
+      transform: (entity) => OrderMapper.toDomain(entity),
+    });
   }
 }

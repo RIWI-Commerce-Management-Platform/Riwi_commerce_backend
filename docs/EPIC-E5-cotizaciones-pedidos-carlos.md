@@ -27,8 +27,8 @@ Centralizar y asegurar el ciclo comercial completo de la plataforma:
 | **HU-30** | Crear cotización con productos (`COT-0001`) | **Alta** | ✅ **Completada** | [`HU-30.md`](./HU-30.md) |
 | **HU-31** | Adjuntar soporte comercial/documento a cotización en S3 | **Alta** | ✅ **Completada** | [`HU-31.md`](./HU-31.md) |
 | **HU-32** | Cambiar estado de cotización con auditoría transversal | **Alta** | ✅ **Completada** | [`HU-32.md`](./HU-32.md) |
-| **HU-33** | Convertir cotización aprobada en pedido (`PED-0001`) | **Alta** | ⏳ **Siguiente paso** | [`HU-33.md`](./HU-33.md) |
-| **HU-34** | Listar cotizaciones y pedidos con filtros y paginación | **Media** | ⏳ **Pendiente** | [`HU-34.md`](./HU-34.md) |
+| **HU-33** | Convertir cotización aprobada en pedido (`PED-0001`) | **Alta** | ✅ **Completada** | [`HU-33.md`](./HU-33.md) |
+| **HU-34** | Listar cotizaciones y pedidos con filtros y paginación | **Media** | ✅ **Completada** | [`HU-34.md`](./HU-34.md) |
 
 ---
 

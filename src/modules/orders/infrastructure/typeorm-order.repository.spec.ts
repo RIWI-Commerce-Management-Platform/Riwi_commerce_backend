@@ -123,4 +123,56 @@ describe('TypeOrmOrderRepository (Infrastructure)', () => {
       expect(nextNum).toBe('PED-0004');
     });
   });
+
+  describe('findPaginated', () => {
+    it('queries paginated orders with all filters applied', async () => {
+      const qbMock: any = {
+        andWhere: vi.fn().mockReturnThis(),
+        orderBy: vi.fn().mockReturnThis(),
+        skip: vi.fn().mockReturnThis(),
+        take: vi.fn().mockReturnThis(),
+        getManyAndCount: vi.fn().mockResolvedValue([[mockOrmEntity], 1]),
+      };
+      ormRepo.createQueryBuilder = vi.fn().mockReturnValue(qbMock);
+
+      const result = await repository.findPaginated({
+        clientId: 5,
+        status: 'CREATED',
+        startDate: '2026-10-01',
+        endDate: '2026-10-31',
+        page: 1,
+        limit: 10,
+      });
+
+      expect(result.data).toHaveLength(1);
+      expect(result.meta.total).toBe(1);
+      expect(qbMock.andWhere).toHaveBeenCalledWith('order.clientId = :clientId', {
+        clientId: 5,
+      });
+      expect(qbMock.andWhere).toHaveBeenCalledWith('order.status = :status', {
+        status: 'CREATED',
+      });
+    });
+
+    it('handles default page and limit fallbacks', async () => {
+      const qbMock: any = {
+        andWhere: vi.fn().mockReturnThis(),
+        orderBy: vi.fn().mockReturnThis(),
+        skip: vi.fn().mockReturnThis(),
+        take: vi.fn().mockReturnThis(),
+        getManyAndCount: vi.fn().mockResolvedValue([[], 0]),
+      };
+      ormRepo.createQueryBuilder = vi.fn().mockReturnValue(qbMock);
+
+      const result = await repository.findPaginated({
+        page: -1,
+        limit: 0,
+      });
+
+      expect(result.data).toHaveLength(0);
+      expect(result.meta.page).toBe(1);
+      expect(result.meta.limit).toBe(10);
+      expect(result.meta.totalPages).toBe(1);
+    });
+  });
 });

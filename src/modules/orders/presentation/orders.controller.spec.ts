@@ -4,6 +4,7 @@ import { OrdersController } from './orders.controller.js';
 import { ConvertQuoteToOrderUseCase } from '../application/convert-quote-to-order.use-case.js';
 import { GetOrderByIdUseCase } from '../application/get-order-by-id.use-case.js';
 import { ChangeOrderStatusUseCase } from '../application/change-order-status.use-case.js';
+import { ListOrdersUseCase } from '../application/list-orders.use-case.js';
 import { CurrentAdvisorProvider } from '../../../shared/auth/domain/current-advisor.provider.js';
 import { Order } from '../domain/order.entity.js';
 import { OrderStatus } from '../domain/order-status.enum.js';
@@ -12,12 +13,14 @@ import { QuoteNotApprovedForOrderError } from '../domain/errors/quote-not-approv
 import { QuoteAlreadyConvertedError } from '../domain/errors/quote-already-converted.error.js';
 import { InvalidOrderStatusTransitionError } from '../domain/errors/invalid-order-status-transition.error.js';
 import { QuoteNotFoundError } from '../../quotes/domain/errors/quote-not-found.error.js';
+import { ListOrdersQueryDto } from './dto/list-orders-query.dto.js';
 
 describe('OrdersController (Presentation)', () => {
   let controller: OrdersController;
   let convertQuoteToOrderUseCase: Partial<ConvertQuoteToOrderUseCase>;
   let getOrderByIdUseCase: Partial<GetOrderByIdUseCase>;
   let changeOrderStatusUseCase: Partial<ChangeOrderStatusUseCase>;
+  let listOrdersUseCase: Partial<ListOrdersUseCase>;
   let currentAdvisor: Partial<CurrentAdvisorProvider>;
 
   const mockOrder = new Order({
@@ -44,6 +47,20 @@ describe('OrdersController (Presentation)', () => {
       execute: vi.fn().mockResolvedValue(mockOrder),
     };
 
+    listOrdersUseCase = {
+      execute: vi.fn().mockResolvedValue({
+        data: [mockOrder],
+        meta: {
+          total: 1,
+          page: 1,
+          limit: 10,
+          totalPages: 1,
+          hasNextPage: false,
+          hasPreviousPage: false,
+        },
+      }),
+    };
+
     currentAdvisor = {
       extract: vi.fn().mockResolvedValue(12),
     };
@@ -52,6 +69,7 @@ describe('OrdersController (Presentation)', () => {
       convertQuoteToOrderUseCase as ConvertQuoteToOrderUseCase,
       getOrderByIdUseCase as GetOrderByIdUseCase,
       changeOrderStatusUseCase as ChangeOrderStatusUseCase,
+      listOrdersUseCase as ListOrdersUseCase,
       currentAdvisor as CurrentAdvisorProvider,
     );
   });
@@ -119,6 +137,27 @@ describe('OrdersController (Presentation)', () => {
       const req = { headers: {} } as any;
 
       await expect(controller.createFromQuote(10, req)).rejects.toThrow(err);
+    });
+  });
+
+  describe('GET /orders (HU-34)', () => {
+    it('returns paginated list of orders', async () => {
+      const query = new ListOrdersQueryDto();
+      query.page = 1;
+      query.limit = 10;
+      query.clientId = 5;
+
+      const result = await controller.list(query);
+
+      expect(result.data).toHaveLength(1);
+      expect(result.meta.total).toBe(1);
+      expect(listOrdersUseCase.execute).toHaveBeenCalledWith(
+        expect.objectContaining({
+          clientId: 5,
+          page: 1,
+          limit: 10,
+        }),
+      );
     });
   });
 

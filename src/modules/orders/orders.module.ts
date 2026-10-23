@@ -7,6 +7,7 @@ import { TypeOrmOrderRepository } from './infrastructure/typeorm-order.repositor
 import { ConvertQuoteToOrderUseCase } from './application/convert-quote-to-order.use-case.js';
 import { GetOrderByIdUseCase } from './application/get-order-by-id.use-case.js';
 import { ChangeOrderStatusUseCase } from './application/change-order-status.use-case.js';
+import { ListOrdersUseCase } from './application/list-orders.use-case.js';
 import { OrdersController } from './presentation/orders.controller.js';
 import { OrdersConversionController } from './presentation/orders-conversion.controller.js';
 import { QuotesModule } from '../quotes/quotes.module.js';
@@ -25,6 +26,7 @@ import { AuthModule } from '../../shared/auth/auth.module.js';
     ConvertQuoteToOrderUseCase,
     GetOrderByIdUseCase,
     ChangeOrderStatusUseCase,
+    ListOrdersUseCase,
     { provide: OrderRepository, useClass: TypeOrmOrderRepository },
   ],
   exports: [
@@ -32,6 +34,7 @@ import { AuthModule } from '../../shared/auth/auth.module.js';
     ConvertQuoteToOrderUseCase,
     GetOrderByIdUseCase,
     ChangeOrderStatusUseCase,
+    ListOrdersUseCase,
   ],
 })
 export class OrdersModule {}
