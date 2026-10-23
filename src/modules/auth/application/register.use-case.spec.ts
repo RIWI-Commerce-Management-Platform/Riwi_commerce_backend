@@ -1,9 +1,11 @@
 import { describe, expect, it, vi } from 'vitest';
+import { Logger } from '@nestjs/common';
 import { AuthService } from '@thallesp/nestjs-better-auth';
 import { RegisterUseCase } from './register.use-case.js';
 import { RegistrationFailedError } from '../domain/errors/registration-failed.error.js';
 
 describe('RegisterUseCase', () => {
+  vi.spyOn(Logger.prototype, 'error').mockImplementation(() => {});
   const createMockAuthService = (signUpEmailFn: any) =>
     ({
       api: {

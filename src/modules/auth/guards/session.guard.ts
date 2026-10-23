@@ -48,13 +48,16 @@ export class SessionGuard implements CanActivate {
       return true;
     }
     const authorization = request.headers?.authorization;
-    const match =
-      typeof authorization === 'string'
-        ? /^Bearer\s+(.+)$/i.exec(authorization)
-        : null;
+    let bearerToken: string | null = null;
+    if (typeof authorization === 'string') {
+      const parts = authorization.trim().split(/\s+/);
+      if (parts.length >= 2 && parts[0].toLowerCase() === 'bearer') {
+        bearerToken = parts.slice(1).join(' ');
+      }
+    }
 
-    const claims = match
-      ? await this.tokenService.authenticateAccess(match[1])
+    const claims = bearerToken
+      ? await this.tokenService.authenticateAccess(bearerToken)
       : null;
     const betterAuthSession = claims
       ? null
@@ -91,7 +94,10 @@ export class SessionGuard implements CanActivate {
         where: { idUsuario: user.id },
         select: { idAsesor: true, correo: true },
       });
-      if (!advisor || advisor.correo.toLowerCase() !== user.email.toLowerCase()) {
+      if (
+        !advisor ||
+        advisor.correo.toLowerCase() !== user.email.toLowerCase()
+      ) {
         throw new UnauthorizedException(
           'The authenticated advisor is not linked to a matching advisor record',
         );

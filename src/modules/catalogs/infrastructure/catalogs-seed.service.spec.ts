@@ -1,8 +1,11 @@
 import { describe, expect, it, vi } from 'vitest';
+import { Logger } from '@nestjs/common';
 import { CatalogsSeedService } from './catalogs-seed.service.js';
 import { SeedCatalogsUseCase } from '../application/seed-catalogs.use-case.js';
 
 describe('CatalogsSeedService', () => {
+  vi.spyOn(Logger.prototype, 'error').mockImplementation(() => {});
+  vi.spyOn(Logger.prototype, 'log').mockImplementation(() => {});
   it('should call seedCatalogsUseCase.execute onApplicationBootstrap successfully', async () => {
     const seedCatalogsUseCase = {
       execute: vi.fn().mockResolvedValue({ counts: { zones: 5 } }),

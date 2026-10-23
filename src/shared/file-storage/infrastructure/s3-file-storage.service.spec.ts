@@ -1,4 +1,5 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest';
+import { Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { S3FileStorageService } from './s3-file-storage.service.js';
 import { FileSizeExceededError } from '../domain/errors/file-size-exceeded.error.js';
@@ -15,6 +16,7 @@ describe('S3FileStorageService', () => {
   let mockConfigService: Partial<ConfigService>;
 
   beforeEach(() => {
+    vi.spyOn(Logger.prototype, 'log').mockImplementation(() => {});
     mockConfigService = {
       get: vi.fn((key: string) => {
         if (key === 'aws.region') return 'us-east-1';

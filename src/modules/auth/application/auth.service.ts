@@ -50,7 +50,10 @@ export class AuthService implements OnModuleInit {
     if (!email || !password) {
       return;
     }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || password.length < 12) {
+    if (
+      !/^[^\s@]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)+$/.test(email) ||
+      password.length < 12
+    ) {
       throw new Error(
         'Initial administrator email must be valid and password must be at least 12 characters',
       );
@@ -120,7 +123,7 @@ export class AuthService implements OnModuleInit {
       typeof dto.name !== 'string' ||
       dto.name.trim().length < 2 ||
       typeof dto.email !== 'string' ||
-      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(dto.email) ||
+      !/^[^\s@]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)+$/.test(dto.email) ||
       typeof dto.password !== 'string' ||
       dto.password.length < 8 ||
       dto.password.length > 128
@@ -243,7 +246,10 @@ export class AuthService implements OnModuleInit {
 
   async login(dto: LoginDto): Promise<AuthResponse> {
     if (
-      !dto ||typeof dto.email !== 'string' || typeof dto.password !== 'string') {
+      !dto ||
+      typeof dto.email !== 'string' ||
+      typeof dto.password !== 'string'
+    ) {
       throw new UnauthorizedException('Incorrect email or password');
     }
 

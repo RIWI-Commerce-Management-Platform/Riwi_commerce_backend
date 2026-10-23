@@ -1,9 +1,11 @@
 import { describe, expect, it, vi } from 'vitest';
+import { Logger } from '@nestjs/common';
 import { AuthService } from '@thallesp/nestjs-better-auth';
 import { LoginUseCase } from './login.use-case.js';
 import { InvalidCredentialsError } from '../domain/errors/invalid-credentials.error.js';
 
 describe('LoginUseCase', () => {
+  vi.spyOn(Logger.prototype, 'error').mockImplementation(() => {});
   const createMockAuthService = (signInEmailFn: any) =>
     ({
       api: {

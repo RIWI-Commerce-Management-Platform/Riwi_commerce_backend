@@ -153,7 +153,7 @@ export class AdvisorService {
       if (
         typeof input.correo !== 'string' ||
         input.correo.length > 255 ||
-        !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(input.correo.trim())
+        !/^[^\s@]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)+$/.test(input.correo.trim())
       ) {
         throw new BadRequestException('correo must be a valid email address');
       }

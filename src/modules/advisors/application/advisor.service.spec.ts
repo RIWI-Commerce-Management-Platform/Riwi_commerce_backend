@@ -3,7 +3,7 @@ import {
   ConflictException,
   NotFoundException,
 } from '@nestjs/common';
-import { Repository } from 'typeorm';
+import { QueryFailedError, Repository } from 'typeorm';
 import { UserRole } from '../../auth/domain/user-role.enum.js';
 import { UserOrmEntity } from '../../auth/infrastructure/user.orm-entity.js';
 import { AdvisorOrmEntity } from '../infrastructure/advisor.orm-entity.js';
@@ -117,6 +117,12 @@ describe('AdvisorService', () => {
     advisor.estado = true;
   });
 
+  it('throws NotFoundException when getting active advisor that does not exist', async () => {
+    await expect(
+      service.getActiveForRouteAssignment(999),
+    ).rejects.toBeInstanceOf(NotFoundException);
+  });
+
   it('deactivates and reactivates via status updates without physical deletion', async () => {
     await service.deactivate(advisor.idAsesor);
     expect(advisor.estado).toBe(false);
@@ -151,5 +157,80 @@ describe('AdvisorService', () => {
         idUsuario: 'user-1',
       }),
     ).rejects.toBeInstanceOf(BadRequestException);
+  });
+
+  it('lists advisors including or excluding inactive', async () => {
+    await service.list(true);
+    expect(advisorRepository.find).toHaveBeenCalledWith({
+      where: undefined,
+      order: { idAsesor: 'ASC' },
+    });
+
+    await service.list(false);
+    expect(advisorRepository.find).toHaveBeenCalledWith({
+      where: { estado: true },
+      order: { idAsesor: 'ASC' },
+    });
+  });
+
+  it('gets advisor by id or throws NotFoundException', async () => {
+    const found = await service.getById(1);
+    expect(found).toBe(advisor);
+
+    await expect(service.getById(999)).rejects.toBeInstanceOf(
+      NotFoundException,
+    );
+  });
+
+  it('updates advisor fields successfully', async () => {
+    const updated = await service.update(1, {
+      nombre: 'Ana María Pérez',
+      correo: 'ana@example.com',
+      telefono: '3109876543',
+    });
+    expect(updated.nombre).toBe('Ana María Pérez');
+    expect(advisorRepository.save).toHaveBeenCalled();
+  });
+
+  it('rethrows query failed error as ConflictException when duplicate constraint hits', async () => {
+    const queryError1 = new QueryFailedError(
+      'query',
+      [],
+      new Error('duplicate'),
+    );
+    (queryError1 as any).driverError = {
+      code: '23505',
+      constraint: 'advisor_correo_unique',
+    };
+    advisorRepository.save.mockRejectedValueOnce(queryError1);
+
+    await expect(
+      service.create({
+        nombre: 'Ana Pérez',
+        correo: 'ana@example.com',
+        telefono: '3001234567',
+        idUsuario: 'user-1',
+      }),
+    ).rejects.toThrow(ConflictException);
+
+    const queryError2 = new QueryFailedError(
+      'query',
+      [],
+      new Error('duplicate'),
+    );
+    (queryError2 as any).driverError = {
+      code: '23505',
+      constraint: 'fk_id_usuario',
+    };
+    advisorRepository.save.mockRejectedValueOnce(queryError2);
+
+    await expect(
+      service.create({
+        nombre: 'Ana Pérez',
+        correo: 'ana@example.com',
+        telefono: '3001234567',
+        idUsuario: 'user-1',
+      }),
+    ).rejects.toThrow(ConflictException);
   });
 });
