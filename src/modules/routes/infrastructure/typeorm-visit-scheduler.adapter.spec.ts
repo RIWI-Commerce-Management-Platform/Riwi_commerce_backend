@@ -9,6 +9,7 @@ describe('TypeOrmVisitSchedulerAdapter', () => {
   const createMockVisitRepo = () => {
     return {
       save: vi.fn().mockImplementation((visits) => Promise.resolve(visits)),
+      delete: vi.fn().mockResolvedValue({ affected: 0 }),
     } as unknown as Repository<VisitOrmEntity>;
   };
 
@@ -59,9 +60,95 @@ describe('TypeOrmVisitSchedulerAdapter', () => {
     expect(count).toBeGreaterThan(0);
     expect(repo.save).toHaveBeenCalled();
 
-    const savedVisits = vi.mocked(repo.save).mock.calls[0][0] as VisitOrmEntity[];
+    const savedVisits = vi.mocked(repo.save).mock
+      .calls[0][0] as VisitOrmEntity[];
     expect(savedVisits[0].advisorId).toBe(7);
     expect(savedVisits[0].routeId).toBe(10);
     expect(savedVisits[0].status).toBe('PENDING');
   });
+
+  it('should discard the route pending visits before scheduling (reassignment)', async () => {
+    const repo = createMockVisitRepo();
+    const adapter = new TypeOrmVisitSchedulerAdapter(repo);
+
+    await adapter.scheduleVisitsForRoute({
+      routeId: 3,
+      advisorId: 8,
+      dayOfWeek: DayOfWeek.MONDAY,
+      frequency: RouteFrequency.WEEKLY,
+      startDate: new Date('2026-10-26'),
+      stops: [],
+    });
+
+    expect(repo.delete).toHaveBeenCalledWith({ routeId: 3, status: 'PENDING' });
+  });
+
+  it.each([
+    [DayOfWeek.SUNDAY, 0],
+    [DayOfWeek.TUESDAY, 2],
+    [DayOfWeek.WEDNESDAY, 3],
+    [DayOfWeek.THURSDAY, 4],
+    [DayOfWeek.FRIDAY, 5],
+    [DayOfWeek.SATURDAY, 6],
+  ])('should schedule the first visit on %s', async (dayOfWeek, dayIndex) => {
+    const repo = createMockVisitRepo();
+    const adapter = new TypeOrmVisitSchedulerAdapter(repo);
+
+    await adapter.scheduleVisitsForRoute({
+      routeId: 1,
+      advisorId: 5,
+      dayOfWeek,
+      frequency: RouteFrequency.WEEKLY,
+      startDate: new Date('2026-10-26T00:00:00Z'),
+      stops: [
+        {
+          clientId: 1,
+          visitOrder: 1,
+          suggestedTime: null,
+          estimatedDurationMinutes: 30,
+        },
+      ],
+    });
+
+    const saved = vi.mocked(repo.save).mock.calls[0][0] as VisitOrmEntity[];
+    expect(saved[0].scheduledAt.getUTCDay()).toBe(dayIndex);
+    // Without a suggested time the visit defaults to 09:00 UTC
+    expect(saved[0].scheduledAt.getUTCHours()).toBe(9);
+  });
+
+  it.each([
+    [RouteFrequency.BIWEEKLY, 14, 4], // Oct 26, Nov 9, Nov 23, Dec 7 (end date inclusive)
+    [RouteFrequency.MONTHLY, 28, 2],
+  ])(
+    'should step %s visits every %i days until the end date',
+    async (frequency, stepDays, expectedVisits) => {
+      const repo = createMockVisitRepo();
+      const adapter = new TypeOrmVisitSchedulerAdapter(repo);
+
+      const count = await adapter.scheduleVisitsForRoute({
+        routeId: 1,
+        advisorId: 5,
+        dayOfWeek: DayOfWeek.MONDAY,
+        frequency,
+        startDate: new Date('2026-10-26T00:00:00Z'),
+        endDate: new Date('2026-12-07T00:00:00Z'),
+        stops: [
+          {
+            clientId: 1,
+            visitOrder: 1,
+            suggestedTime: '14:30',
+            estimatedDurationMinutes: 30,
+          },
+        ],
+      });
+
+      const saved = vi.mocked(repo.save).mock.calls[0][0] as VisitOrmEntity[];
+      expect(count).toBe(expectedVisits);
+      const gapMs =
+        saved[1].scheduledAt.getTime() - saved[0].scheduledAt.getTime();
+      expect(gapMs).toBe(stepDays * 24 * 60 * 60 * 1000);
+      expect(saved[0].scheduledAt.getUTCHours()).toBe(14);
+      expect(saved[0].scheduledAt.getUTCMinutes()).toBe(30);
+    },
+  );
 });

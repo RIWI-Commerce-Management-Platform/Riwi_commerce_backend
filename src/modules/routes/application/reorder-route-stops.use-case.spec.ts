@@ -89,13 +89,62 @@ describe('ReorderRouteStopsUseCase', () => {
     );
 
     const actor = {
-      id: 'dir-1',
+      id: 1,
       role: UserRole.DIRECTOR_REGIONAL,
       zoneId: 5,
     };
 
     await expect(useCase.execute(1, [103, 101, 102], actor)).rejects.toThrow(
       UnauthorizedZoneError,
+    );
+  });
+
+  it('should set metrics from the single stop when only one stop exists', async () => {
+    const route = new Route({
+      id: 2,
+      name: 'Ruta 2',
+      zoneId: 1,
+      dayOfWeek: DayOfWeek.MONDAY,
+      frequency: RouteFrequency.WEEKLY,
+      startDate: new Date('2026-10-26'),
+    });
+    route.addStop(101, '09:00:00', 45);
+    const calculator = createMockDistanceCalculator();
+    const useCase = new ReorderRouteStopsUseCase(
+      createMockRepo(route),
+      createMockClientReader(),
+      calculator,
+    );
+
+    const result = await useCase.execute(2, [101]);
+
+    expect(result.totalDistanceKm).toBe(0);
+    expect(result.estimatedDurationMinutes).toBe(45);
+    expect(calculator.calculateMetrics).not.toHaveBeenCalled();
+  });
+
+  it('should use only the stops whose clients have coordinates as waypoints', async () => {
+    const clientReader = createMockClientReader();
+    vi.mocked(clientReader.findByIds).mockResolvedValue([
+      { id: 101, latitude: 10.9, longitude: -74.8 },
+      { id: 102, latitude: 11.0, longitude: -74.7 },
+      { id: 103, latitude: null, longitude: null },
+    ] as never);
+    const calculator = createMockDistanceCalculator();
+    const useCase = new ReorderRouteStopsUseCase(
+      createMockRepo(),
+      clientReader,
+      calculator,
+    );
+
+    await useCase.execute(1, [102, 101, 103]);
+
+    expect(calculator.calculateMetrics).toHaveBeenCalledWith(
+      [
+        { latitude: 11.0, longitude: -74.7 },
+        { latitude: 10.9, longitude: -74.8 },
+      ],
+      90,
     );
   });
 });

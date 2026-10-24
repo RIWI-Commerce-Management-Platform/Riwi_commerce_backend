@@ -15,14 +15,10 @@ import {
   Post,
   Query,
   UseGuards,
+  UsePipes,
+  ValidationPipe,
 } from '@nestjs/common';
-import {
-  ApiBearerAuth,
-  ApiOperation,
-  ApiParam,
-  ApiResponse,
-  ApiTags,
-} from '@nestjs/swagger';
+import { ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { CreateRouteDraftDto } from './dto/create-route-draft.dto.js';
 import { UpdateRouteDraftDto } from './dto/update-route-draft.dto.js';
 import { AddRouteStopDto } from './dto/add-route-stop.dto.js';
@@ -60,7 +56,7 @@ import { AuthActor } from '../application/dto/auth-actor.dto.js';
 
 /**
  * Controlador HTTP para la gestión integral de Rutas Comerciales (Épica E3).
- * 
+ *
  * En mi controlador expongo las operaciones REST para el Wizard de planeación de rutas:
  * - Paso 1: Creación de datos generales y borrador (HU-17).
  * - Paso 2: Agregar, remover y reordenar paradas con visualización en mapa (HU-18 y HU-19).
@@ -69,8 +65,13 @@ import { AuthActor } from '../application/dto/auth-actor.dto.js';
  * - Métricas: Resumen logístico de distancia en km y tiempo estimado (HU-22).
  */
 @ApiTags('Routes')
-@ApiBearerAuth()
 @UseGuards(SessionGuard, RolesGuard)
+@UsePipes(
+  new ValidationPipe({
+    whitelist: true,
+    transform: true,
+  }),
+)
 @Controller('routes')
 export class RoutesController {
   constructor(
@@ -91,11 +92,25 @@ export class RoutesController {
    */
   @Post()
   @Roles(UserRole.DIRECTOR_REGIONAL, UserRole.ADMIN)
-  @ApiOperation({ summary: 'Crear una ruta comercial en estado borrador (Paso 1 del Wizard - HU-17)' })
-  @ApiResponse({ status: 201, description: 'Ruta creada exitosamente en borrador', type: RouteResponseDto })
+  @ApiOperation({
+    summary:
+      'Crear una ruta comercial en estado borrador (Paso 1 del Wizard - HU-17)',
+  })
+  @ApiResponse({
+    status: 201,
+    description: 'Ruta creada exitosamente en borrador',
+    type: RouteResponseDto,
+  })
   @ApiResponse({ status: 400, description: 'Datos de entrada inválidos' })
-  @ApiResponse({ status: 403, description: 'El Director Regional no tiene permisos sobre la zona especificada' })
-  @ApiResponse({ status: 409, description: 'Ya existe una ruta con ese nombre en la misma zona' })
+  @ApiResponse({
+    status: 403,
+    description:
+      'El Director Regional no tiene permisos sobre la zona especificada',
+  })
+  @ApiResponse({
+    status: 409,
+    description: 'Ya existe una ruta con ese nombre en la misma zona',
+  })
   async createDraft(
     @Body() dto: CreateRouteDraftDto,
     @CurrentUser() user: any,
@@ -133,7 +148,10 @@ export class RoutesController {
    */
   @Get()
   @Roles(UserRole.DIRECTOR_REGIONAL, UserRole.ADMIN, UserRole.ASESOR)
-  @ApiOperation({ summary: 'Listar rutas con filtros por asesor, zona y estado con paginación (HU-21)' })
+  @ApiOperation({
+    summary:
+      'Listar rutas con filtros por asesor, zona y estado con paginación (HU-21)',
+  })
   @ApiResponse({ status: 200, description: 'Listado paginado de rutas' })
   async findPaginated(
     @Query() query: FindRoutesQueryDto,
@@ -172,7 +190,10 @@ export class RoutesController {
   @Post('metrics/calculate')
   @HttpCode(HttpStatus.OK)
   @Roles(UserRole.DIRECTOR_REGIONAL, UserRole.ADMIN)
-  @ApiOperation({ summary: 'Calcular distancia y duración estimada para una secuencia de clientes (HU-22)' })
+  @ApiOperation({
+    summary:
+      'Calcular distancia y duración estimada para una secuencia de clientes (HU-22)',
+  })
   @ApiResponse({ status: 200, type: RouteMetricsResponseDto })
   async calculateMetrics(
     @Body() dto: CalculateMetricsDto,
@@ -189,7 +210,10 @@ export class RoutesController {
    */
   @Get(':id')
   @Roles(UserRole.DIRECTOR_REGIONAL, UserRole.ADMIN, UserRole.ASESOR)
-  @ApiOperation({ summary: 'Obtener detalle de ruta con coordenadas de paradas para Leaflet (HU-19 y HU-21)' })
+  @ApiOperation({
+    summary:
+      'Obtener detalle de ruta con coordenadas de paradas para Leaflet (HU-19 y HU-21)',
+  })
   @ApiParam({ name: 'id', description: 'ID de la ruta' })
   @ApiResponse({ status: 200, type: RouteResponseDto })
   @ApiResponse({ status: 404, description: 'Ruta no encontrada' })
@@ -216,7 +240,9 @@ export class RoutesController {
    */
   @Patch(':id')
   @Roles(UserRole.DIRECTOR_REGIONAL, UserRole.ADMIN)
-  @ApiOperation({ summary: 'Actualizar datos generales de la ruta (HU-17 y HU-21)' })
+  @ApiOperation({
+    summary: 'Actualizar datos generales de la ruta (HU-17 y HU-21)',
+  })
   @ApiParam({ name: 'id', description: 'ID de la ruta' })
   @ApiResponse({ status: 200, type: RouteResponseDto })
   async updateDraft(
@@ -258,7 +284,9 @@ export class RoutesController {
    */
   @Patch(':id/status')
   @Roles(UserRole.DIRECTOR_REGIONAL, UserRole.ADMIN)
-  @ApiOperation({ summary: 'Alternar estado activo/inactivo (Soft delete) (HU-21)' })
+  @ApiOperation({
+    summary: 'Alternar estado activo/inactivo (Soft delete) (HU-21)',
+  })
   @ApiParam({ name: 'id', description: 'ID de la ruta' })
   @ApiResponse({ status: 200, type: RouteResponseDto })
   async toggleStatus(
@@ -284,7 +312,10 @@ export class RoutesController {
    */
   @Post(':id/stops')
   @Roles(UserRole.DIRECTOR_REGIONAL, UserRole.ADMIN)
-  @ApiOperation({ summary: 'Agregar un cliente como parada a la ruta (Paso 2 del Wizard - HU-18)' })
+  @ApiOperation({
+    summary:
+      'Agregar un cliente como parada a la ruta (Paso 2 del Wizard - HU-18)',
+  })
   @ApiParam({ name: 'id', description: 'ID de la ruta' })
   @ApiResponse({ status: 201, type: RouteResponseDto })
   async addStop(
@@ -336,7 +367,11 @@ export class RoutesController {
         zoneId: user.zoneId,
       };
 
-      const route = await this.removeRouteStopUseCase.execute(id, clientId, actor);
+      const route = await this.removeRouteStopUseCase.execute(
+        id,
+        clientId,
+        actor,
+      );
       return RouteResponseDto.fromDomain(route);
     } catch (err) {
       this._handleDomainError(err);
@@ -348,7 +383,10 @@ export class RoutesController {
    */
   @Patch(':id/stops/reorder')
   @Roles(UserRole.DIRECTOR_REGIONAL, UserRole.ADMIN)
-  @ApiOperation({ summary: 'Reordenar paradas para el mapa interactivo y drag-and-drop (HU-18 y HU-19)' })
+  @ApiOperation({
+    summary:
+      'Reordenar paradas para el mapa interactivo y drag-and-drop (HU-18 y HU-19)',
+  })
   @ApiParam({ name: 'id', description: 'ID de la ruta' })
   @ApiResponse({ status: 200, type: RouteResponseDto })
   async reorderStops(
@@ -380,7 +418,10 @@ export class RoutesController {
    */
   @Post(':id/assign')
   @Roles(UserRole.DIRECTOR_REGIONAL, UserRole.ADMIN)
-  @ApiOperation({ summary: 'Asignar ruta a asesor y programar visitas en su agenda (Paso 3 - HU-20)' })
+  @ApiOperation({
+    summary:
+      'Asignar ruta a asesor y programar visitas en su agenda (Paso 3 - HU-20)',
+  })
   @ApiParam({ name: 'id', description: 'ID de la ruta' })
   @ApiResponse({ status: 200, type: RouteResponseDto })
   async assignAdvisor(
@@ -411,7 +452,10 @@ export class RoutesController {
    * Traductor de excepciones de dominio a códigos de respuesta HTTP de NestJS.
    */
   private _handleDomainError(err: unknown): never {
-    if (err instanceof RouteNotFoundError || err instanceof ClientNotInRouteError) {
+    if (
+      err instanceof RouteNotFoundError ||
+      err instanceof ClientNotInRouteError
+    ) {
       throw new NotFoundException(err.message);
     }
     if (err instanceof RouteNameAlreadyExistsError) {

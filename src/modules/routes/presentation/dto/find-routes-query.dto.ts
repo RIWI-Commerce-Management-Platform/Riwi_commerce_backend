@@ -1,10 +1,23 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { Type } from 'class-transformer';
-import { IsBoolean, IsEnum, IsInt, IsOptional, IsPositive, IsString } from 'class-validator';
+import { Transform, Type } from 'class-transformer';
+import {
+  IsBoolean,
+  IsEnum,
+  IsInt,
+  IsOptional,
+  IsPositive,
+  IsString,
+} from 'class-validator';
 import { PaginationQueryDto } from '../../../../shared/pagination/pagination-query.dto.js';
 import { DayOfWeek } from '../../domain/day-of-week.enum.js';
 import { RouteFrequency } from '../../domain/route-frequency.enum.js';
 import { RouteStatus } from '../../domain/route-status.enum.js';
+
+function parseBooleanQuery(value: unknown): unknown {
+  if (value === 'true') return true;
+  if (value === 'false') return false;
+  return value;
+}
 
 /**
  * Parámetros de consulta para filtrar el listado paginado de rutas comerciales (HU-21).
@@ -62,7 +75,8 @@ export class FindRoutesQueryDto extends PaginationQueryDto {
     example: true,
   })
   @IsOptional()
-  @Type(() => Boolean)
+  // @Type(() => Boolean) would turn the string "false" into true
+  @Transform(({ value }) => parseBooleanQuery(value))
   @IsBoolean()
   isActive?: boolean;
 

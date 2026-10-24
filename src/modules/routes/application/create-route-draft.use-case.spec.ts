@@ -54,7 +54,7 @@ describe('CreateRouteDraftUseCase', () => {
     const useCase = new CreateRouteDraftUseCase(repository);
 
     const actor = {
-      id: 'dir-1',
+      id: 1,
       role: UserRole.DIRECTOR_REGIONAL,
       zoneId: 2, // Zone 2, but command is for Zone 1
     };
@@ -69,7 +69,7 @@ describe('CreateRouteDraftUseCase', () => {
     const useCase = new CreateRouteDraftUseCase(repository);
 
     const actor = {
-      id: 'admin-1',
+      id: 2,
       role: UserRole.ADMIN,
     };
 

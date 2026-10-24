@@ -57,7 +57,7 @@ describe('UpdateRouteDraftUseCase', () => {
     const useCase = new UpdateRouteDraftUseCase(repository);
 
     const actor = {
-      id: 'dir-1',
+      id: 1,
       role: UserRole.DIRECTOR_REGIONAL,
       zoneId: 2,
     };
@@ -84,5 +84,17 @@ describe('UpdateRouteDraftUseCase', () => {
     await expect(
       useCase.execute(1, { name: 'Ruta Existente' }),
     ).rejects.toThrow(RouteNameAlreadyExistsError);
+  });
+
+  it('should forbid a director from moving a route to another zone', async () => {
+    const useCase = new UpdateRouteDraftUseCase(createMockRepository());
+
+    await expect(
+      useCase.execute(
+        1,
+        { zoneId: 2 },
+        { id: 1, role: UserRole.DIRECTOR_REGIONAL, zoneId: 1 },
+      ),
+    ).rejects.toBeInstanceOf(UnauthorizedZoneError);
   });
 });

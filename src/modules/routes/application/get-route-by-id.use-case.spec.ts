@@ -1,7 +1,10 @@
 import { describe, expect, it, vi } from 'vitest';
 import { GetRouteByIdUseCase } from './get-route-by-id.use-case.js';
 import { RouteRepository } from '../domain/route.repository.js';
-import { RouteClientReaderPort, RouteClientDetails } from './ports/route-client-reader.port.js';
+import {
+  RouteClientReaderPort,
+  RouteClientDetails,
+} from './ports/route-client-reader.port.js';
 import { Route } from '../domain/route.entity.js';
 import { DayOfWeek } from '../domain/day-of-week.enum.js';
 import { RouteFrequency } from '../domain/route-frequency.enum.js';
@@ -90,7 +93,7 @@ describe('GetRouteByIdUseCase', () => {
 
     const useCase = new GetRouteByIdUseCase(repo, clientReader);
     const actor = {
-      id: 'dir-1',
+      id: 1,
       role: UserRole.DIRECTOR_REGIONAL,
       zoneId: 88,
     };

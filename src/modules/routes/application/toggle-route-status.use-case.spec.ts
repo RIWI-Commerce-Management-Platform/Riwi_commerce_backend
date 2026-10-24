@@ -81,7 +81,7 @@ describe('ToggleRouteStatusUseCase', () => {
 
     const useCase = new ToggleRouteStatusUseCase(repo);
     const actor = {
-      id: 'dir-1',
+      id: 1,
       role: UserRole.DIRECTOR_REGIONAL,
       zoneId: 77,
     };

@@ -83,7 +83,7 @@ describe('RemoveRouteStopUseCase', () => {
     );
 
     const actor = {
-      id: 'dir-1',
+      id: 1,
       role: UserRole.DIRECTOR_REGIONAL,
       zoneId: 99,
     };
@@ -91,5 +91,77 @@ describe('RemoveRouteStopUseCase', () => {
     await expect(useCase.execute(1, 101, actor)).rejects.toThrow(
       UnauthorizedZoneError,
     );
+  });
+
+  it('should recalculate metrics with the coordinates of the remaining stops', async () => {
+    const route = createRouteWithStops();
+    route.addStop(103, '11:00:00', 20);
+    const clientReader = createMockClientReader();
+    vi.mocked(clientReader.findByIds).mockResolvedValue([
+      { id: 102, latitude: 10.96, longitude: -74.79 },
+      // A client without coordinates is skipped as a waypoint
+      { id: 103, latitude: null, longitude: null },
+    ] as never);
+    const calculator = createMockDistanceCalculator();
+    vi.mocked(calculator.calculateMetrics).mockResolvedValue({
+      totalDistanceKm: 4.2,
+      estimatedDurationMinutes: 65,
+    });
+    const useCase = new RemoveRouteStopUseCase(
+      createMockRepo(route),
+      clientReader,
+      calculator,
+    );
+
+    const result = await useCase.execute(1, 101);
+
+    expect(clientReader.findByIds).toHaveBeenCalledWith([102, 103]);
+    expect(calculator.calculateMetrics).toHaveBeenCalledWith(
+      [{ latitude: 10.96, longitude: -74.79 }],
+      50,
+    );
+    expect(result.totalDistanceKm).toBe(4.2);
+    expect(result.estimatedDurationMinutes).toBe(65);
+  });
+
+  it('should reset metrics to zero when the last stop is removed', async () => {
+    const route = new Route({
+      id: 2,
+      name: 'Ruta 2',
+      zoneId: 1,
+      dayOfWeek: DayOfWeek.MONDAY,
+      frequency: RouteFrequency.WEEKLY,
+      startDate: new Date('2026-10-26'),
+    });
+    route.addStop(101, '09:00:00', 30);
+    const calculator = createMockDistanceCalculator();
+    const useCase = new RemoveRouteStopUseCase(
+      createMockRepo(route),
+      createMockClientReader(),
+      calculator,
+    );
+
+    const result = await useCase.execute(2, 101);
+
+    expect(result.stops).toHaveLength(0);
+    expect(result.totalDistanceKm).toBe(0);
+    expect(result.estimatedDurationMinutes).toBe(0);
+    expect(calculator.calculateMetrics).not.toHaveBeenCalled();
+  });
+
+  it('should allow a director to edit a route in their own zone', async () => {
+    const useCase = new RemoveRouteStopUseCase(
+      createMockRepo(),
+      createMockClientReader(),
+      createMockDistanceCalculator(),
+    );
+
+    const result = await useCase.execute(1, 101, {
+      id: 1,
+      role: UserRole.DIRECTOR_REGIONAL,
+      zoneId: 1,
+    });
+
+    expect(result.stops).toHaveLength(1);
   });
 });

@@ -29,25 +29,49 @@ describe('RoutesController', () => {
   });
 
   const mockUser = {
-    id: 'user-1',
+    id: 1,
     role: UserRole.DIRECTOR_REGIONAL,
     zoneId: 1,
   };
 
   const createMockUseCases = () => ({
-    createRouteDraftUseCase: { execute: vi.fn().mockResolvedValue(mockRoute) } as any,
-    updateRouteDraftUseCase: { execute: vi.fn().mockResolvedValue(mockRoute) } as any,
-    addRouteStopUseCase: { execute: vi.fn().mockResolvedValue(mockRoute) } as any,
-    removeRouteStopUseCase: { execute: vi.fn().mockResolvedValue(mockRoute) } as any,
-    reorderRouteStopsUseCase: { execute: vi.fn().mockResolvedValue(mockRoute) } as any,
-    assignRouteAdvisorUseCase: { execute: vi.fn().mockResolvedValue(mockRoute) } as any,
+    createRouteDraftUseCase: {
+      execute: vi.fn().mockResolvedValue(mockRoute),
+    } as any,
+    updateRouteDraftUseCase: {
+      execute: vi.fn().mockResolvedValue(mockRoute),
+    } as any,
+    addRouteStopUseCase: {
+      execute: vi.fn().mockResolvedValue(mockRoute),
+    } as any,
+    removeRouteStopUseCase: {
+      execute: vi.fn().mockResolvedValue(mockRoute),
+    } as any,
+    reorderRouteStopsUseCase: {
+      execute: vi.fn().mockResolvedValue(mockRoute),
+    } as any,
+    assignRouteAdvisorUseCase: {
+      execute: vi.fn().mockResolvedValue(mockRoute),
+    } as any,
     calculateRouteMetricsUseCase: {
-      execute: vi.fn().mockResolvedValue({ totalDistanceKm: 10, estimatedDurationMinutes: 60 }),
+      execute: vi
+        .fn()
+        .mockResolvedValue({
+          totalDistanceKm: 10,
+          estimatedDurationMinutes: 60,
+        }),
     } as any,
     findRoutesUseCase: {
       execute: vi.fn().mockResolvedValue({
         data: [mockRoute],
-        meta: { total: 1, page: 1, limit: 10, totalPages: 1, hasNextPage: false, hasPreviousPage: false },
+        meta: {
+          total: 1,
+          page: 1,
+          limit: 10,
+          totalPages: 1,
+          hasNextPage: false,
+          hasPreviousPage: false,
+        },
       }),
     } as any,
     getRouteByIdUseCase: {
@@ -56,7 +80,9 @@ describe('RoutesController', () => {
         stops: [],
       }),
     } as any,
-    toggleRouteStatusUseCase: { execute: vi.fn().mockResolvedValue(mockRoute) } as any,
+    toggleRouteStatusUseCase: {
+      execute: vi.fn().mockResolvedValue(mockRoute),
+    } as any,
   });
 
   it('should create route draft successfully', async () => {
@@ -152,7 +178,10 @@ describe('RoutesController', () => {
 
     const result = await controller.getById(1, mockUser);
     expect(result.id).toBe(1);
-    expect(useCases.getRouteByIdUseCase.execute).toHaveBeenCalledWith(1, expect.any(Object));
+    expect(useCases.getRouteByIdUseCase.execute).toHaveBeenCalledWith(
+      1,
+      expect.any(Object),
+    );
   });
 
   it('should translate RouteNotFoundError to NotFoundException', async () => {
@@ -291,7 +320,10 @@ describe('RoutesController', () => {
 
     const result = await controller.toggleStatus(1, mockUser);
     expect(result.id).toBe(1);
-    expect(useCases.toggleRouteStatusUseCase.execute).toHaveBeenCalledWith(1, expect.any(Object));
+    expect(useCases.toggleRouteStatusUseCase.execute).toHaveBeenCalledWith(
+      1,
+      expect.any(Object),
+    );
   });
 
   it('should update route general info', async () => {
@@ -309,7 +341,11 @@ describe('RoutesController', () => {
       useCases.toggleRouteStatusUseCase,
     );
 
-    const result = await controller.updateDraft(1, { name: 'Nuevo Nombre' }, mockUser);
+    const result = await controller.updateDraft(
+      1,
+      { name: 'Nuevo Nombre' },
+      mockUser,
+    );
     expect(result.id).toBe(1);
   });
 
@@ -347,7 +383,85 @@ describe('RoutesController', () => {
       useCases.toggleRouteStatusUseCase,
     );
 
-    const result = await controller.reorderStops(1, { orderedClientIds: [102, 101] }, mockUser);
+    const result = await controller.reorderStops(
+      1,
+      { orderedClientIds: [102, 101] },
+      mockUser,
+    );
     expect(result.id).toBe(1);
+  });
+
+  describe('domain error translation', () => {
+    const buildController = (useCases: ReturnType<typeof createMockUseCases>) =>
+      new RoutesController(
+        useCases.createRouteDraftUseCase,
+        useCases.updateRouteDraftUseCase,
+        useCases.addRouteStopUseCase,
+        useCases.removeRouteStopUseCase,
+        useCases.reorderRouteStopsUseCase,
+        useCases.assignRouteAdvisorUseCase,
+        useCases.calculateRouteMetricsUseCase,
+        useCases.findRoutesUseCase,
+        useCases.getRouteByIdUseCase,
+        useCases.toggleRouteStatusUseCase,
+      );
+
+    it('maps a not-found route on update to 404', async () => {
+      const useCases = createMockUseCases();
+      useCases.updateRouteDraftUseCase.execute.mockRejectedValue(
+        new RouteNotFoundError(9),
+      );
+
+      await expect(
+        buildController(useCases).updateDraft(9, { name: 'X' }, mockUser),
+      ).rejects.toBeInstanceOf(NotFoundException);
+    });
+
+    it('maps a zone violation on toggle to 403', async () => {
+      const useCases = createMockUseCases();
+      useCases.toggleRouteStatusUseCase.execute.mockRejectedValue(
+        new UnauthorizedZoneError(1, 2),
+      );
+
+      await expect(
+        buildController(useCases).toggleStatus(1, mockUser),
+      ).rejects.toBeInstanceOf(ForbiddenException);
+    });
+
+    it('maps a generic domain Error on remove to 400', async () => {
+      const useCases = createMockUseCases();
+      useCases.removeRouteStopUseCase.execute.mockRejectedValue(
+        new Error('Cannot assign an inactive route'),
+      );
+
+      await expect(
+        buildController(useCases).removeStop(1, 101, mockUser),
+      ).rejects.toBeInstanceOf(BadRequestException);
+    });
+
+    it('rethrows a non-Error rejection on reorder unchanged', async () => {
+      const useCases = createMockUseCases();
+      const rejection = { reason: 'not an Error' };
+      useCases.reorderRouteStopsUseCase.execute.mockRejectedValue(rejection);
+
+      await expect(
+        buildController(useCases).reorderStops(
+          1,
+          { orderedClientIds: [101] },
+          mockUser,
+        ),
+      ).rejects.toBe(rejection);
+    });
+
+    it('maps a duplicate name on update to 409', async () => {
+      const useCases = createMockUseCases();
+      useCases.updateRouteDraftUseCase.execute.mockRejectedValue(
+        new RouteNameAlreadyExistsError('Ruta 1', 1),
+      );
+
+      await expect(
+        buildController(useCases).updateDraft(1, { name: 'Ruta 1' }, mockUser),
+      ).rejects.toBeInstanceOf(ConflictException);
+    });
   });
 });
