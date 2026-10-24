@@ -10,14 +10,17 @@ import { UserOrmEntity } from '../infrastructure/user.orm-entity.js';
 import { RolesGuard } from './roles.guard.js';
 
 describe('RolesGuard', () => {
-  const request = { user: { id: 'user-1' } };
+  const request = { user: { id: 1 } };
   const context = {
     getHandler: vi.fn(),
     getClass: vi.fn(),
     switchToHttp: () => ({ getRequest: () => request }),
   } as unknown as ExecutionContext;
 
-  function createGuard(role: UserRole | null, requiredRoles: UserRole[] | null = [UserRole.ADMIN]) {
+  function createGuard(
+    role: UserRole | null,
+    requiredRoles: UserRole[] | null = [UserRole.ADMIN],
+  ) {
     const reflector = {
       getAllAndOverride: vi.fn().mockReturnValue(requiredRoles),
     } as unknown as Reflector;
@@ -42,13 +45,13 @@ describe('RolesGuard', () => {
     await expect(
       createGuard(UserRole.ADMIN).canActivate(context),
     ).rejects.toBeInstanceOf(UnauthorizedException);
-    request.user = { id: 'user-1' };
+    request.user = { id: 1 };
   });
 
   it('returns 401 when user is not found in database', async () => {
-    await expect(
-      createGuard(null).canActivate(context),
-    ).rejects.toBeInstanceOf(UnauthorizedException);
+    await expect(createGuard(null).canActivate(context)).rejects.toBeInstanceOf(
+      UnauthorizedException,
+    );
   });
 
   it('returns 403 when the current role is not allowed', async () => {

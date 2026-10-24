@@ -7,6 +7,7 @@ import {
   HttpStatus,
   NotFoundException,
   Param,
+  ParseIntPipe,
   Patch,
   Post,
   Req,
@@ -58,7 +59,10 @@ export class AuthController {
     private readonly assignUserRoleUseCase: AssignUserRoleUseCase,
   ) {}
 
-  private forwardCookies(res: Response, setCookieHeaders: SetCookieHeaders): void {
+  private forwardCookies(
+    res: Response,
+    setCookieHeaders: SetCookieHeaders,
+  ): void {
     if (setCookieHeaders) {
       res.setHeader('set-cookie', setCookieHeaders);
     }
@@ -204,9 +208,9 @@ export class AuthController {
   @ApiResponse({ status: 403, description: 'The Admin role is required.' })
   @ApiResponse({ status: 404, description: 'User or zone not found.' })
   async assignRole(
-    @Param('userId') userId: string,
+    @Param('userId', ParseIntPipe) userId: number,
     @Body() dto: AssignUserRoleDto,
-  ): Promise<{ id: string; role: UserRole; zoneId: number | null }> {
+  ): Promise<{ id: number; role: UserRole; zoneId: number | null }> {
     try {
       return await this.assignUserRoleUseCase.execute({
         userId,

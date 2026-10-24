@@ -5,15 +5,15 @@ import {
   Index,
   JoinColumn,
   ManyToOne,
-  PrimaryColumn,
+  PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
 import { UserOrmEntity } from './user.orm-entity.js';
 
 @Entity('account')
 export class AccountOrmEntity {
-  @PrimaryColumn('text')
-  id!: string;
+  @PrimaryGeneratedColumn('increment')
+  id!: number;
 
   @Column('text', { name: 'accountId' })
   accountId!: string;
@@ -22,8 +22,8 @@ export class AccountOrmEntity {
   providerId!: string;
 
   @Index('account_userId_idx')
-  @Column('text', { name: 'userId' })
-  userId!: string;
+  @Column('integer', { name: 'userId' })
+  userId!: number;
 
   @Column('text', { name: 'accessToken', nullable: true })
   accessToken!: string | null;

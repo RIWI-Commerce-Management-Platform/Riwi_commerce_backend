@@ -6,7 +6,7 @@ import { UserRole } from '../domain/user-role.enum.js';
 import { UserNotFoundError } from '../domain/errors/user-not-found.error.js';
 
 export interface CurrentUserRoleInfo {
-  id: string;
+  id: number;
   role: UserRole;
   zoneId: number | null;
 }
@@ -18,7 +18,7 @@ export class GetCurrentUserUseCase {
     private readonly userRepository: Repository<UserOrmEntity>,
   ) {}
 
-  async execute(userId: string): Promise<CurrentUserRoleInfo> {
+  async execute(userId: number): Promise<CurrentUserRoleInfo> {
     const user = await this.userRepository.findOne({
       where: { id: userId },
       select: { id: true, role: true, zoneId: true },

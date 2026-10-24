@@ -63,7 +63,7 @@ describe('AuthController', () => {
     it('should login and set cookie header', async () => {
       const { controller, loginUseCase, mockReq, mockRes } = setup();
       (loginUseCase.execute as any).mockResolvedValue({
-        data: { user: { id: 'u1' } },
+        data: { user: { id: 1 } },
         setCookieHeaders: ['cookie=1'],
       });
 
@@ -76,7 +76,7 @@ describe('AuthController', () => {
       expect(mockRes.setHeader).toHaveBeenCalledWith('set-cookie', [
         'cookie=1',
       ]);
-      expect(result).toEqual({ user: { id: 'u1' } });
+      expect(result).toEqual({ user: { id: 1 } });
     });
 
     it('should throw UnauthorizedException on InvalidCredentialsError', async () => {
@@ -99,7 +99,7 @@ describe('AuthController', () => {
     it('should register and set cookie header', async () => {
       const { controller, registerUseCase, mockReq, mockRes } = setup();
       (registerUseCase.execute as any).mockResolvedValue({
-        data: { user: { id: 'u2' } },
+        data: { user: { id: 2 } },
         setCookieHeaders: ['cookie=2'],
       });
 
@@ -112,7 +112,7 @@ describe('AuthController', () => {
       expect(mockRes.setHeader).toHaveBeenCalledWith('set-cookie', [
         'cookie=2',
       ]);
-      expect(result).toEqual({ user: { id: 'u2' } });
+      expect(result).toEqual({ user: { id: 2 } });
     });
 
     it('should throw BadRequestException on RegistrationFailedError', async () => {
@@ -154,19 +154,16 @@ describe('AuthController', () => {
     it('should return merged user and session', async () => {
       const { controller, getCurrentUserUseCase } = setup();
       (getCurrentUserUseCase.execute as any).mockResolvedValue({
-        id: 'u1',
+        id: 1,
         role: UserRole.ASESOR,
         zoneId: 2,
       });
 
-      const result = await controller.getMe(
-        { id: 'u1', name: 'User' },
-        { id: 's1' },
-      );
+      const result = await controller.getMe({ id: 1, name: 'User' }, { id: 1 });
 
       expect(result).toEqual({
-        user: { id: 'u1', name: 'User', role: UserRole.ASESOR, zoneId: 2 },
-        session: { id: 's1' },
+        user: { id: 1, name: 'User', role: UserRole.ASESOR, zoneId: 2 },
+        session: { id: 1 },
       });
     });
 
@@ -176,19 +173,19 @@ describe('AuthController', () => {
         new UserNotFoundError(),
       );
 
-      await expect(
-        controller.getMe({ id: 'u1' }, { id: 's1' }),
-      ).rejects.toThrow(UnauthorizedException);
+      await expect(controller.getMe({ id: 1 }, { id: 1 })).rejects.toThrow(
+        UnauthorizedException,
+      );
     });
   });
 
   describe('protectedEndpoint', () => {
     it('should return user info with access granted', () => {
       const { controller } = setup();
-      const result = controller.protectedEndpoint({ id: 'u1' });
+      const result = controller.protectedEndpoint({ id: 1 });
       expect(result).toEqual({
         message: 'Access granted',
-        user: { id: 'u1' },
+        user: { id: 1 },
       });
     });
   });
@@ -197,17 +194,17 @@ describe('AuthController', () => {
     it('should assign role successfully', async () => {
       const { controller, assignUserRoleUseCase } = setup();
       (assignUserRoleUseCase.execute as any).mockResolvedValue({
-        id: 'u1',
+        id: 1,
         role: UserRole.ADMIN,
         zoneId: null,
       });
 
-      const result = await controller.assignRole('u1', {
+      const result = await controller.assignRole(1, {
         role: UserRole.ADMIN,
       });
 
       expect(result).toEqual({
-        id: 'u1',
+        id: 1,
         role: UserRole.ADMIN,
         zoneId: null,
       });
@@ -220,7 +217,7 @@ describe('AuthController', () => {
       );
 
       await expect(
-        controller.assignRole('u1', { role: 'INVALID' as any }),
+        controller.assignRole(1, { role: 'INVALID' as any }),
       ).rejects.toThrow(BadRequestException);
     });
 
@@ -231,7 +228,7 @@ describe('AuthController', () => {
       );
 
       await expect(
-        controller.assignRole('u1', { role: UserRole.DIRECTOR_REGIONAL }),
+        controller.assignRole(1, { role: UserRole.DIRECTOR_REGIONAL }),
       ).rejects.toThrow(BadRequestException);
     });
 
@@ -242,7 +239,7 @@ describe('AuthController', () => {
       );
 
       await expect(
-        controller.assignRole('u1', { role: UserRole.ASESOR, zoneId: 3 }),
+        controller.assignRole(1, { role: UserRole.ASESOR, zoneId: 3 }),
       ).rejects.toThrow(BadRequestException);
     });
 
@@ -253,7 +250,7 @@ describe('AuthController', () => {
       );
 
       await expect(
-        controller.assignRole('u1', {
+        controller.assignRole(1, {
           role: UserRole.DIRECTOR_REGIONAL,
           zoneId: 99,
         }),
@@ -267,25 +264,47 @@ describe('AuthController', () => {
       );
 
       await expect(
-        controller.assignRole('u99', { role: UserRole.ADMIN }),
+        controller.assignRole(99, { role: UserRole.ADMIN }),
       ).rejects.toThrow(NotFoundException);
     });
 
     it('should rethrow unexpected errors', async () => {
-      const { controller, loginUseCase, registerUseCase, getCurrentUserUseCase, assignUserRoleUseCase, mockReq, mockRes } = setup();
+      const {
+        controller,
+        loginUseCase,
+        registerUseCase,
+        getCurrentUserUseCase,
+        assignUserRoleUseCase,
+        mockReq,
+        mockRes,
+      } = setup();
       const err = new Error('Unexpected error');
 
       (loginUseCase.execute as any).mockRejectedValueOnce(err);
-      await expect(controller.login({ email: 'a@b.com', password: '123' }, mockReq, mockRes)).rejects.toThrow(err);
+      await expect(
+        controller.login(
+          { email: 'a@b.com', password: '123' },
+          mockReq,
+          mockRes,
+        ),
+      ).rejects.toThrow(err);
 
       (registerUseCase.execute as any).mockRejectedValueOnce(err);
-      await expect(controller.register({ name: 'A', email: 'a@b.com', password: '123' }, mockReq, mockRes)).rejects.toThrow(err);
+      await expect(
+        controller.register(
+          { name: 'A', email: 'a@b.com', password: '123' },
+          mockReq,
+          mockRes,
+        ),
+      ).rejects.toThrow(err);
 
       (getCurrentUserUseCase.execute as any).mockRejectedValueOnce(err);
-      await expect(controller.getMe({ id: 'u1' }, {})).rejects.toThrow(err);
+      await expect(controller.getMe({ id: 1 }, {})).rejects.toThrow(err);
 
       (assignUserRoleUseCase.execute as any).mockRejectedValueOnce(err);
-      await expect(controller.assignRole('u1', { role: UserRole.ADMIN })).rejects.toThrow(err);
+      await expect(
+        controller.assignRole(1, { role: UserRole.ADMIN }),
+      ).rejects.toThrow(err);
     });
   });
 });

@@ -8,7 +8,7 @@ import { UserNotFoundError } from '../domain/errors/user-not-found.error.js';
 describe('GetCurrentUserUseCase', () => {
   it('should return user info when user exists', async () => {
     const mockUser = {
-      id: 'user-123',
+      id: 123,
       role: UserRole.ASESOR,
       zoneId: 5,
     } as UserOrmEntity;
@@ -17,10 +17,10 @@ describe('GetCurrentUserUseCase', () => {
     const mockRepo = { findOne } as unknown as Repository<UserOrmEntity>;
 
     const useCase = new GetCurrentUserUseCase(mockRepo);
-    const result = await useCase.execute('user-123');
+    const result = await useCase.execute(123);
 
     expect(findOne).toHaveBeenCalledWith({
-      where: { id: 'user-123' },
+      where: { id: 123 },
       select: { id: true, role: true, zoneId: true },
     });
     expect(result).toEqual(mockUser);
@@ -32,8 +32,6 @@ describe('GetCurrentUserUseCase', () => {
 
     const useCase = new GetCurrentUserUseCase(mockRepo);
 
-    await expect(useCase.execute('non-existent')).rejects.toThrow(
-      UserNotFoundError,
-    );
+    await expect(useCase.execute(999)).rejects.toThrow(UserNotFoundError);
   });
 });

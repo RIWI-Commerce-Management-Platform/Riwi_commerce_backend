@@ -5,15 +5,15 @@ import {
   Index,
   JoinColumn,
   ManyToOne,
-  PrimaryColumn,
+  PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
 import { UserOrmEntity } from './user.orm-entity.js';
 
 @Entity('session')
 export class SessionOrmEntity {
-  @PrimaryColumn('text')
-  id!: string;
+  @PrimaryGeneratedColumn('increment')
+  id!: number;
 
   @Column('timestamptz', { name: 'expiresAt' })
   expiresAt!: Date;
@@ -34,8 +34,8 @@ export class SessionOrmEntity {
   userAgent!: string | null;
 
   @Index('session_userId_idx')
-  @Column('text', { name: 'userId' })
-  userId!: string;
+  @Column('integer', { name: 'userId' })
+  userId!: number;
 
   @ManyToOne(() => UserOrmEntity, { onDelete: 'CASCADE', nullable: false })
   @JoinColumn({ name: 'userId', referencedColumnName: 'id' })

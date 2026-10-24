@@ -2,15 +2,15 @@ import {
   Column,
   CreateDateColumn,
   Entity,
-  PrimaryColumn,
+  PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
 import { UserRole } from '../domain/user-role.enum.js';
 
 @Entity('user')
 export class UserOrmEntity {
-  @PrimaryColumn('text')
-  id!: string;
+  @PrimaryGeneratedColumn('increment')
+  id!: number;
 
   @Column('text', { name: 'name' })
   name!: string;

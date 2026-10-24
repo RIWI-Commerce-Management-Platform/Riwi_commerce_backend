@@ -30,7 +30,7 @@ describe('AssignUserRoleUseCase', () => {
 
     await expect(
       useCase.execute({
-        userId: 'u1',
+        userId: 1,
         role: 'SUPER_ADMIN' as any,
       }),
     ).rejects.toThrow(InvalidRoleError);
@@ -41,7 +41,7 @@ describe('AssignUserRoleUseCase', () => {
 
     await expect(
       useCase.execute({
-        userId: 'u1',
+        userId: 1,
         role: UserRole.DIRECTOR_REGIONAL,
       }),
     ).rejects.toThrow(ZoneRequiredError);
@@ -52,7 +52,7 @@ describe('AssignUserRoleUseCase', () => {
 
     await expect(
       useCase.execute({
-        userId: 'u1',
+        userId: 1,
         role: UserRole.DIRECTOR_REGIONAL,
         zoneId: 3.14 as any,
       }),
@@ -65,7 +65,7 @@ describe('AssignUserRoleUseCase', () => {
 
     await expect(
       useCase.execute({
-        userId: 'u1',
+        userId: 1,
         role: UserRole.DIRECTOR_REGIONAL,
         zoneId: 99,
       }),
@@ -77,7 +77,7 @@ describe('AssignUserRoleUseCase', () => {
 
     await expect(
       useCase.execute({
-        userId: 'u1',
+        userId: 1,
         role: UserRole.ASESOR,
         zoneId: 5,
       }),
@@ -90,7 +90,7 @@ describe('AssignUserRoleUseCase', () => {
 
     await expect(
       useCase.execute({
-        userId: 'missing-user',
+        userId: 999,
         role: UserRole.ADMIN,
       }),
     ).rejects.toThrow(UserNotFoundError);
@@ -100,7 +100,7 @@ describe('AssignUserRoleUseCase', () => {
     const { useCase, userRepo, zoneRepo } = setup();
     const mockZone = { id: 10, name: 'Zona Norte' } as ZoneOrmEntity;
     const mockUser = {
-      id: 'u1',
+      id: 1,
       role: UserRole.ASESOR,
       zoneId: null,
     } as UserOrmEntity;
@@ -110,13 +110,13 @@ describe('AssignUserRoleUseCase', () => {
     (userRepo.save as any).mockImplementation((u: any) => Promise.resolve(u));
 
     const result = await useCase.execute({
-      userId: 'u1',
+      userId: 1,
       role: UserRole.DIRECTOR_REGIONAL,
       zoneId: 10,
     });
 
     expect(result).toEqual({
-      id: 'u1',
+      id: 1,
       role: UserRole.DIRECTOR_REGIONAL,
       zoneId: 10,
     });
@@ -128,7 +128,7 @@ describe('AssignUserRoleUseCase', () => {
   it('should assign non-director role without zone successfully', async () => {
     const { useCase, userRepo } = setup();
     const mockUser = {
-      id: 'u2',
+      id: 2,
       role: UserRole.DIRECTOR_REGIONAL,
       zoneId: 5,
     } as UserOrmEntity;
@@ -137,12 +137,12 @@ describe('AssignUserRoleUseCase', () => {
     (userRepo.save as any).mockImplementation((u: any) => Promise.resolve(u));
 
     const result = await useCase.execute({
-      userId: 'u2',
+      userId: 2,
       role: UserRole.ADMIN,
     });
 
     expect(result).toEqual({
-      id: 'u2',
+      id: 2,
       role: UserRole.ADMIN,
       zoneId: null,
     });
