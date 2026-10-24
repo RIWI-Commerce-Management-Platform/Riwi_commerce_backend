@@ -4,18 +4,16 @@ import { RouteRepository } from '../domain/route.repository.js';
 import { RouteNotFoundError } from '../domain/errors/route-not-found.error.js';
 import { UnauthorizedZoneError } from '../domain/errors/unauthorized-zone.error.js';
 import { RouteClientReaderPort } from './ports/route-client-reader.port.js';
-import { RouteDistanceCalculatorPort, RouteWaypoint } from './ports/route-distance-calculator.port.js';
+import {
+  RouteDistanceCalculatorPort,
+  RouteWaypoint,
+} from './ports/route-distance-calculator.port.js';
 import { AuthActor } from './dto/auth-actor.dto.js';
 import { UserRole } from '../../auth/domain/user-role.enum.js';
 
 /**
- * Caso de uso: Quitar una parada de cliente de la ruta comercial (HU-18 y HU-22).
- * 
- * En este caso de uso:
- * 1. Busco la ruta y valido los permisos del Director Regional sobre la zona.
- * 2. Remuevo el cliente de la lista de paradas y reindexo el orden de visita.
- * 3. Recalculo las métricas de distancia y tiempo estimado con las paradas restantes.
- * 4. Persisto la ruta actualizada.
+ * Removes a client's stop from a route (HU-18, HU-22), renumbers the visit
+ * order and recalculates the metrics with the remaining stops.
  */
 @Injectable()
 export class RemoveRouteStopUseCase {
@@ -35,27 +33,25 @@ export class RemoveRouteStopUseCase {
       throw new RouteNotFoundError(routeId);
     }
 
-    // 1. Verifico la seguridad de zona
+    // A regional director can only manage routes in their zone
     if (actor && actor.role === UserRole.DIRECTOR_REGIONAL) {
       if (actor.zoneId && actor.zoneId !== route.zoneId) {
         throw new UnauthorizedZoneError(actor.zoneId, route.zoneId);
       }
     }
 
-    // 2. Remuevo la parada en el agregado de dominio
     route.removeStop(clientId);
 
-    // 3. Recalculo métricas para las paradas que quedaron
     await this._recalculateRouteMetrics(route);
 
-    // 4. Guardo los cambios
     return await this.routeRepository.save(route);
   }
 
   private async _recalculateRouteMetrics(route: Route): Promise<void> {
     const stops = route.stops;
     if (stops.length < 2) {
-      const singleStopDuration = stops.length === 1 ? stops[0].estimatedDurationMinutes : 0;
+      const singleStopDuration =
+        stops.length === 1 ? stops[0].estimatedDurationMinutes : 0;
       route.updateMetrics(0, singleStopDuration);
       return;
     }
@@ -83,6 +79,9 @@ export class RemoveRouteStopUseCase {
       totalStopAttentionMinutes,
     );
 
-    route.updateMetrics(metrics.totalDistanceKm, metrics.estimatedDurationMinutes);
+    route.updateMetrics(
+      metrics.totalDistanceKm,
+      metrics.estimatedDurationMinutes,
+    );
   }
 }

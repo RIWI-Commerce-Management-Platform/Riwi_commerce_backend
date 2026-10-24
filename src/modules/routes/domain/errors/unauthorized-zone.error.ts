@@ -1,8 +1,6 @@
 /**
- * Error de dominio lanzado cuando un Director Regional intenta crear, modificar
- * o consultar una ruta que pertenece a una zona geográfica distinta a la suya.
- * 
- * Regla de negocio de seguridad: Cada Director Regional está limitado a su territorio asignado.
+ * Thrown when a regional director creates, changes or reads a route outside
+ * their zone. Each director is limited to their assigned territory.
  */
 export class UnauthorizedZoneError extends Error {
   constructor(userZoneId: number, targetZoneId: number) {

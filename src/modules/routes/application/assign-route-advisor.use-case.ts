@@ -8,15 +8,10 @@ import { AuthActor } from './dto/auth-actor.dto.js';
 import { UserRole } from '../../auth/domain/user-role.enum.js';
 
 /**
- * Caso de uso: Asignar una ruta comercial a un asesor y programar sus visitas (HU-20).
- * 
- * En este caso de uso implemento el Paso 3 del Wizard:
- * 1. Busco la ruta y verifico los permisos territoriales del Director Regional.
- * 2. Asigno el asesor a la ruta mediante el método de dominio `assignAdvisor()`,
- *    el cual valida que la ruta contenga paradas y cambia su estado a ASSIGNED.
- * 3. Persisto la ruta con su nuevo estado y asesor.
- * 4. Invoco el puerto `VisitSchedulerPort` para generar de forma automática
- *    las visitas programadas en la agenda de Camilo (Épica E4) según el día y frecuencia.
+ * Assigns a route to an advisor and schedules its visits (HU-20, wizard
+ * step 3). `assignAdvisor()` requires at least one stop and moves the route
+ * to ASSIGNED; VisitSchedulerPort then creates the visits in the advisor's
+ * agenda (epic E4) for the route's day and frequency.
  */
 @Injectable()
 export class AssignRouteAdvisorUseCase {
@@ -35,20 +30,18 @@ export class AssignRouteAdvisorUseCase {
       throw new RouteNotFoundError(routeId);
     }
 
-    // 1. Verifico la seguridad de zona
+    // A regional director can only manage routes in their zone
     if (actor && actor.role === UserRole.DIRECTOR_REGIONAL) {
       if (actor.zoneId && actor.zoneId !== route.zoneId) {
         throw new UnauthorizedZoneError(actor.zoneId, route.zoneId);
       }
     }
 
-    // 2. Asigno el asesor en el agregado (valida paradas y pasa a ASSIGNED)
     route.assignAdvisor(advisorId);
 
-    // 3. Guardo el estado de la ruta asignada
     const savedRoute = await this.routeRepository.save(route);
 
-    // 4. Programo automáticamente las visitas en la agenda del asesor (Camilo E4)
+    // Schedule the visits in the advisor's agenda (E4)
     await this.visitScheduler.scheduleVisitsForRoute({
       routeId: savedRoute.id!,
       advisorId,

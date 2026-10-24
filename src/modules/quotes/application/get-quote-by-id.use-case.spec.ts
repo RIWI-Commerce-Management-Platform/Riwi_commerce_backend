@@ -42,7 +42,7 @@ describe('GetQuoteByIdUseCase', () => {
   it('returns quote and generates presigned url when documentKey is present', async () => {
     const result = await useCase.execute(1);
 
-    expect(quoteRepository.findById).toHaveBeenCalledWith(1);
+    expect(quoteRepository.findById).toHaveBeenCalledWith(1, {});
     expect(fileStorageService.getPresignedUrl).toHaveBeenCalledWith(
       'quotes/soporte.pdf',
     );

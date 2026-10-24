@@ -11,7 +11,9 @@ import {
   Patch,
   Post,
   Query,
+  Req,
 } from '@nestjs/common';
+import type { Request } from 'express';
 import {
   ApiConflictResponse,
   ApiNotFoundResponse,
@@ -36,6 +38,11 @@ import { FindClientsQueryDto } from './dto/find-clients-query.dto.js';
 import { PaginatedClientResponseDto } from './dto/paginated-client-response.dto.js';
 import { PaginatedResponseDto } from '../../../shared/pagination/paginated-response.dto.js';
 import { queryValidationPipe } from '../../../shared/pagination/query-validation.pipe.js';
+import { PaginationQueryDto } from '../../../shared/pagination/pagination-query.dto.js';
+import { CurrentActorProvider } from '../../../shared/auth/domain/current-actor.provider.js';
+import { CurrentUser } from '../../auth/decorators/current-user.decorator.js';
+import { ListClientHistoryUseCase } from '../application/list-client-history.use-case.js';
+import { ClientHistoryEntryResponseDto } from './dto/client-history-entry-response.dto.js';
 
 @ApiTags('Clients')
 @Controller('clients')
@@ -46,11 +53,15 @@ export class ClientsController {
     private readonly toggleClientStatusUseCase: ToggleClientStatusUseCase,
     private readonly findClientsUseCase: FindClientsUseCase,
     private readonly getClientByIdUseCase: GetClientByIdUseCase,
+    private readonly listClientHistoryUseCase: ListClientHistoryUseCase,
+    private readonly currentActor: CurrentActorProvider,
   ) {}
 
   @Get()
   @ApiOperation({
     summary: 'Search and filter clients with pagination and coordinates',
+    description:
+      'A regional director only sees the clients of their zone (HU-06).',
   })
   @ApiOkResponse({
     description: 'Paginated list of clients matching criteria.',
@@ -58,17 +69,22 @@ export class ClientsController {
   })
   async findClients(
     @Query(queryValidationPipe()) query: FindClientsQueryDto,
+    @Req() request: Request,
   ): Promise<PaginatedClientResponseDto> {
-    const result = await this.findClientsUseCase.execute({
-      search: query.search,
-      zoneId: query.parsedZoneId,
-      clientTypeId: query.parsedClientTypeId,
-      potentialId: query.parsedPotentialId,
-      municipality: query.municipality,
-      isActive: query.parsedIsActive,
-      page: query.parsedPage,
-      limit: query.parsedLimit,
-    });
+    const actor = await this.currentActor.extract(request);
+    const result = await this.findClientsUseCase.execute(
+      {
+        search: query.search,
+        zoneId: query.parsedZoneId,
+        clientTypeId: query.parsedClientTypeId,
+        potentialId: query.parsedPotentialId,
+        municipality: query.municipality,
+        isActive: query.parsedIsActive,
+        page: query.parsedPage,
+        limit: query.parsedLimit,
+      },
+      actor,
+    );
 
     return PaginatedResponseDto.create(
       result,
@@ -109,9 +125,15 @@ export class ClientsController {
   @ApiConflictResponse({
     description: 'A client with the specified NIT already exists.',
   })
-  async create(@Body() dto: CreateClientDto): Promise<ClientResponseDto> {
+  async create(
+    @Body() dto: CreateClientDto,
+    @CurrentUser('id') actorId?: number,
+  ): Promise<ClientResponseDto> {
     try {
-      const client = await this.createClientUseCase.execute({ ...dto });
+      const client = await this.createClientUseCase.execute({
+        ...dto,
+        actorId,
+      });
 
       return new ClientResponseDto(client);
     } catch (error) {
@@ -136,9 +158,14 @@ export class ClientsController {
   async update(
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: UpdateClientDto,
+    @CurrentUser('id') actorId?: number,
   ): Promise<ClientResponseDto> {
     try {
-      const client = await this.updateClientUseCase.execute({ id, ...dto });
+      const client = await this.updateClientUseCase.execute({
+        id,
+        ...dto,
+        actorId,
+      });
 
       return new ClientResponseDto(client);
     } catch (error) {
@@ -163,14 +190,50 @@ export class ClientsController {
   async toggleStatus(
     @Param('id', ParseIntPipe) id: number,
     @Body() dto?: ToggleClientStatusDto,
+    @CurrentUser('id') actorId?: number,
   ): Promise<ClientResponseDto> {
     try {
       const client = await this.toggleClientStatusUseCase.execute({
         id,
         isActive: dto?.isActive,
+        actorId,
       });
 
       return new ClientResponseDto(client);
+    } catch (error) {
+      if (error instanceof ClientNotFoundError) {
+        throw new NotFoundException(error.message);
+      }
+      throw error;
+    }
+  }
+
+  @Get(':id/history')
+  @ApiOperation({
+    summary: 'Latest interactions recorded for a client (HU-15)',
+    description:
+      'Activity log entries (client changes, contacts, portfolios, visits, quotes, orders, follow-ups), newest first.',
+  })
+  @ApiParam({ name: 'id', type: Number, example: 1 })
+  @ApiOkResponse({
+    description: 'Paginated activity log of the client.',
+    type: [ClientHistoryEntryResponseDto],
+  })
+  @ApiNotFoundResponse({ description: 'Client not found.' })
+  async getHistory(
+    @Param('id', ParseIntPipe) id: number,
+    @Query(queryValidationPipe()) query: PaginationQueryDto,
+  ): Promise<PaginatedResponseDto<ClientHistoryEntryResponseDto>> {
+    try {
+      const result = await this.listClientHistoryUseCase.execute({
+        clientId: id,
+        page: query.parsedPage,
+        limit: query.parsedLimit,
+      });
+      return PaginatedResponseDto.create(
+        result,
+        (entry) => new ClientHistoryEntryResponseDto(entry),
+      );
     } catch (error) {
       if (error instanceof ClientNotFoundError) {
         throw new NotFoundException(error.message);

@@ -22,6 +22,20 @@ export class QuoteResponseDto {
   })
   clientId: number;
 
+  @ApiPropertyOptional({
+    description: 'User (advisor) who created the quote',
+    example: 5,
+    nullable: true,
+  })
+  advisorId: number | null;
+
+  @ApiPropertyOptional({
+    description: 'Visit that generated the quote (HU-27)',
+    example: 12,
+    nullable: true,
+  })
+  visitId: number | null;
+
   @ApiProperty({
     description: 'Current status of the quote',
     enum: QuoteStatus,
@@ -43,19 +57,21 @@ export class QuoteResponseDto {
 
   @ApiPropertyOptional({
     description: 'Commercial notes or observations',
-    example: 'Entrega estimada en 5 dias habiles tras confirmacion',
+    example: 'Estimated delivery 5 business days after confirmation',
   })
   notes?: string | null;
 
   @ApiPropertyOptional({
     description: 'S3 document storage key reference',
-    example: 'quotes/1730000000-cotizacion-soporte.pdf',
+    example: 'quotes/1730000000-quote-support.pdf',
   })
   documentKey?: string | null;
 
   @ApiPropertyOptional({
-    description: 'Presigned URL for viewing or downloading the commercial document',
-    example: 'https://comercial-360-bucket.s3.amazonaws.com/quotes/1730000000-soporte.pdf?...',
+    description:
+      'Presigned URL for viewing or downloading the commercial document',
+    example:
+      'https://comercial-360-bucket.s3.amazonaws.com/quotes/1730000000-soporte.pdf?...',
   })
   documentUrl?: string | null;
 
@@ -81,6 +97,8 @@ export class QuoteResponseDto {
     this.id = quote.id!;
     this.quoteNumber = quote.quoteNumber;
     this.clientId = quote.clientId;
+    this.advisorId = quote.advisorId;
+    this.visitId = quote.visitId;
     this.status = quote.status;
     this.subtotal = quote.subtotal;
     this.total = quote.total;

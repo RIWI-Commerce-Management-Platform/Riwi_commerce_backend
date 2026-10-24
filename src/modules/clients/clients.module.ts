@@ -20,12 +20,40 @@ import { TypeOrmClientContactRepository } from './infrastructure/typeorm-client-
 import { NominatimGeocodingAdapter } from './infrastructure/adapters/nominatim-geocoding.adapter.js';
 import { ClientsController } from './presentation/clients.controller.js';
 import { ClientContactsController } from './presentation/client-contacts.controller.js';
+import { ClientPortfoliosController } from './presentation/client-portfolios.controller.js';
+import { ClientHistoryRepository } from './domain/client-history.repository.js';
+import { ClientPortfolioRepository } from './domain/client-portfolio.repository.js';
+import { ClientHistoryOrmEntity } from './infrastructure/client-history.orm-entity.js';
+import { ClientPortfolioOrmEntity } from './infrastructure/client-portfolio.orm-entity.js';
+import { TypeOrmClientHistoryRepository } from './infrastructure/typeorm-client-history.repository.js';
+import { TypeOrmClientPortfolioRepository } from './infrastructure/typeorm-client-portfolio.repository.js';
+import { ListClientHistoryUseCase } from './application/list-client-history.use-case.js';
+import { ListClientPortfoliosUseCase } from './application/list-client-portfolios.use-case.js';
+import { AddClientPortfolioUseCase } from './application/add-client-portfolio.use-case.js';
+import { RemoveClientPortfolioUseCase } from './application/remove-client-portfolio.use-case.js';
+import { PortfolioOrmEntity } from '../catalogs/infrastructure/portfolio.orm-entity.js';
+import { UserOrmEntity } from '../auth/infrastructure/user.orm-entity.js';
+import { ActivityLogModule } from '../../shared/activity-log/activity-log.module.js';
+import { AuthModule as SharedAuthModule } from '../../shared/auth/auth.module.js';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([ClientOrmEntity, ClientContactOrmEntity]),
+    TypeOrmModule.forFeature([
+      ClientOrmEntity,
+      ClientContactOrmEntity,
+      ClientHistoryOrmEntity,
+      ClientPortfolioOrmEntity,
+      PortfolioOrmEntity,
+      UserOrmEntity,
+    ]),
+    ActivityLogModule,
+    SharedAuthModule,
   ],
-  controllers: [ClientsController, ClientContactsController],
+  controllers: [
+    ClientsController,
+    ClientContactsController,
+    ClientPortfoliosController,
+  ],
   providers: [
     CreateClientUseCase,
     UpdateClientUseCase,
@@ -37,6 +65,18 @@ import { ClientContactsController } from './presentation/client-contacts.control
     ListClientContactsUseCase,
     SetPrimaryContactUseCase,
     DeleteClientContactUseCase,
+    ListClientHistoryUseCase,
+    ListClientPortfoliosUseCase,
+    AddClientPortfolioUseCase,
+    RemoveClientPortfolioUseCase,
+    {
+      provide: ClientHistoryRepository,
+      useClass: TypeOrmClientHistoryRepository,
+    },
+    {
+      provide: ClientPortfolioRepository,
+      useClass: TypeOrmClientPortfolioRepository,
+    },
     {
       provide: ClientRepository,
       useClass: TypeOrmClientRepository,

@@ -16,7 +16,9 @@ describe('CreateQuoteUseCase', () => {
   beforeEach(() => {
     mockQuoteRepository = {
       generateNextQuoteNumber: vi.fn().mockResolvedValue('COT-0001'),
-      save: vi.fn().mockImplementation((quote: Quote) => Promise.resolve(quote)),
+      save: vi
+        .fn()
+        .mockImplementation((quote: Quote) => Promise.resolve(quote)),
     };
     mockClientReader = {
       findById: vi.fn().mockResolvedValue({
@@ -96,7 +98,7 @@ describe('CreateQuoteUseCase', () => {
           unitPrice: 500,
         },
         {
-          productName: 'Mouse Inalámbrico',
+          productName: 'Wireless Mouse',
           quantity: 3,
           unitPrice: 25.5,
         },

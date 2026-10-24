@@ -11,7 +11,7 @@ export class ClientContactResponseDto {
   @ApiProperty({ example: 'Carlos Mario Mendoza' })
   name: string;
 
-  @ApiProperty({ example: 'Gerente de Compras' })
+  @ApiProperty({ example: 'Purchasing Manager' })
   position: string;
 
   @ApiProperty({ example: '+576053001122' })

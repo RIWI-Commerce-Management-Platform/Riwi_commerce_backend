@@ -14,6 +14,9 @@ import { ClientsModule } from './modules/clients/clients.module.js';
 import { CatalogsModule } from './modules/catalogs/catalogs.module.js';
 import { AuthModule } from './modules/auth/auth.module.js';
 import { RoutesModule } from './modules/routes/routes.module.js';
+import { AdvisorsModule } from './modules/advisors/advisors.module.js';
+import { ReportsModule } from './modules/reports/reports.module.js';
+import { IndicatorsModule } from './modules/indicators/indicators.module.js';
 
 export const { ObserveModule, ObserveInstrument } = createObserveModule();
 
@@ -55,6 +58,9 @@ export const { ObserveModule, ObserveInstrument } = createObserveModule();
     OrdersModule,
     AuthModule,
     RoutesModule,
+    AdvisorsModule,
+    ReportsModule,
+    IndicatorsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

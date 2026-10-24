@@ -54,7 +54,9 @@ describe('CreateClientUseCase', () => {
       }),
     );
 
-    const useCase = new CreateClientUseCase(mockRepository, mockGeocodingPort);
+    const useCase = new CreateClientUseCase(mockRepository, mockGeocodingPort, {
+      record: vi.fn(),
+    } as any);
 
     await expect(useCase.execute(baseInput)).rejects.toThrow(
       ClientNitAlreadyExistsError,
@@ -68,7 +70,9 @@ describe('CreateClientUseCase', () => {
       lng: -75.5812,
     });
 
-    const useCase = new CreateClientUseCase(mockRepository, mockGeocodingPort);
+    const useCase = new CreateClientUseCase(mockRepository, mockGeocodingPort, {
+      record: vi.fn(),
+    } as any);
     const result = await useCase.execute(baseInput);
 
     expect(geocode).toHaveBeenCalledWith(
@@ -86,7 +90,9 @@ describe('CreateClientUseCase', () => {
     findByNit.mockResolvedValueOnce(null);
     geocode.mockClear();
 
-    const useCase = new CreateClientUseCase(mockRepository, mockGeocodingPort);
+    const useCase = new CreateClientUseCase(mockRepository, mockGeocodingPort, {
+      record: vi.fn(),
+    } as any);
     const result = await useCase.execute({
       ...baseInput,
       latitude: 10.9685,
@@ -102,7 +108,9 @@ describe('CreateClientUseCase', () => {
     findByNit.mockResolvedValueOnce(null);
     geocode.mockResolvedValueOnce(null);
 
-    const useCase = new CreateClientUseCase(mockRepository, mockGeocodingPort);
+    const useCase = new CreateClientUseCase(mockRepository, mockGeocodingPort, {
+      record: vi.fn(),
+    } as any);
     const result = await useCase.execute(baseInput);
 
     expect(result.latitude).toBeNull();

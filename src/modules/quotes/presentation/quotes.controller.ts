@@ -38,6 +38,7 @@ import { InvalidQuoteStatusTransitionError } from '../domain/errors/invalid-quot
 import { FileSizeExceededError } from '../../../shared/file-storage/domain/errors/file-size-exceeded.error.js';
 import { InvalidFileTypeError } from '../../../shared/file-storage/domain/errors/invalid-file-type.error.js';
 import { CurrentAdvisorProvider } from '../../../shared/auth/domain/current-advisor.provider.js';
+import { CurrentActorProvider } from '../../../shared/auth/domain/current-actor.provider.js';
 import { queryValidationPipe } from '../../../shared/pagination/query-validation.pipe.js';
 
 interface UploadedFilePayload {
@@ -57,6 +58,7 @@ export class QuotesController {
     private readonly changeQuoteStatusUseCase: ChangeQuoteStatusUseCase,
     private readonly listQuotesUseCase: ListQuotesUseCase,
     private readonly currentAdvisor: CurrentAdvisorProvider,
+    private readonly currentActor: CurrentActorProvider,
   ) {}
 
   @Post()
@@ -67,10 +69,16 @@ export class QuotesController {
       'Quote created successfully with calculated totals and consecutive number',
     type: QuoteResponseDto,
   })
-  async create(@Body() dto: CreateQuoteDto): Promise<QuoteResponseDto> {
+  async create(
+    @Body() dto: CreateQuoteDto,
+    @Req() request: Request,
+  ): Promise<QuoteResponseDto> {
+    const advisorId = await this.currentAdvisor.extract(request);
     try {
       const quote = await this.createQuoteUseCase.execute({
         clientId: dto.clientId,
+        advisorId,
+        visitId: dto.visitId,
         notes: dto.notes,
         documentKey: dto.documentKey,
         items: dto.items,
@@ -85,7 +93,11 @@ export class QuotesController {
   }
 
   @Get()
-  @ApiOperation({ summary: 'List quotes with pagination and filters (HU-34)' })
+  @ApiOperation({
+    summary: 'List quotes with pagination and filters (HU-34)',
+    description:
+      'An advisor only sees their own quotes and a regional director only the quotes of clients in their zone (HU-06).',
+  })
   @ApiResponse({
     status: 200,
     description: 'Paginated list of quotes matching filter criteria',
@@ -93,15 +105,21 @@ export class QuotesController {
   })
   async list(
     @Query(queryValidationPipe()) query: ListQuotesQueryDto,
+    @Req() request: Request,
   ): Promise<PaginatedResponseDto<QuoteResponseDto>> {
-    const result = await this.listQuotesUseCase.execute({
-      clientId: query.clientId,
-      status: query.status,
-      startDate: query.startDate,
-      endDate: query.endDate,
-      page: query.parsedPage,
-      limit: query.parsedLimit,
-    });
+    const actor = await this.currentActor.extract(request);
+    const result = await this.listQuotesUseCase.execute(
+      {
+        clientId: query.clientId,
+        advisorId: query.advisorId,
+        status: query.status,
+        startDate: query.startDate,
+        endDate: query.endDate,
+        page: query.parsedPage,
+        limit: query.parsedLimit,
+      },
+      actor,
+    );
 
     return PaginatedResponseDto.create(
       result,
@@ -118,9 +136,11 @@ export class QuotesController {
   })
   async getById(
     @Param('id', ParseIntPipe) id: number,
+    @Req() request: Request,
   ): Promise<QuoteResponseDto> {
+    const actor = await this.currentActor.extract(request);
     try {
-      const result = await this.getQuoteByIdUseCase.execute(id);
+      const result = await this.getQuoteByIdUseCase.execute(id, actor);
       return new QuoteResponseDto(result.quote, result.documentUrl);
     } catch (error) {
       if (error instanceof QuoteNotFoundError) {

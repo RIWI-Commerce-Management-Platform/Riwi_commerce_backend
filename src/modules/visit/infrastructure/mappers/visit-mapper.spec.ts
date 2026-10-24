@@ -21,7 +21,7 @@ function buildOrmEntity(
   entity.startTime = null;
   entity.endTime = null;
   entity.status = VisitStatus.PENDING;
-  entity.objective = 'Presentar catalogo';
+  entity.objective = 'Present the catalog';
   entity.observations = null;
   Object.assign(entity, overrides);
   return entity;
@@ -55,7 +55,7 @@ describe('VisitMapper', () => {
       actualDate: new Date(2026, 9, 20),
       startTime: '09:00:00',
       endTime: '10:30:00',
-      observations: 'Cliente interesado.',
+      observations: 'Interested client.',
     });
     entity.resultLinks = [
       buildLink(1, 'Visita realizada'),
@@ -68,7 +68,7 @@ describe('VisitMapper', () => {
       { id: 1, name: 'Visita realizada', observation: undefined },
       { id: 2, name: 'Pedido capturado', observation: 'Descuento del 10%' },
     ]);
-    expect(domain.observations).toBe('Cliente interesado.');
+    expect(domain.observations).toBe('Interested client.');
   });
 
   it('maps a visit without result links to an empty results list', () => {
@@ -91,7 +91,7 @@ describe('VisitMapper', () => {
       startTime: '09:00:00',
       endTime: '10:30:00',
       status: VisitStatus.VISITED,
-      objective: 'Presentar catalogo',
+      objective: 'Present the catalog',
       observations: 'obs',
       results: [{ id: 1, name: 'Visita realizada' }],
     });

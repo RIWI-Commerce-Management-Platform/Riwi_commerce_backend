@@ -25,7 +25,9 @@ describe('DeleteClientContactUseCase', () => {
       save: vi.fn((c) => Promise.resolve(c)),
     } as unknown as ClientContactRepository;
 
-    const useCase = new DeleteClientContactUseCase(contactRepo);
+    const useCase = new DeleteClientContactUseCase(contactRepo, {
+      record: vi.fn(),
+    } as any);
     return { useCase, contactRepo };
   };
 

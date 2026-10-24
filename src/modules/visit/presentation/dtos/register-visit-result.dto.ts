@@ -45,7 +45,7 @@ export class RegisterVisitResultDto {
 
   @ApiProperty({
     description: 'General visit observations (maximum 500 characters).',
-    example: 'Cliente interesado en renovar el contrato anual.',
+    example: 'Client interested in renewing the annual contract.',
     maxLength: 500,
   })
   @IsString()
@@ -53,7 +53,8 @@ export class RegisterVisitResultDto {
   observations: string;
 
   @ApiProperty({
-    description: 'One or more selected visit results (validated against the catalog).',
+    description:
+      'One or more selected visit results (validated against the catalog).',
     type: [VisitResultDto],
   })
   @IsArray()

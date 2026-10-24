@@ -75,7 +75,7 @@ describe('AssignRouteAdvisorUseCase', () => {
   it('should throw RouteHasNoStopsError if route has zero stops', async () => {
     const emptyRoute = new Route({
       id: 1,
-      name: 'Ruta Vacía',
+      name: 'Empty route',
       zoneId: 1,
       dayOfWeek: DayOfWeek.MONDAY,
       frequency: RouteFrequency.WEEKLY,

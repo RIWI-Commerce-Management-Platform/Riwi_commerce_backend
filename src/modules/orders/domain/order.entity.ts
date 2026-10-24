@@ -7,6 +7,8 @@ export interface OrderProps {
   orderNumber: string;
   quoteId: number;
   clientId: number;
+  /** Advisor of the quote the order comes from. */
+  advisorId?: number | null;
   status?: OrderStatus;
   subtotal: number;
   total: number;
@@ -20,6 +22,7 @@ export class Order {
   readonly orderNumber: string;
   readonly quoteId: number;
   readonly clientId: number;
+  readonly advisorId: number | null;
   status: OrderStatus;
   readonly subtotal: number;
   readonly total: number;
@@ -32,6 +35,7 @@ export class Order {
     this.orderNumber = props.orderNumber;
     this.quoteId = props.quoteId;
     this.clientId = props.clientId;
+    this.advisorId = props.advisorId ?? null;
     this.status = props.status ?? OrderStatus.CREATED;
     this.subtotal = props.subtotal;
     this.total = props.total;

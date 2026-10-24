@@ -26,6 +26,8 @@ describe('OrdersController (Presentation)', () => {
   let changeOrderStatusUseCase: Partial<ChangeOrderStatusUseCase>;
   let listOrdersUseCase: Partial<ListOrdersUseCase>;
   let currentAdvisor: Partial<CurrentAdvisorProvider>;
+  let currentActor: { extract: ReturnType<typeof vi.fn> };
+  const actor = { id: 7, role: 'ASESOR', zoneId: null };
 
   const mockOrder = new Order({
     id: 1,
@@ -65,6 +67,9 @@ describe('OrdersController (Presentation)', () => {
       }),
     };
 
+    currentActor = {
+      extract: vi.fn().mockResolvedValue(actor),
+    };
     currentAdvisor = {
       extract: vi.fn().mockResolvedValue(12),
     };
@@ -75,6 +80,7 @@ describe('OrdersController (Presentation)', () => {
       changeOrderStatusUseCase as ChangeOrderStatusUseCase,
       listOrdersUseCase as ListOrdersUseCase,
       currentAdvisor as CurrentAdvisorProvider,
+      currentActor as any,
     );
   });
 
@@ -150,7 +156,7 @@ describe('OrdersController (Presentation)', () => {
       query.limit = 10;
       query.clientId = 5;
 
-      const result = await controller.list(query);
+      const result = await controller.list(query, {} as any);
 
       expect(result.data).toHaveLength(1);
       expect(result.meta.total).toBe(1);
@@ -160,15 +166,16 @@ describe('OrdersController (Presentation)', () => {
           page: 1,
           limit: 10,
         }),
+        actor,
       );
     });
   });
 
   describe('GET /orders/:id (HU-33)', () => {
     it('returns order by ID', async () => {
-      const response = await controller.getById(1);
+      const response = await controller.getById(1, {} as any);
       expect(response.id).toBe(1);
-      expect(getOrderByIdUseCase.execute).toHaveBeenCalledWith(1);
+      expect(getOrderByIdUseCase.execute).toHaveBeenCalledWith(1, actor);
     });
 
     it('translates OrderNotFoundError to NotFoundException', async () => {
@@ -176,14 +183,16 @@ describe('OrdersController (Presentation)', () => {
         new OrderNotFoundError(999),
       );
 
-      await expect(controller.getById(999)).rejects.toThrow(NotFoundException);
+      await expect(controller.getById(999, {} as any)).rejects.toThrow(
+        NotFoundException,
+      );
     });
 
     it('rethrows unexpected errors', async () => {
       const err = new Error('db down');
       vi.mocked(getOrderByIdUseCase.execute!).mockRejectedValue(err);
 
-      await expect(controller.getById(1)).rejects.toThrow(err);
+      await expect(controller.getById(1, {} as any)).rejects.toThrow(err);
     });
   });
 

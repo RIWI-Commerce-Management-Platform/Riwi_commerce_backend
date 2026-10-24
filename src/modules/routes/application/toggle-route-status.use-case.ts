@@ -7,13 +7,8 @@ import { AuthActor } from './dto/auth-actor.dto.js';
 import { UserRole } from '../../auth/domain/user-role.enum.js';
 
 /**
- * Caso de uso: Alternar estado activo/inactivo de una ruta comercial (HU-21).
- * 
- * En este caso de uso:
- * 1. Busco la ruta y verifico los permisos territoriales del Director Regional.
- * 2. Si la ruta está activa, la desactivo lógicamente (`is_active = false`, status = INACTIVE).
- * 3. Si la ruta estaba inactiva, la reactivo (`is_active = true`).
- * 4. Persisto el nuevo estado en el repositorio.
+ * Toggles a route between active and inactive (HU-21). Deactivating is a
+ * soft delete (`is_active = false`, status INACTIVE).
  */
 @Injectable()
 export class ToggleRouteStatusUseCase {
@@ -25,21 +20,19 @@ export class ToggleRouteStatusUseCase {
       throw new RouteNotFoundError(routeId);
     }
 
-    // 1. Verifico la seguridad de zona
+    // A regional director can only manage routes in their zone
     if (actor && actor.role === UserRole.DIRECTOR_REGIONAL) {
       if (actor.zoneId && actor.zoneId !== route.zoneId) {
         throw new UnauthorizedZoneError(actor.zoneId, route.zoneId);
       }
     }
 
-    // 2. Alterno el estado lógico
     if (route.isActive) {
       route.deactivate();
     } else {
       route.activate();
     }
 
-    // 3. Guardo y retorno
     return await this.routeRepository.save(route);
   }
 }

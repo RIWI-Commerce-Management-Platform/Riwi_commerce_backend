@@ -82,9 +82,15 @@ UPDATE "user" SET "role" = 'ADMIN' WHERE "email" = 'admin@ejemplo.com';
 
 The `@Roles(...)` decorator and `RolesGuard` protect endpoints that declare them.
 Sessions are validated through Better Auth, and roles are read from the database
-to avoid trusting stale session data. Filtering routes, visits, and quotes by
-advisor/zone, linking users to an `ASESOR` record, and role-based frontend menus
-remain out of scope because those modules and the frontend are not in this repository.
+to avoid trusting stale session data. Advisors only see their own routes, visits,
+quotes and orders, and a regional director only sees their zone (see `docs/HU-06.md`).
+Advisors are managed by an admin through `/advisors` (`docs/HU-07.md`).
+
+## Demo data
+
+After the migrations, set `DEMO_PASSWORD` in `.env` and run `npm run seed:demo` to load
+3 advisors, 20 clients from Barranquilla and its metropolitan area, 4 routes with their
+visits, quotes, an order and follow-ups (`docs/HU-42.md`).
 
 ## Architecture
 
@@ -119,3 +125,4 @@ src/
 | `npm run migration:generate` | Generate a migration from entity changes |
 | `npm run migration:run` | Run pending migrations |
 | `npm run migration:revert` | Revert the last migration |
+| `npm run seed:demo` | Load the demo data (HU-42) |

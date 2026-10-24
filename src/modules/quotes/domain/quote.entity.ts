@@ -6,6 +6,10 @@ export interface QuoteProps {
   id?: number;
   quoteNumber: string;
   clientId: number;
+  /** User (advisor) who created the quote. Null for quotes created before HU-06. */
+  advisorId?: number | null;
+  /** Visit the quote came from (HU-27). */
+  visitId?: number | null;
   status: QuoteStatus;
   subtotal: number;
   total: number;
@@ -20,6 +24,8 @@ export class Quote {
   readonly id?: number;
   readonly quoteNumber: string;
   readonly clientId: number;
+  readonly advisorId: number | null;
+  readonly visitId: number | null;
   status: QuoteStatus;
   subtotal: number;
   total: number;
@@ -33,6 +39,8 @@ export class Quote {
     this.id = props.id;
     this.quoteNumber = props.quoteNumber;
     this.clientId = props.clientId;
+    this.advisorId = props.advisorId ?? null;
+    this.visitId = props.visitId ?? null;
     this.status = props.status;
     this.subtotal = props.subtotal;
     this.total = props.total;

@@ -2,7 +2,7 @@ import { DayOfWeek } from '../../domain/day-of-week.enum.js';
 import { RouteFrequency } from '../../domain/route-frequency.enum.js';
 
 /**
- * Detalle de cada parada de cliente para programar en la agenda.
+ * A client stop to schedule in the agenda.
  */
 export interface ScheduledStopItem {
   clientId: number;
@@ -12,7 +12,7 @@ export interface ScheduledStopItem {
 }
 
 /**
- * Parámetros de comando para la generación automática de visitas programadas (HU-20).
+ * Input to generate the scheduled visits of a route (HU-20).
  */
 export interface ScheduleVisitsCommand {
   routeId: number;
@@ -25,17 +25,14 @@ export interface ScheduleVisitsCommand {
 }
 
 /**
- * Puerto abstracto para la programación automática de visitas comerciales (HU-20).
- *
- * En mi diseño, este puerto representa el contrato de integración con el módulo
- * de Visitas de Camilo (Épica E4). Al asignar una ruta a un asesor comercial,
- * invoco este método para crear las visitas en estado PENDING según el día y frecuencia.
+ * Port that schedules the visits of a route (HU-20); the contract with the
+ * visits module (epic E4). When a route is assigned, it creates PENDING
+ * visits for the route's day and frequency.
  */
 export abstract class VisitSchedulerPort {
   /**
-   * Con este método genero las visitas programadas en la agenda del asesor.
-   * Reemplaza las visitas PENDING que la ruta ya tuviera (reasignación).
-   * Retorna la cantidad de visitas creadas en base de datos.
+   * Creates the visits in the advisor's agenda, replacing the route's
+   * PENDING visits (reassignment). Returns how many visits were created.
    */
   abstract scheduleVisitsForRoute(
     command: ScheduleVisitsCommand,

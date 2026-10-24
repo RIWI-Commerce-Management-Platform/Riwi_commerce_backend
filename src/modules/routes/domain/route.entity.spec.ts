@@ -165,12 +165,12 @@ describe('Route Domain Entity', () => {
 
     route.updateGeneralInfo({
       name: 'Ruta Norte Modificada',
-      description: 'Nueva descripción',
+      description: 'New description',
       dayOfWeek: DayOfWeek.FRIDAY,
     });
 
     expect(route.name).toBe('Ruta Norte Modificada');
-    expect(route.description).toBe('Nueva descripción');
+    expect(route.description).toBe('New description');
     expect(route.dayOfWeek).toBe(DayOfWeek.FRIDAY);
   });
 

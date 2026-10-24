@@ -21,7 +21,7 @@ function buildVisit(status: VisitStatus = VisitStatus.PENDING) {
     startTime: null,
     endTime: null,
     status,
-    objective: 'Presentar catalogo',
+    objective: 'Present the catalog',
   });
 }
 
@@ -33,7 +33,9 @@ describe('StartVisitUseCase', () => {
   beforeEach(() => {
     mockVisitDao = {
       findByIdAndAdvisor: vi.fn(),
-      save: vi.fn().mockImplementation((visit: Visit) => Promise.resolve(visit)),
+      save: vi
+        .fn()
+        .mockImplementation((visit: Visit) => Promise.resolve(visit)),
     };
     mockActivityLog = {
       record: vi.fn().mockResolvedValue(undefined),
@@ -46,9 +48,9 @@ describe('StartVisitUseCase', () => {
   });
 
   it('starts a pending visit and persists the transition', async () => {
-    (mockVisitDao.findByIdAndAdvisor as ReturnType<typeof vi.fn>).mockResolvedValue(
-      buildVisit(),
-    );
+    (
+      mockVisitDao.findByIdAndAdvisor as ReturnType<typeof vi.fn>
+    ).mockResolvedValue(buildVisit());
 
     const result = await useCase.execute(1, 20);
 
@@ -58,9 +60,9 @@ describe('StartVisitUseCase', () => {
   });
 
   it('records the visit start in the activity log', async () => {
-    (mockVisitDao.findByIdAndAdvisor as ReturnType<typeof vi.fn>).mockResolvedValue(
-      buildVisit(),
-    );
+    (
+      mockVisitDao.findByIdAndAdvisor as ReturnType<typeof vi.fn>
+    ).mockResolvedValue(buildVisit());
 
     await useCase.execute(1, 20);
 
@@ -74,17 +76,17 @@ describe('StartVisitUseCase', () => {
   });
 
   it('throws NotFound when the visit does not exist or belongs to another advisor', async () => {
-    (mockVisitDao.findByIdAndAdvisor as ReturnType<typeof vi.fn>).mockResolvedValue(
-      null,
-    );
+    (
+      mockVisitDao.findByIdAndAdvisor as ReturnType<typeof vi.fn>
+    ).mockResolvedValue(null);
 
     await expect(useCase.execute(1, 20)).rejects.toThrow(NotFoundException);
   });
 
   it('rejects starting a visit that is not pending', async () => {
-    (mockVisitDao.findByIdAndAdvisor as ReturnType<typeof vi.fn>).mockResolvedValue(
-      buildVisit(VisitStatus.IN_PROGRESS),
-    );
+    (
+      mockVisitDao.findByIdAndAdvisor as ReturnType<typeof vi.fn>
+    ).mockResolvedValue(buildVisit(VisitStatus.IN_PROGRESS));
 
     await expect(useCase.execute(1, 20)).rejects.toThrow(BadRequestException);
     expect(mockVisitDao.save).not.toHaveBeenCalled();
@@ -92,14 +94,16 @@ describe('StartVisitUseCase', () => {
   });
 
   it('propagates persistence errors instead of masking them as bad requests', async () => {
-    (mockVisitDao.findByIdAndAdvisor as ReturnType<typeof vi.fn>).mockResolvedValue(
-      buildVisit(),
-    );
+    (
+      mockVisitDao.findByIdAndAdvisor as ReturnType<typeof vi.fn>
+    ).mockResolvedValue(buildVisit());
     (mockVisitDao.save as ReturnType<typeof vi.fn>).mockRejectedValue(
       new Error('database unavailable'),
     );
 
-    await expect(useCase.execute(1, 20)).rejects.toThrow('database unavailable');
+    await expect(useCase.execute(1, 20)).rejects.toThrow(
+      'database unavailable',
+    );
     expect(mockActivityLog.record).not.toHaveBeenCalled();
   });
 
@@ -110,6 +114,8 @@ describe('StartVisitUseCase', () => {
     });
     (mockVisitDao.findByIdAndAdvisor as any).mockResolvedValue(visit);
 
-    await expect(useCase.execute(1, 20)).rejects.toThrow('Unexpected domain start error');
+    await expect(useCase.execute(1, 20)).rejects.toThrow(
+      'Unexpected domain start error',
+    );
   });
 });

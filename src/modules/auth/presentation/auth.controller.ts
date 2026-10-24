@@ -41,6 +41,17 @@ import { ZoneRequiredError } from '../domain/errors/zone-required.error.js';
 import { UnexpectedZoneError } from '../domain/errors/unexpected-zone.error.js';
 import { ZoneNotFoundError } from '../domain/errors/zone-not-found.error.js';
 import { UserNotFoundError } from '../domain/errors/user-not-found.error.js';
+import { InvalidResetTokenError } from '../domain/errors/invalid-reset-token.error.js';
+import { SocialLoginUnavailableError } from '../domain/errors/social-login-unavailable.error.js';
+import { RequestPasswordResetUseCase } from '../application/request-password-reset.use-case.js';
+import { ResetPasswordUseCase } from '../application/reset-password.use-case.js';
+import { StartMicrosoftLoginUseCase } from '../application/start-microsoft-login.use-case.js';
+import { ForgotPasswordDto } from './dto/forgot-password.dto.js';
+import { ResetPasswordDto } from './dto/reset-password.dto.js';
+import { MicrosoftLoginDto } from './dto/microsoft-login.dto.js';
+
+const frontendUrl = (): string =>
+  process.env.FRONTEND_URL ?? 'http://localhost:3000';
 
 @ApiTags('Auth')
 @UsePipes(
@@ -57,6 +68,9 @@ export class AuthController {
     private readonly logoutUseCase: LogoutUseCase,
     private readonly getCurrentUserUseCase: GetCurrentUserUseCase,
     private readonly assignUserRoleUseCase: AssignUserRoleUseCase,
+    private readonly requestPasswordResetUseCase: RequestPasswordResetUseCase,
+    private readonly resetPasswordUseCase: ResetPasswordUseCase,
+    private readonly startMicrosoftLoginUseCase: StartMicrosoftLoginUseCase,
   ) {}
 
   private forwardCookies(
@@ -153,6 +167,85 @@ export class AuthController {
       success: true,
       message: 'Session ended successfully',
     };
+  }
+
+  @Public()
+  @Post('forgot-password')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Send a password reset link by email (HU-09)',
+    description:
+      'Always answers 200 so it cannot reveal which emails are registered. The link expires in 1 hour and opens `redirectTo?token=...`.',
+  })
+  @ApiResponse({ status: 200, description: 'Reset email requested.' })
+  async forgotPassword(@Body() dto: ForgotPasswordDto) {
+    await this.requestPasswordResetUseCase.execute({
+      email: dto.email,
+      redirectTo: dto.redirectTo ?? `${frontendUrl()}/reset-password`,
+    });
+    return {
+      success: true,
+      message:
+        'If the email is registered, a password reset link has been sent',
+    };
+  }
+
+  @Public()
+  @Post('reset-password')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Set a new password with the token from the reset link (HU-09)',
+    description: 'Every open session of the user is revoked.',
+  })
+  @ApiResponse({ status: 200, description: 'Password updated.' })
+  @ApiResponse({ status: 400, description: 'Invalid or expired token.' })
+  async resetPassword(@Body() dto: ResetPasswordDto) {
+    try {
+      await this.resetPasswordUseCase.execute({
+        token: dto.token,
+        newPassword: dto.newPassword,
+      });
+      return { success: true, message: 'Password updated successfully' };
+    } catch (error) {
+      if (error instanceof InvalidResetTokenError) {
+        throw new BadRequestException(error.message);
+      }
+      throw error;
+    }
+  }
+
+  @Public()
+  @Post('microsoft')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Start the Microsoft 365 sign-in (HU-10)',
+    description:
+      'Returns the Microsoft authorization URL; the frontend redirects the browser to it. Requires MICROSOFT_CLIENT_ID and MICROSOFT_CLIENT_SECRET.',
+  })
+  @ApiResponse({ status: 200, description: '{ url } to redirect to.' })
+  @ApiResponse({
+    status: 400,
+    description: 'Microsoft sign-in is not configured.',
+  })
+  async microsoftLogin(
+    @Body() dto: MicrosoftLoginDto,
+    @Req() req: Request,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<{ url: string }> {
+    try {
+      const result = await this.startMicrosoftLoginUseCase.execute({
+        callbackURL: dto.callbackURL ?? frontendUrl(),
+        errorCallbackURL: dto.errorCallbackURL,
+        headers: req.headers,
+      });
+      this.forwardCookies(res, result.setCookieHeaders);
+      return { url: result.url };
+    } catch (error) {
+      if (error instanceof SocialLoginUnavailableError) {
+        throw new BadRequestException(error.message);
+      }
+      throw error;
+    }
   }
 
   @Get('me')

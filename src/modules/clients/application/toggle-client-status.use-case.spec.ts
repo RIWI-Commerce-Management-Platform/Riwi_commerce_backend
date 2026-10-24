@@ -42,7 +42,9 @@ describe('ToggleClientStatusUseCase', () => {
   it('should throw ClientNotFoundError if client does not exist', async () => {
     findById.mockResolvedValueOnce(null);
 
-    const useCase = new ToggleClientStatusUseCase(mockRepository);
+    const useCase = new ToggleClientStatusUseCase(mockRepository, {
+      record: vi.fn(),
+    } as any);
 
     await expect(useCase.execute({ id: 999 })).rejects.toThrow(
       ClientNotFoundError,
@@ -53,7 +55,9 @@ describe('ToggleClientStatusUseCase', () => {
     const client = createActiveClient();
     findById.mockResolvedValueOnce(client);
 
-    const useCase = new ToggleClientStatusUseCase(mockRepository);
+    const useCase = new ToggleClientStatusUseCase(mockRepository, {
+      record: vi.fn(),
+    } as any);
     const result = await useCase.execute({ id: 1 });
 
     expect(result.isActive).toBe(false);
@@ -65,7 +69,9 @@ describe('ToggleClientStatusUseCase', () => {
     client.deactivate();
     findById.mockResolvedValueOnce(client);
 
-    const useCase = new ToggleClientStatusUseCase(mockRepository);
+    const useCase = new ToggleClientStatusUseCase(mockRepository, {
+      record: vi.fn(),
+    } as any);
     const result = await useCase.execute({ id: 1 });
 
     expect(result.isActive).toBe(true);
@@ -77,7 +83,9 @@ describe('ToggleClientStatusUseCase', () => {
     client.deactivate();
     findById.mockResolvedValueOnce(client);
 
-    const useCase = new ToggleClientStatusUseCase(mockRepository);
+    const useCase = new ToggleClientStatusUseCase(mockRepository, {
+      record: vi.fn(),
+    } as any);
     const result = await useCase.execute({ id: 1, isActive: true });
 
     expect(result.isActive).toBe(true);
@@ -87,7 +95,9 @@ describe('ToggleClientStatusUseCase', () => {
     const client = createActiveClient();
     findById.mockResolvedValueOnce(client);
 
-    const useCase = new ToggleClientStatusUseCase(mockRepository);
+    const useCase = new ToggleClientStatusUseCase(mockRepository, {
+      record: vi.fn(),
+    } as any);
     const result = await useCase.execute({ id: 1, isActive: false });
 
     expect(result.isActive).toBe(false);

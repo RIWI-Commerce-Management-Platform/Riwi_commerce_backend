@@ -27,6 +27,7 @@ import { QuoteAlreadyConvertedError } from '../domain/errors/quote-already-conve
 import { InvalidOrderStatusTransitionError } from '../domain/errors/invalid-order-status-transition.error.js';
 import { QuoteNotFoundError } from '../../quotes/domain/errors/quote-not-found.error.js';
 import { CurrentAdvisorProvider } from '../../../shared/auth/domain/current-advisor.provider.js';
+import { CurrentActorProvider } from '../../../shared/auth/domain/current-actor.provider.js';
 import { queryValidationPipe } from '../../../shared/pagination/query-validation.pipe.js';
 
 @ApiTags('Orders')
@@ -38,6 +39,7 @@ export class OrdersController {
     private readonly changeOrderStatusUseCase: ChangeOrderStatusUseCase,
     private readonly listOrdersUseCase: ListOrdersUseCase,
     private readonly currentAdvisor: CurrentAdvisorProvider,
+    private readonly currentActor: CurrentActorProvider,
   ) {}
 
   @Post('from-quote/:quoteId')
@@ -84,15 +86,21 @@ export class OrdersController {
   })
   async list(
     @Query(queryValidationPipe()) query: ListOrdersQueryDto,
+    @Req() request: Request,
   ): Promise<PaginatedResponseDto<OrderResponseDto>> {
-    const result = await this.listOrdersUseCase.execute({
-      clientId: query.clientId,
-      status: query.status,
-      startDate: query.startDate,
-      endDate: query.endDate,
-      page: query.parsedPage,
-      limit: query.parsedLimit,
-    });
+    const actor = await this.currentActor.extract(request);
+    const result = await this.listOrdersUseCase.execute(
+      {
+        clientId: query.clientId,
+        advisorId: query.advisorId,
+        status: query.status,
+        startDate: query.startDate,
+        endDate: query.endDate,
+        page: query.parsedPage,
+        limit: query.parsedLimit,
+      },
+      actor,
+    );
 
     return PaginatedResponseDto.create(
       result,
@@ -109,9 +117,11 @@ export class OrdersController {
   })
   async getById(
     @Param('id', ParseIntPipe) id: number,
+    @Req() request: Request,
   ): Promise<OrderResponseDto> {
+    const actor = await this.currentActor.extract(request);
     try {
-      const order = await this.getOrderByIdUseCase.execute(id);
+      const order = await this.getOrderByIdUseCase.execute(id, actor);
       return new OrderResponseDto(order);
     } catch (error) {
       if (error instanceof OrderNotFoundError) {

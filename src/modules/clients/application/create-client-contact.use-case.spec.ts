@@ -44,12 +44,14 @@ describe('CreateClientContactUseCase', () => {
       unsetPrimaryByClientId: vi.fn(),
     } as unknown as ClientContactRepository;
 
+    const activityLog = { record: vi.fn() };
     const useCase = new CreateClientContactUseCase(
       clientRepository,
       contactRepository,
+      activityLog as any,
     );
 
-    return { useCase, clientRepository, contactRepository };
+    return { useCase, clientRepository, contactRepository, activityLog };
   };
 
   it('should throw ClientNotFoundError if client does not exist', async () => {

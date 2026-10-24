@@ -3,13 +3,16 @@ import { Route } from '../domain/route.entity.js';
 import { RouteRepository } from '../domain/route.repository.js';
 import { RouteNotFoundError } from '../domain/errors/route-not-found.error.js';
 import { UnauthorizedZoneError } from '../domain/errors/unauthorized-zone.error.js';
-import { RouteClientReaderPort, RouteClientDetails } from './ports/route-client-reader.port.js';
+import {
+  RouteClientReaderPort,
+  RouteClientDetails,
+} from './ports/route-client-reader.port.js';
 import { AuthActor } from './dto/auth-actor.dto.js';
 import { UserRole } from '../../auth/domain/user-role.enum.js';
 
 /**
- * Estructura de parada enriquecida con información del cliente y sus coordenadas
- * para renderizar directamente en el mapa Leaflet de OpenStreetMap (HU-19).
+ * A stop with its client's data and coordinates, ready to draw on the
+ * Leaflet/OpenStreetMap map (HU-19).
  */
 export interface EnrichedRouteStop {
   id?: number;
@@ -21,7 +24,7 @@ export interface EnrichedRouteStop {
 }
 
 /**
- * Detalle completo de la ruta con paradas enriquecidas para el mapa.
+ * Route detail with the stops enriched for the map.
  */
 export interface EnrichedRouteDetails {
   route: Route;
@@ -29,14 +32,10 @@ export interface EnrichedRouteDetails {
 }
 
 /**
- * Caso de uso: Obtener el detalle de una ruta comercial por su ID (HU-19 y HU-21).
- * 
- * En este caso de uso:
- * 1. Busco la ruta en el repositorio y valido que exista.
- * 2. Valido que el Director Regional tenga autorización sobre la zona.
- * 3. Enriquezco cada parada con el nombre comercial, dirección y coordenadas
- *    del cliente para que el frontend pueda pintar los marcadores numerados
- *    y la polilínea del recorrido en el mapa interactivo (HU-19).
+ * Route detail by id (HU-19, HU-21). Each stop carries the client's
+ * commercial name, address and coordinates so the frontend can draw the
+ * numbered markers and the route line on the map. A regional director only
+ * sees their zone and an advisor only their own routes (HU-06).
  */
 @Injectable()
 export class GetRouteByIdUseCase {
@@ -54,16 +53,23 @@ export class GetRouteByIdUseCase {
       throw new RouteNotFoundError(routeId);
     }
 
-    // 1. Verifico la seguridad de zona
     if (actor && actor.role === UserRole.DIRECTOR_REGIONAL) {
       if (actor.zoneId && actor.zoneId !== route.zoneId) {
         throw new UnauthorizedZoneError(actor.zoneId, route.zoneId);
       }
     }
+    // An advisor can't tell apart a route of someone else from a missing one
+    if (
+      actor &&
+      actor.role === UserRole.ASESOR &&
+      route.advisorId !== actor.id
+    ) {
+      throw new RouteNotFoundError(routeId);
+    }
 
-    // 2. Consulto los clientes de las paradas para enriquecer con coordenadas
     const clientIds = route.stops.map((s) => s.clientId);
-    const clients = clientIds.length > 0 ? await this.clientReader.findByIds(clientIds) : [];
+    const clients =
+      clientIds.length > 0 ? await this.clientReader.findByIds(clientIds) : [];
     const clientMap = new Map(clients.map((c) => [c.id, c]));
 
     const enrichedStops: EnrichedRouteStop[] = route.stops.map((stop) => ({

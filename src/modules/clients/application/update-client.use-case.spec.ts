@@ -52,7 +52,9 @@ describe('UpdateClientUseCase', () => {
   it('should throw ClientNotFoundError if client does not exist', async () => {
     findById.mockResolvedValueOnce(null);
 
-    const useCase = new UpdateClientUseCase(mockRepository, mockGeocodingPort);
+    const useCase = new UpdateClientUseCase(mockRepository, mockGeocodingPort, {
+      record: vi.fn(),
+    } as any);
 
     await expect(
       useCase.execute({ id: 999, commercialName: 'New Name' }),
@@ -69,7 +71,9 @@ describe('UpdateClientUseCase', () => {
       }),
     );
 
-    const useCase = new UpdateClientUseCase(mockRepository, mockGeocodingPort);
+    const useCase = new UpdateClientUseCase(mockRepository, mockGeocodingPort, {
+      record: vi.fn(),
+    } as any);
 
     await expect(
       useCase.execute({ id: 1, nit: '900999999-9' }),
@@ -83,7 +87,9 @@ describe('UpdateClientUseCase', () => {
       lng: -75.5917,
     });
 
-    const useCase = new UpdateClientUseCase(mockRepository, mockGeocodingPort);
+    const useCase = new UpdateClientUseCase(mockRepository, mockGeocodingPort, {
+      record: vi.fn(),
+    } as any);
     const result = await useCase.execute({
       id: 1,
       address: 'Carrera 43A # 1-50',
@@ -103,7 +109,9 @@ describe('UpdateClientUseCase', () => {
     findById.mockResolvedValueOnce(existingClient);
     geocode.mockClear();
 
-    const useCase = new UpdateClientUseCase(mockRepository, mockGeocodingPort);
+    const useCase = new UpdateClientUseCase(mockRepository, mockGeocodingPort, {
+      record: vi.fn(),
+    } as any);
     const result = await useCase.execute({
       id: 1,
       address: 'Carrera 43A # 1-50',

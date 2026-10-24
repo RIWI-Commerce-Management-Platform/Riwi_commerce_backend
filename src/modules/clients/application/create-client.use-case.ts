@@ -3,8 +3,10 @@ import { Client } from '../domain/client.entity.js';
 import { ClientRepository } from '../domain/client.repository.js';
 import { ClientNitAlreadyExistsError } from '../domain/client-nit-already-exists.error.js';
 import { GeocodingPort } from './ports/geocoding.port.js';
+import { ActivityLogService } from '../../../shared/activity-log/domain/activity-log.service.js';
 
 export interface CreateClientInput {
+  actorId?: number;
   nit: string;
   businessName: string;
   commercialName: string;
@@ -28,6 +30,7 @@ export class CreateClientUseCase {
   constructor(
     private readonly clientRepository: ClientRepository,
     private readonly geocodingPort: GeocodingPort,
+    private readonly activityLog: ActivityLogService,
   ) {}
 
   async execute(input: CreateClientInput): Promise<Client> {
@@ -74,6 +77,19 @@ export class CreateClientUseCase {
       updatedAt: now,
     });
 
-    return this.clientRepository.save(client);
+    const saved = await this.clientRepository.save(client);
+
+    if (input.actorId !== undefined) {
+      await this.activityLog.record({
+        action: 'client.created',
+        entityType: 'client',
+        entityId: saved.id!,
+        clientId: saved.id!,
+        actorId: input.actorId,
+        description: `Client ${saved.commercialName} (NIT ${saved.nit}) created`,
+      });
+    }
+
+    return saved;
   }
 }

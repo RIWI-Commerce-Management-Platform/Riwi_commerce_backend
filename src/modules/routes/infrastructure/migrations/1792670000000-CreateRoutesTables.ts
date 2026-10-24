@@ -8,23 +8,25 @@ import {
 } from 'typeorm';
 
 /**
- * Migración para la creación de las tablas `routes` (RUTA) y `route_stops` (RUTA_CLIENTE).
- * 
- * En esta migración configuro la estructura relacional completa para la planeación de rutas,
- * garantizando integridad referencial con las zonas territoriales y los clientes.
+ * Creates `routes` (RUTA) and `route_stops` (RUTA_CLIENTE) with their
+ * foreign keys to zones and clients.
  */
 export class CreateRoutesTables1792670000000 implements MigrationInterface {
   name = 'CreateRoutesTables1792670000000';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
-    // 1. Creo la tabla principal `routes`
     await queryRunner.createTable(
       new Table({
         name: 'routes',
         columns: [
           { name: 'id', type: 'serial', isPrimary: true },
           { name: 'name', type: 'varchar', length: '150' },
-          { name: 'description', type: 'varchar', length: '500', isNullable: true },
+          {
+            name: 'description',
+            type: 'varchar',
+            length: '500',
+            isNullable: true,
+          },
           { name: 'zone_id', type: 'integer' },
           { name: 'advisor_id', type: 'integer', isNullable: true },
           { name: 'day_of_week', type: 'varchar', length: '20' },
@@ -71,7 +73,7 @@ export class CreateRoutesTables1792670000000 implements MigrationInterface {
       true,
     );
 
-    // 2. Creo la tabla relacional `route_stops` (paradas de clientes)
+    // Client stops of each route
     await queryRunner.createTable(
       new Table({
         name: 'route_stops',
@@ -96,7 +98,6 @@ export class CreateRoutesTables1792670000000 implements MigrationInterface {
       true,
     );
 
-    // 3. Claves foráneas para `routes`
     await queryRunner.createForeignKey(
       'routes',
       new TableForeignKey({
@@ -108,7 +109,6 @@ export class CreateRoutesTables1792670000000 implements MigrationInterface {
       }),
     );
 
-    // 4. Claves foráneas e índices para `route_stops`
     await queryRunner.createForeignKey(
       'route_stops',
       new TableForeignKey({
@@ -131,7 +131,7 @@ export class CreateRoutesTables1792670000000 implements MigrationInterface {
       }),
     );
 
-    // 5. Restricción única para no duplicar un cliente en la misma ruta
+    // A client appears at most once per route
     await queryRunner.createUniqueConstraint(
       'route_stops',
       new TableUnique({
@@ -140,7 +140,7 @@ export class CreateRoutesTables1792670000000 implements MigrationInterface {
       }),
     );
 
-    // 6. Índices para acelerar búsquedas
+    // Indexes for the list filters
     await queryRunner.createIndex(
       'routes',
       new TableIndex({
@@ -165,7 +165,7 @@ export class CreateRoutesTables1792670000000 implements MigrationInterface {
       }),
     );
 
-    // 7. Relación con la tabla `visits` (Camilo E4) para conectar las visitas generadas
+    // Link the generated visits (E4) to their route
     const visitsTableExists = await queryRunner.hasTable('visits');
     if (visitsTableExists) {
       await queryRunner.createForeignKey(
@@ -187,7 +187,7 @@ export class CreateRoutesTables1792670000000 implements MigrationInterface {
       try {
         await queryRunner.dropForeignKey('visits', 'FK_visits_route');
       } catch {
-        // En caso de que no exista
+        // The foreign key may not exist
       }
     }
 

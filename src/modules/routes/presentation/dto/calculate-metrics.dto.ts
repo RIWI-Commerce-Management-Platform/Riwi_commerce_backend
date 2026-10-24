@@ -1,12 +1,18 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { ArrayNotEmpty, IsArray, IsInt, IsOptional, Min } from 'class-validator';
+import {
+  ArrayNotEmpty,
+  IsArray,
+  IsInt,
+  IsOptional,
+  Min,
+} from 'class-validator';
 
 /**
- * DTO para previsualizar el cálculo de distancia y duración de una secuencia de paradas (HU-22).
+ * Body to preview the distance and duration of a sequence of stops (HU-22).
  */
 export class CalculateMetricsDto {
   @ApiProperty({
-    description: 'Secuencia ordenada de IDs de clientes a evaluar',
+    description: 'Ordered client ids to evaluate',
     example: [101, 102, 103],
     type: [Number],
   })
@@ -16,7 +22,7 @@ export class CalculateMetricsDto {
   clientIds!: number[];
 
   @ApiPropertyOptional({
-    description: 'Duración estimada promedio por parada en minutos',
+    description: 'Average estimated minutes per stop',
     example: 30,
     default: 30,
   })

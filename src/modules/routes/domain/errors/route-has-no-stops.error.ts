@@ -1,8 +1,6 @@
 /**
- * Error de dominio lanzado cuando intento asignar una ruta a un asesor comercial
- * pero aún no le he agregado ninguna parada (clientes a visitar).
- * 
- * Regla de negocio: No tiene sentido despachar a un asesor con una ruta vacía.
+ * Thrown when assigning a route that has no stops yet: an advisor can't be
+ * sent out with an empty route.
  */
 export class RouteHasNoStopsError extends Error {
   constructor(routeId?: number) {

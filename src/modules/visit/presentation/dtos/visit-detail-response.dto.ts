@@ -46,6 +46,12 @@ export class VisitDetailResponseDto extends VisitSummaryResponseDto {
   @ApiProperty({ type: [VisitResultResponseDto] })
   results: VisitResultResponseDto[];
 
+  @ApiProperty({ description: 'The visit generated a quote (HU-27)' })
+  quoteGenerated: boolean;
+
+  @ApiProperty({ description: 'The visit generated an order (HU-27)' })
+  orderGenerated: boolean;
+
   constructor(visit: Visit) {
     super(visit);
     this.actualDate = visit.actualDate;
@@ -58,5 +64,7 @@ export class VisitDetailResponseDto extends VisitSummaryResponseDto {
     this.results = visit.results.map(
       (result) => new VisitResultResponseDto(result),
     );
+    this.quoteGenerated = visit.quoteGenerated;
+    this.orderGenerated = visit.orderGenerated;
   }
 }

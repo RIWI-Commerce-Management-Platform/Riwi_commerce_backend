@@ -32,7 +32,7 @@ describe('GetOrderByIdUseCase (Application)', () => {
     const result = await useCase.execute(1);
     expect(result.id).toBe(1);
     expect(result.orderNumber).toBe('PED-0001');
-    expect(orderRepository.findById).toHaveBeenCalledWith(1);
+    expect(orderRepository.findById).toHaveBeenCalledWith(1, {});
   });
 
   it('throws OrderNotFoundError when order does not exist', async () => {
