@@ -178,19 +178,25 @@ export class QuotesController {
   })
   async attachDocument(
     @Param('id', ParseIntPipe) id: number,
+    @Req() request: Request,
     @UploadedFile() file?: UploadedFilePayload,
   ): Promise<QuoteResponseDto> {
     if (!file) {
       throw new BadRequestException('A file is required.');
     }
 
+    const actor = await this.currentActor.extract(request);
     try {
-      const result = await this.attachQuoteDocumentUseCase.execute(id, {
-        buffer: file.buffer,
-        originalname: file.originalname,
-        mimetype: file.mimetype,
-        size: file.size,
-      });
+      const result = await this.attachQuoteDocumentUseCase.execute(
+        id,
+        {
+          buffer: file.buffer,
+          originalname: file.originalname,
+          mimetype: file.mimetype,
+          size: file.size,
+        },
+        actor,
+      );
       return new QuoteResponseDto(result.quote, result.documentUrl);
     } catch (error) {
       if (error instanceof QuoteNotFoundError) {
@@ -222,12 +228,14 @@ export class QuotesController {
     @Req() request: Request,
   ): Promise<QuoteResponseDto> {
     const actorId = await this.currentAdvisor.extract(request);
+    const actor = await this.currentActor.extract(request);
 
     try {
       const updatedQuote = await this.changeQuoteStatusUseCase.execute({
         quoteId: id,
         newStatus: dto.status,
         actorId,
+        actor,
       });
       return new QuoteResponseDto(updatedQuote);
     } catch (error) {

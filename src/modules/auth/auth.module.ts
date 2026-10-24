@@ -12,7 +12,6 @@ import { LoginUseCase } from './application/login.use-case.js';
 import { RegisterUseCase } from './application/register.use-case.js';
 import { LogoutUseCase } from './application/logout.use-case.js';
 import { GetCurrentUserUseCase } from './application/get-current-user.use-case.js';
-import { AssignUserRoleUseCase } from './application/assign-user-role.use-case.js';
 import { RequestPasswordResetUseCase } from './application/request-password-reset.use-case.js';
 import { ResetPasswordUseCase } from './application/reset-password.use-case.js';
 import { StartMicrosoftLoginUseCase } from './application/start-microsoft-login.use-case.js';
@@ -37,7 +36,6 @@ import { StartMicrosoftLoginUseCase } from './application/start-microsoft-login.
     RegisterUseCase,
     LogoutUseCase,
     GetCurrentUserUseCase,
-    AssignUserRoleUseCase,
     RequestPasswordResetUseCase,
     ResetPasswordUseCase,
     StartMicrosoftLoginUseCase,

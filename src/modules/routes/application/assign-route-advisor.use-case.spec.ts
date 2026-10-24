@@ -2,6 +2,8 @@ import { describe, expect, it, vi } from 'vitest';
 import { AssignRouteAdvisorUseCase } from './assign-route-advisor.use-case.js';
 import { RouteRepository } from '../domain/route.repository.js';
 import { VisitSchedulerPort } from './ports/visit-scheduler.port.js';
+import { RouteAdvisorReaderPort } from './ports/route-advisor-reader.port.js';
+import { InvalidRouteAdvisorError } from '../domain/errors/invalid-route-advisor.error.js';
 import { Route } from '../domain/route.entity.js';
 import { RouteStatus } from '../domain/route-status.enum.js';
 import { DayOfWeek } from '../domain/day-of-week.enum.js';
@@ -37,12 +39,20 @@ describe('AssignRouteAdvisorUseCase', () => {
     scheduleVisitsForRoute: vi.fn().mockResolvedValue(4),
   });
 
+  const createMockAdvisorReader = (active = true): RouteAdvisorReaderPort => ({
+    isActiveAdvisor: vi.fn().mockResolvedValue(active),
+  });
+
   it('should assign advisor, update status to ASSIGNED, and schedule visits', async () => {
     const route = createRouteWithStops();
     const repo = createMockRepo(route);
     const visitScheduler = createMockVisitScheduler();
 
-    const useCase = new AssignRouteAdvisorUseCase(repo, visitScheduler);
+    const useCase = new AssignRouteAdvisorUseCase(
+      repo,
+      visitScheduler,
+      createMockAdvisorReader(),
+    );
 
     const result = await useCase.execute(1, 10);
 
@@ -67,6 +77,7 @@ describe('AssignRouteAdvisorUseCase', () => {
     const useCase = new AssignRouteAdvisorUseCase(
       repo,
       createMockVisitScheduler(),
+      createMockAdvisorReader(),
     );
 
     await expect(useCase.execute(999, 10)).rejects.toThrow(RouteNotFoundError);
@@ -86,6 +97,7 @@ describe('AssignRouteAdvisorUseCase', () => {
     const useCase = new AssignRouteAdvisorUseCase(
       repo,
       createMockVisitScheduler(),
+      createMockAdvisorReader(),
     );
 
     await expect(useCase.execute(1, 10)).rejects.toThrow(RouteHasNoStopsError);
@@ -96,6 +108,7 @@ describe('AssignRouteAdvisorUseCase', () => {
     const useCase = new AssignRouteAdvisorUseCase(
       repo,
       createMockVisitScheduler(),
+      createMockAdvisorReader(),
     );
 
     const actor = {
@@ -107,5 +120,21 @@ describe('AssignRouteAdvisorUseCase', () => {
     await expect(useCase.execute(1, 10, actor)).rejects.toThrow(
       UnauthorizedZoneError,
     );
+  });
+
+  it('should throw InvalidRouteAdvisorError if the advisor is not active', async () => {
+    const repo = createMockRepo();
+    const visitScheduler = createMockVisitScheduler();
+    const useCase = new AssignRouteAdvisorUseCase(
+      repo,
+      visitScheduler,
+      createMockAdvisorReader(false),
+    );
+
+    await expect(useCase.execute(1, 10)).rejects.toThrow(
+      InvalidRouteAdvisorError,
+    );
+    expect(repo.save).not.toHaveBeenCalled();
+    expect(visitScheduler.scheduleVisitsForRoute).not.toHaveBeenCalled();
   });
 });

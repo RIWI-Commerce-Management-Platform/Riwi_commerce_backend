@@ -3,7 +3,7 @@ import { DataSource } from 'typeorm';
 import { AppModule } from '../app.module.js';
 import { auth } from '../modules/auth/auth.js';
 import { UserRole } from '../modules/auth/domain/user-role.enum.js';
-import { AssignUserRoleUseCase } from '../modules/auth/application/assign-user-role.use-case.js';
+import { AssignUserRoleUseCase } from '../modules/users/application/assign-user-role.use-case.js';
 import { CreateAdvisorUseCase } from '../modules/advisors/application/create-advisor.use-case.js';
 import { CreateClientUseCase } from '../modules/clients/application/create-client.use-case.js';
 import { CreateClientContactUseCase } from '../modules/clients/application/create-client-contact.use-case.js';

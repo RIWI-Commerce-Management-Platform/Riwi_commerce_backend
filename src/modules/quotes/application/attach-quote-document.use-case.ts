@@ -3,6 +3,10 @@ import { QuoteRepository } from '../domain/quote.repository.js';
 import { FileStorageService } from '../../../shared/file-storage/domain/file-storage.service.js';
 import { QuoteNotFoundError } from '../domain/errors/quote-not-found.error.js';
 import { Quote } from '../domain/quote.entity.js';
+import {
+  CurrentActor,
+  scopeForActor,
+} from '../../../shared/auth/domain/current-actor.provider.js';
 
 export interface AttachQuoteDocumentResult {
   quote: Quote;
@@ -26,8 +30,12 @@ export class AttachQuoteDocumentUseCase {
   async execute(
     quoteId: number,
     file: UploadFileInput,
+    actor?: CurrentActor,
   ): Promise<AttachQuoteDocumentResult> {
-    const quote = await this.quoteRepository.findById(quoteId);
+    const quote = await this.quoteRepository.findById(
+      quoteId,
+      scopeForActor(actor),
+    );
     if (!quote) {
       throw new QuoteNotFoundError(quoteId);
     }

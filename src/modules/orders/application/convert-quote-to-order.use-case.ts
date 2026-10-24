@@ -9,6 +9,7 @@ import { QuoteStatus } from '../../quotes/domain/quote-status.enum.js';
 import { QuoteNotFoundError } from '../../quotes/domain/errors/quote-not-found.error.js';
 import { QuoteNotApprovedForOrderError } from '../domain/errors/quote-not-approved-for-order.error.js';
 import { QuoteAlreadyConvertedError } from '../domain/errors/quote-already-converted.error.js';
+import { scopeForActor } from '../../../shared/auth/domain/current-actor.provider.js';
 import { ConvertQuoteToOrderCommand } from './dto/convert-quote-to-order.command.js';
 
 @Injectable()
@@ -20,7 +21,10 @@ export class ConvertQuoteToOrderUseCase {
   ) {}
 
   async execute(command: ConvertQuoteToOrderCommand): Promise<Order> {
-    const quote = await this.quoteRepository.findById(command.quoteId);
+    const quote = await this.quoteRepository.findById(
+      command.quoteId,
+      scopeForActor(command.actor),
+    );
     if (!quote) {
       throw new QuoteNotFoundError(command.quoteId);
     }

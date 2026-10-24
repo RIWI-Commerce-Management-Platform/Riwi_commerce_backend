@@ -1,3 +1,4 @@
+import { UserRole } from '../../auth/domain/user-role.enum.js';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ChangeOrderStatusUseCase } from './change-order-status.use-case.js';
 import { OrderRepository } from '../domain/order.repository.js';
@@ -61,6 +62,17 @@ describe('ChangeOrderStatusUseCase (Application)', () => {
         },
       }),
     );
+  });
+
+  it('looks the order up within the actor scope (HU-06)', async () => {
+    await useCase.execute({
+      orderId: 1,
+      newStatus: OrderStatus.DISPATCHED,
+      actorId: 2,
+      actor: { id: 2, role: UserRole.DIRECTOR_REGIONAL, zoneId: 4 },
+    });
+
+    expect(orderRepository.findById).toHaveBeenCalledWith(1, { zoneId: 4 });
   });
 
   it('throws OrderNotFoundError when order does not exist', async () => {

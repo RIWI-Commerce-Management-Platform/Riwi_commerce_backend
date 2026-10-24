@@ -52,6 +52,7 @@ import { RouteHasNoStopsError } from '../domain/errors/route-has-no-stops.error.
 import { ClientAlreadyInRouteError } from '../domain/errors/client-already-in-route.error.js';
 import { ClientNotInRouteError } from '../domain/errors/client-not-in-route.error.js';
 import { InvalidStopOrderError } from '../domain/errors/invalid-stop-order.error.js';
+import { InvalidRouteAdvisorError } from '../domain/errors/invalid-route-advisor.error.js';
 import { AuthActor } from '../application/dto/auth-actor.dto.js';
 
 /**
@@ -439,7 +440,8 @@ export class RoutesController {
     if (
       err instanceof RouteHasNoStopsError ||
       err instanceof ClientAlreadyInRouteError ||
-      err instanceof InvalidStopOrderError
+      err instanceof InvalidStopOrderError ||
+      err instanceof InvalidRouteAdvisorError
     ) {
       throw new BadRequestException(err.message);
     }

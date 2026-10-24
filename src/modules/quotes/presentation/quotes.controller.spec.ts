@@ -181,9 +181,9 @@ describe('QuotesController (Presentation)', () => {
 
   describe('POST /quotes/:id/attachment (HU-31)', () => {
     it('throws BadRequestException if no file is provided', async () => {
-      await expect(controller.attachDocument(1, undefined)).rejects.toThrow(
-        BadRequestException,
-      );
+      await expect(
+        controller.attachDocument(1, {} as any, undefined),
+      ).rejects.toThrow(BadRequestException);
     });
 
     it('attaches file to quote and returns response DTO with documentUrl', async () => {
@@ -194,11 +194,12 @@ describe('QuotesController (Presentation)', () => {
         size: 100,
       } as any;
 
-      const response = await controller.attachDocument(1, mockFile);
+      const response = await controller.attachDocument(1, {} as any, mockFile);
 
       expect(attachQuoteDocumentUseCase.execute).toHaveBeenCalledWith(
         1,
         mockFile,
+        actor,
       );
       expect(response.id).toBe(1);
       expect(response.documentUrl).toBe(
@@ -218,9 +219,9 @@ describe('QuotesController (Presentation)', () => {
         size: 100,
       } as any;
 
-      await expect(controller.attachDocument(999, mockFile)).rejects.toThrow(
-        NotFoundException,
-      );
+      await expect(
+        controller.attachDocument(999, {} as any, mockFile),
+      ).rejects.toThrow(NotFoundException);
     });
 
     it('translates FileSizeExceededError to BadRequestException', async () => {
@@ -235,9 +236,9 @@ describe('QuotesController (Presentation)', () => {
         size: 2048,
       } as any;
 
-      await expect(controller.attachDocument(1, mockFile)).rejects.toThrow(
-        BadRequestException,
-      );
+      await expect(
+        controller.attachDocument(1, {} as any, mockFile),
+      ).rejects.toThrow(BadRequestException);
     });
 
     it('translates InvalidFileTypeError to BadRequestException', async () => {
@@ -252,9 +253,9 @@ describe('QuotesController (Presentation)', () => {
         size: 100,
       } as any;
 
-      await expect(controller.attachDocument(1, mockFile)).rejects.toThrow(
-        BadRequestException,
-      );
+      await expect(
+        controller.attachDocument(1, {} as any, mockFile),
+      ).rejects.toThrow(BadRequestException);
     });
   });
 
@@ -271,6 +272,7 @@ describe('QuotesController (Presentation)', () => {
         quoteId: 1,
         newStatus: QuoteStatus.SENT,
         actorId: 15,
+        actor,
       });
       expect(response.quoteNumber).toBe('COT-0001');
     });
@@ -327,11 +329,10 @@ describe('QuotesController (Presentation)', () => {
         dbError,
       );
       await expect(
-        controller.attachDocument(
-          1,
-          { originalname: 'doc.pdf', buffer: Buffer.from('') } as any,
-          req,
-        ),
+        controller.attachDocument(1, req, {
+          originalname: 'doc.pdf',
+          buffer: Buffer.from(''),
+        } as any),
       ).rejects.toThrow(dbError);
 
       vi.mocked(changeQuoteStatusUseCase.execute!).mockRejectedValueOnce(

@@ -1,3 +1,4 @@
+import { UserRole } from '../../auth/domain/user-role.enum.js';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { AttachQuoteDocumentUseCase } from './attach-quote-document.use-case.js';
 import { QuoteRepository } from '../domain/quote.repository.js';
@@ -38,7 +39,9 @@ describe('AttachQuoteDocumentUseCase', () => {
       }),
       getPresignedUrl: vi
         .fn()
-        .mockResolvedValue('https://s3.amazonaws.com/quotes/173000-soporte.pdf'),
+        .mockResolvedValue(
+          'https://s3.amazonaws.com/quotes/173000-soporte.pdf',
+        ),
     };
 
     useCase = new AttachQuoteDocumentUseCase(
@@ -57,7 +60,7 @@ describe('AttachQuoteDocumentUseCase', () => {
 
     const result = await useCase.execute(1, file);
 
-    expect(quoteRepository.findById).toHaveBeenCalledWith(1);
+    expect(quoteRepository.findById).toHaveBeenCalledWith(1, {});
     expect(fileStorageService.upload).toHaveBeenCalledWith({
       buffer: file.buffer,
       filename: 'soporte.pdf',
@@ -72,6 +75,20 @@ describe('AttachQuoteDocumentUseCase', () => {
     expect(result.documentUrl).toBe(
       'https://s3.amazonaws.com/quotes/173000-soporte.pdf',
     );
+  });
+
+  it('looks the quote up within the actor scope (HU-06)', async () => {
+    const actor = { id: 3, role: UserRole.ASESOR, zoneId: null };
+    const file = {
+      buffer: Buffer.from('dummy'),
+      originalname: 'soporte.pdf',
+      mimetype: 'application/pdf',
+      size: 10,
+    };
+
+    await useCase.execute(1, file, actor);
+
+    expect(quoteRepository.findById).toHaveBeenCalledWith(1, { advisorId: 3 });
   });
 
   it('throws QuoteNotFoundError if quote is not found', async () => {

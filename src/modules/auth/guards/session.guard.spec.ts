@@ -56,4 +56,16 @@ describe('SessionGuard', () => {
     expect((request as any).session).toEqual({ id: 7, userId: 3 });
     expect((request as any).user).toEqual({ id: 3, email: 'user@example.com' });
   });
+
+  it('bypasses the cookie cache so revoked sessions are rejected at once', async () => {
+    vi.mocked(auth.api.getSession).mockResolvedValue(null);
+    const guard = createGuard(false);
+
+    await expect(guard.canActivate(context)).rejects.toBeInstanceOf(
+      UnauthorizedException,
+    );
+    expect(auth.api.getSession).toHaveBeenCalledWith(
+      expect.objectContaining({ query: { disableCookieCache: true } }),
+    );
+  });
 });

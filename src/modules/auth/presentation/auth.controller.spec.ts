@@ -1,21 +1,12 @@
 import { describe, expect, it, vi } from 'vitest';
-import {
-  BadRequestException,
-  NotFoundException,
-  UnauthorizedException,
-} from '@nestjs/common';
+import { BadRequestException, UnauthorizedException } from '@nestjs/common';
 import { AuthController } from './auth.controller.js';
 import { LoginUseCase } from '../application/login.use-case.js';
 import { RegisterUseCase } from '../application/register.use-case.js';
 import { LogoutUseCase } from '../application/logout.use-case.js';
 import { GetCurrentUserUseCase } from '../application/get-current-user.use-case.js';
-import { AssignUserRoleUseCase } from '../application/assign-user-role.use-case.js';
 import { InvalidCredentialsError } from '../domain/errors/invalid-credentials.error.js';
 import { RegistrationFailedError } from '../domain/errors/registration-failed.error.js';
-import { InvalidRoleError } from '../domain/errors/invalid-role.error.js';
-import { ZoneRequiredError } from '../domain/errors/zone-required.error.js';
-import { UnexpectedZoneError } from '../domain/errors/unexpected-zone.error.js';
-import { ZoneNotFoundError } from '../domain/errors/zone-not-found.error.js';
 import { UserNotFoundError } from '../domain/errors/user-not-found.error.js';
 import { UserRole } from '../domain/user-role.enum.js';
 import { InvalidResetTokenError } from '../domain/errors/invalid-reset-token.error.js';
@@ -29,9 +20,6 @@ describe('AuthController', () => {
     const getCurrentUserUseCase = {
       execute: vi.fn(),
     } as unknown as GetCurrentUserUseCase;
-    const assignUserRoleUseCase = {
-      execute: vi.fn(),
-    } as unknown as AssignUserRoleUseCase;
 
     const requestPasswordResetUseCase = { execute: vi.fn() };
     const resetPasswordUseCase = { execute: vi.fn() };
@@ -42,7 +30,6 @@ describe('AuthController', () => {
       registerUseCase,
       logoutUseCase,
       getCurrentUserUseCase,
-      assignUserRoleUseCase,
       requestPasswordResetUseCase as any,
       resetPasswordUseCase as any,
       startMicrosoftLoginUseCase as any,
@@ -62,7 +49,6 @@ describe('AuthController', () => {
       registerUseCase,
       logoutUseCase,
       getCurrentUserUseCase,
-      assignUserRoleUseCase,
       requestPasswordResetUseCase,
       resetPasswordUseCase,
       startMicrosoftLoginUseCase,
@@ -202,91 +188,13 @@ describe('AuthController', () => {
     });
   });
 
-  describe('assignRole', () => {
-    it('should assign role successfully', async () => {
-      const { controller, assignUserRoleUseCase } = setup();
-      (assignUserRoleUseCase.execute as any).mockResolvedValue({
-        id: 1,
-        role: UserRole.ADMIN,
-        zoneId: null,
-      });
-
-      const result = await controller.assignRole(1, {
-        role: UserRole.ADMIN,
-      });
-
-      expect(result).toEqual({
-        id: 1,
-        role: UserRole.ADMIN,
-        zoneId: null,
-      });
-    });
-
-    it('should throw BadRequestException on InvalidRoleError', async () => {
-      const { controller, assignUserRoleUseCase } = setup();
-      (assignUserRoleUseCase.execute as any).mockRejectedValue(
-        new InvalidRoleError(),
-      );
-
-      await expect(
-        controller.assignRole(1, { role: 'INVALID' as any }),
-      ).rejects.toThrow(BadRequestException);
-    });
-
-    it('should throw BadRequestException on ZoneRequiredError', async () => {
-      const { controller, assignUserRoleUseCase } = setup();
-      (assignUserRoleUseCase.execute as any).mockRejectedValue(
-        new ZoneRequiredError(),
-      );
-
-      await expect(
-        controller.assignRole(1, { role: UserRole.DIRECTOR_REGIONAL }),
-      ).rejects.toThrow(BadRequestException);
-    });
-
-    it('should throw BadRequestException on UnexpectedZoneError', async () => {
-      const { controller, assignUserRoleUseCase } = setup();
-      (assignUserRoleUseCase.execute as any).mockRejectedValue(
-        new UnexpectedZoneError(),
-      );
-
-      await expect(
-        controller.assignRole(1, { role: UserRole.ASESOR, zoneId: 3 }),
-      ).rejects.toThrow(BadRequestException);
-    });
-
-    it('should throw NotFoundException on ZoneNotFoundError', async () => {
-      const { controller, assignUserRoleUseCase } = setup();
-      (assignUserRoleUseCase.execute as any).mockRejectedValue(
-        new ZoneNotFoundError(),
-      );
-
-      await expect(
-        controller.assignRole(1, {
-          role: UserRole.DIRECTOR_REGIONAL,
-          zoneId: 99,
-        }),
-      ).rejects.toThrow(NotFoundException);
-    });
-
-    it('should throw NotFoundException on UserNotFoundError', async () => {
-      const { controller, assignUserRoleUseCase } = setup();
-      (assignUserRoleUseCase.execute as any).mockRejectedValue(
-        new UserNotFoundError(),
-      );
-
-      await expect(
-        controller.assignRole(99, { role: UserRole.ADMIN }),
-      ).rejects.toThrow(NotFoundException);
-    });
-
+  describe('unexpected errors', () => {
     it('should rethrow unexpected errors', async () => {
       const {
         controller,
         loginUseCase,
         registerUseCase,
         getCurrentUserUseCase,
-        assignUserRoleUseCase,
         mockReq,
         mockRes,
       } = setup();
@@ -312,11 +220,6 @@ describe('AuthController', () => {
 
       (getCurrentUserUseCase.execute as any).mockRejectedValueOnce(err);
       await expect(controller.getMe({ id: 1 }, {})).rejects.toThrow(err);
-
-      (assignUserRoleUseCase.execute as any).mockRejectedValueOnce(err);
-      await expect(
-        controller.assignRole(1, { role: UserRole.ADMIN }),
-      ).rejects.toThrow(err);
     });
   });
 

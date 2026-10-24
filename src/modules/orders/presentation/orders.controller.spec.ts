@@ -92,6 +92,7 @@ describe('OrdersController (Presentation)', () => {
       expect(convertQuoteToOrderUseCase.execute).toHaveBeenCalledWith({
         quoteId: 10,
         actorId: 12,
+        actor,
       });
       expect(response.orderNumber).toBe('PED-0001');
     });
@@ -209,6 +210,7 @@ describe('OrdersController (Presentation)', () => {
         orderId: 1,
         newStatus: OrderStatus.DISPATCHED,
         actorId: 12,
+        actor,
       });
       expect(response.orderNumber).toBe('PED-0001');
     });

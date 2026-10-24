@@ -1,14 +1,14 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { UserOrmEntity } from '../infrastructure/user.orm-entity.js';
+import { UserOrmEntity } from '../../auth/infrastructure/user.orm-entity.js';
 import { ZoneOrmEntity } from '../../zones/infrastructure/zone.orm-entity.js';
-import { UserRole } from '../domain/user-role.enum.js';
-import { InvalidRoleError } from '../domain/errors/invalid-role.error.js';
-import { ZoneRequiredError } from '../domain/errors/zone-required.error.js';
-import { UnexpectedZoneError } from '../domain/errors/unexpected-zone.error.js';
-import { ZoneNotFoundError } from '../domain/errors/zone-not-found.error.js';
-import { UserNotFoundError } from '../domain/errors/user-not-found.error.js';
+import { UserRole } from '../../auth/domain/user-role.enum.js';
+import { InvalidRoleError } from '../../auth/domain/errors/invalid-role.error.js';
+import { ZoneRequiredError } from '../../auth/domain/errors/zone-required.error.js';
+import { UnexpectedZoneError } from '../../auth/domain/errors/unexpected-zone.error.js';
+import { ZoneNotFoundError } from '../../auth/domain/errors/zone-not-found.error.js';
+import { UserNotFoundError } from '../../auth/domain/errors/user-not-found.error.js';
 
 export interface AssignUserRoleInput {
   userId: number;

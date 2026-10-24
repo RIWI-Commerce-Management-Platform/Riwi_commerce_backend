@@ -3,6 +3,7 @@ import { OrderRepository } from '../domain/order.repository.js';
 import { ActivityLogService } from '../../../shared/activity-log/domain/activity-log.service.js';
 import { Order } from '../domain/order.entity.js';
 import { OrderNotFoundError } from '../domain/errors/order-not-found.error.js';
+import { scopeForActor } from '../../../shared/auth/domain/current-actor.provider.js';
 import { ChangeOrderStatusCommand } from './dto/change-order-status.command.js';
 
 @Injectable()
@@ -13,7 +14,10 @@ export class ChangeOrderStatusUseCase {
   ) {}
 
   async execute(command: ChangeOrderStatusCommand): Promise<Order> {
-    const order = await this.orderRepository.findById(command.orderId);
+    const order = await this.orderRepository.findById(
+      command.orderId,
+      scopeForActor(command.actor),
+    );
     if (!order) {
       throw new OrderNotFoundError(command.orderId);
     }

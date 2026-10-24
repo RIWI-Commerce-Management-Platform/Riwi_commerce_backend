@@ -1,3 +1,4 @@
+import { UserRole } from '../../auth/domain/user-role.enum.js';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ChangeQuoteStatusUseCase } from './change-quote-status.use-case.js';
 import { QuoteRepository } from '../domain/quote.repository.js';
@@ -86,6 +87,17 @@ describe('ChangeQuoteStatusUseCase', () => {
         }),
       }),
     );
+  });
+
+  it('looks the quote up within the actor scope (HU-06)', async () => {
+    await useCase.execute({
+      quoteId: 1,
+      newStatus: QuoteStatus.SENT,
+      actorId: 3,
+      actor: { id: 3, role: UserRole.ASESOR, zoneId: null },
+    });
+
+    expect(quoteRepository.findById).toHaveBeenCalledWith(1, { advisorId: 3 });
   });
 
   it('throws QuoteNotFoundError if quote does not exist', async () => {

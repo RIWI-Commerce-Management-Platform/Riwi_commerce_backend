@@ -67,7 +67,8 @@ Each module keeps its own migrations under `src/modules/<module>/infrastructure/
 
 New users are assigned the `ASESOR` role by default. Available roles are `ADMIN`,
 `DIRECTOR_REGIONAL`, and `ASESOR`; a regional director must be assigned to a zone.
-Only an Admin can change a user's role through `PATCH /auth/users/:userId/role`:
+Only an Admin can change a user's role through `PATCH /auth/users/:userId/role`
+(Swagger tag **Users**, together with `GET /users`, `GET /users/role/:role` and `GET /users/:id`):
 
 ```json
 { "role": "DIRECTOR_REGIONAL", "zoneId": 1 }

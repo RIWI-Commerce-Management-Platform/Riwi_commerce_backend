@@ -4,11 +4,17 @@ import { ActivityLogService } from '../../../shared/activity-log/domain/activity
 import { QuoteNotFoundError } from '../domain/errors/quote-not-found.error.js';
 import { QuoteStatus } from '../domain/quote-status.enum.js';
 import { Quote } from '../domain/quote.entity.js';
+import {
+  CurrentActor,
+  scopeForActor,
+} from '../../../shared/auth/domain/current-actor.provider.js';
 
 export interface ChangeQuoteStatusCommand {
   quoteId: number;
   newStatus: QuoteStatus;
   actorId: number;
+  /** With an actor, a quote outside their scope is not found (HU-06). */
+  actor?: CurrentActor;
 }
 
 @Injectable()
@@ -19,7 +25,10 @@ export class ChangeQuoteStatusUseCase {
   ) {}
 
   async execute(command: ChangeQuoteStatusCommand): Promise<Quote> {
-    const quote = await this.quoteRepository.findById(command.quoteId);
+    const quote = await this.quoteRepository.findById(
+      command.quoteId,
+      scopeForActor(command.actor),
+    );
     if (!quote) {
       throw new QuoteNotFoundError(command.quoteId);
     }

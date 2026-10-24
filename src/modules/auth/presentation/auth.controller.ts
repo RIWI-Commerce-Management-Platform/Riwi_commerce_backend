@@ -5,15 +5,10 @@ import {
   Get,
   HttpCode,
   HttpStatus,
-  NotFoundException,
-  Param,
-  ParseIntPipe,
-  Patch,
   Post,
   Req,
   Res,
   UnauthorizedException,
-  UseGuards,
   UsePipes,
   ValidationPipe,
 } from '@nestjs/common';
@@ -22,24 +17,15 @@ import type { Request, Response } from 'express';
 import { CurrentSession } from '../decorators/current-session.decorator.js';
 import { CurrentUser } from '../decorators/current-user.decorator.js';
 import { Public } from '../decorators/public.decorator.js';
-import { Roles } from '../decorators/roles.decorator.js';
-import { RolesGuard } from '../guards/roles.guard.js';
-import { UserRole } from '../domain/user-role.enum.js';
-import { AssignUserRoleDto } from './dto/assign-user-role.dto.js';
 import { LoginDto } from './dto/login.dto.js';
 import { RegisterDto } from './dto/register.dto.js';
 import { LoginUseCase } from '../application/login.use-case.js';
 import { RegisterUseCase } from '../application/register.use-case.js';
 import { LogoutUseCase } from '../application/logout.use-case.js';
 import { GetCurrentUserUseCase } from '../application/get-current-user.use-case.js';
-import { AssignUserRoleUseCase } from '../application/assign-user-role.use-case.js';
 import { SetCookieHeaders } from '../application/extract-set-cookies.js';
 import { InvalidCredentialsError } from '../domain/errors/invalid-credentials.error.js';
 import { RegistrationFailedError } from '../domain/errors/registration-failed.error.js';
-import { InvalidRoleError } from '../domain/errors/invalid-role.error.js';
-import { ZoneRequiredError } from '../domain/errors/zone-required.error.js';
-import { UnexpectedZoneError } from '../domain/errors/unexpected-zone.error.js';
-import { ZoneNotFoundError } from '../domain/errors/zone-not-found.error.js';
 import { UserNotFoundError } from '../domain/errors/user-not-found.error.js';
 import { InvalidResetTokenError } from '../domain/errors/invalid-reset-token.error.js';
 import { SocialLoginUnavailableError } from '../domain/errors/social-login-unavailable.error.js';
@@ -67,7 +53,6 @@ export class AuthController {
     private readonly registerUseCase: RegisterUseCase,
     private readonly logoutUseCase: LogoutUseCase,
     private readonly getCurrentUserUseCase: GetCurrentUserUseCase,
-    private readonly assignUserRoleUseCase: AssignUserRoleUseCase,
     private readonly requestPasswordResetUseCase: RequestPasswordResetUseCase,
     private readonly resetPasswordUseCase: ResetPasswordUseCase,
     private readonly startMicrosoftLoginUseCase: StartMicrosoftLoginUseCase,
@@ -287,44 +272,5 @@ export class AuthController {
       message: 'Access granted',
       user,
     };
-  }
-
-  @Patch('users/:userId/role')
-  @UseGuards(RolesGuard)
-  @Roles(UserRole.ADMIN)
-  @ApiOperation({
-    summary: 'Assign or change a user role (Admin only)',
-  })
-  @ApiResponse({ status: 200, description: 'Role updated successfully.' })
-  @ApiResponse({ status: 400, description: 'Invalid role or zone.' })
-  @ApiResponse({ status: 401, description: 'No active session.' })
-  @ApiResponse({ status: 403, description: 'The Admin role is required.' })
-  @ApiResponse({ status: 404, description: 'User or zone not found.' })
-  async assignRole(
-    @Param('userId', ParseIntPipe) userId: number,
-    @Body() dto: AssignUserRoleDto,
-  ): Promise<{ id: number; role: UserRole; zoneId: number | null }> {
-    try {
-      return await this.assignUserRoleUseCase.execute({
-        userId,
-        role: dto.role,
-        zoneId: dto.zoneId,
-      });
-    } catch (error) {
-      if (
-        error instanceof InvalidRoleError ||
-        error instanceof ZoneRequiredError ||
-        error instanceof UnexpectedZoneError
-      ) {
-        throw new BadRequestException(error.message);
-      }
-      if (
-        error instanceof ZoneNotFoundError ||
-        error instanceof UserNotFoundError
-      ) {
-        throw new NotFoundException(error.message);
-      }
-      throw error;
-    }
   }
 }

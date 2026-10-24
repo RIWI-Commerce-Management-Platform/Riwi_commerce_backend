@@ -4,6 +4,8 @@ import { RouteRepository } from '../domain/route.repository.js';
 import { RouteNotFoundError } from '../domain/errors/route-not-found.error.js';
 import { UnauthorizedZoneError } from '../domain/errors/unauthorized-zone.error.js';
 import { VisitSchedulerPort } from './ports/visit-scheduler.port.js';
+import { RouteAdvisorReaderPort } from './ports/route-advisor-reader.port.js';
+import { InvalidRouteAdvisorError } from '../domain/errors/invalid-route-advisor.error.js';
 import { AuthActor } from './dto/auth-actor.dto.js';
 import { UserRole } from '../../auth/domain/user-role.enum.js';
 
@@ -11,13 +13,15 @@ import { UserRole } from '../../auth/domain/user-role.enum.js';
  * Assigns a route to an advisor and schedules its visits (HU-20, wizard
  * step 3). `assignAdvisor()` requires at least one stop and moves the route
  * to ASSIGNED; VisitSchedulerPort then creates the visits in the advisor's
- * agenda (epic E4) for the route's day and frequency.
+ * agenda (epic E4) for the route's day and frequency. Only an active advisor
+ * can receive a route (HU-07).
  */
 @Injectable()
 export class AssignRouteAdvisorUseCase {
   constructor(
     private readonly routeRepository: RouteRepository,
     private readonly visitScheduler: VisitSchedulerPort,
+    private readonly advisorReader: RouteAdvisorReaderPort,
   ) {}
 
   async execute(
@@ -35,6 +39,10 @@ export class AssignRouteAdvisorUseCase {
       if (actor.zoneId && actor.zoneId !== route.zoneId) {
         throw new UnauthorizedZoneError(actor.zoneId, route.zoneId);
       }
+    }
+
+    if (!(await this.advisorReader.isActiveAdvisor(advisorId))) {
+      throw new InvalidRouteAdvisorError(advisorId);
     }
 
     route.assignAdvisor(advisorId);

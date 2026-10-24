@@ -1,3 +1,4 @@
+import { UserRole } from '../../auth/domain/user-role.enum.js';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ConvertQuoteToOrderUseCase } from './convert-quote-to-order.use-case.js';
 import { OrderRepository } from '../domain/order.repository.js';
@@ -80,6 +81,18 @@ describe('ConvertQuoteToOrderUseCase (Application)', () => {
         actorId: 7,
       }),
     );
+  });
+
+  it('looks the quote up within the actor scope (HU-06)', async () => {
+    await useCase.execute({
+      quoteId: 10,
+      actorId: 7,
+      actor: { id: 7, role: UserRole.ASESOR, zoneId: null },
+    });
+
+    expect(quoteRepository.findById).toHaveBeenCalledWith(10, {
+      advisorId: 7,
+    });
   });
 
   it('throws QuoteNotFoundError when quote does not exist', async () => {

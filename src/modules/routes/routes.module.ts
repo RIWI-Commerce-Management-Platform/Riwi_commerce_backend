@@ -4,6 +4,7 @@ import { RouteOrmEntity } from './infrastructure/route.orm-entity.js';
 import { RouteStopOrmEntity } from './infrastructure/route-stop.orm-entity.js';
 import { VisitOrmEntity } from '../visit/infrastructure/visit.orm-entity.js';
 import { UserOrmEntity } from '../auth/infrastructure/user.orm-entity.js';
+import { AdvisorOrmEntity } from '../advisors/infrastructure/advisor.orm-entity.js';
 import { ClientsModule } from '../clients/clients.module.js';
 
 import { RouteRepository } from './domain/route.repository.js';
@@ -17,6 +18,9 @@ import { HaversineRouteDistanceCalculatorAdapter } from './infrastructure/havers
 
 import { VisitSchedulerPort } from './application/ports/visit-scheduler.port.js';
 import { TypeOrmVisitSchedulerAdapter } from './infrastructure/typeorm-visit-scheduler.adapter.js';
+
+import { RouteAdvisorReaderPort } from './application/ports/route-advisor-reader.port.js';
+import { TypeOrmRouteAdvisorReaderAdapter } from './infrastructure/typeorm-route-advisor-reader.adapter.js';
 
 import { CreateRouteDraftUseCase } from './application/create-route-draft.use-case.js';
 import { UpdateRouteDraftUseCase } from './application/update-route-draft.use-case.js';
@@ -44,6 +48,7 @@ import { RolesGuard } from '../auth/guards/roles.guard.js';
       RouteStopOrmEntity,
       VisitOrmEntity,
       UserOrmEntity,
+      AdvisorOrmEntity,
     ]),
     ClientsModule,
   ],
@@ -77,6 +82,10 @@ import { RolesGuard } from '../auth/guards/roles.guard.js';
     {
       provide: VisitSchedulerPort,
       useClass: TypeOrmVisitSchedulerAdapter,
+    },
+    {
+      provide: RouteAdvisorReaderPort,
+      useClass: TypeOrmRouteAdvisorReaderAdapter,
     },
 
     // Auth guards

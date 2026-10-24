@@ -56,11 +56,13 @@ export class OrdersController {
     @Req() request: Request,
   ): Promise<OrderResponseDto> {
     const actorId = await this.currentAdvisor.extract(request);
+    const actor = await this.currentActor.extract(request);
 
     try {
       const order = await this.convertQuoteToOrderUseCase.execute({
         quoteId,
         actorId,
+        actor,
       });
       return new OrderResponseDto(order);
     } catch (error) {
@@ -147,12 +149,14 @@ export class OrdersController {
     @Req() request: Request,
   ): Promise<OrderResponseDto> {
     const actorId = await this.currentAdvisor.extract(request);
+    const actor = await this.currentActor.extract(request);
 
     try {
       const updatedOrder = await this.changeOrderStatusUseCase.execute({
         orderId: id,
         newStatus: dto.status,
         actorId,
+        actor,
       });
       return new OrderResponseDto(updatedOrder);
     } catch (error) {
