@@ -3,6 +3,7 @@ import { AuthService } from '@thallesp/nestjs-better-auth';
 import { fromNodeHeaders } from 'better-auth/node';
 import { RegistrationFailedError } from '../domain/errors/registration-failed.error.js';
 import { extractSetCookies, SetCookieHeaders } from './extract-set-cookies.js';
+import { toNumericAuthIds } from './to-numeric-auth-ids.js';
 
 export interface RegisterInput {
   name: string;
@@ -35,10 +36,11 @@ export class RegisterUseCase {
         asResponse: true,
       });
     } catch (error: any) {
-      this.logger.error('signUpEmail threw unexpectedly', error?.stack ?? error);
-      throw new RegistrationFailedError(
-        error?.body?.message || error?.message,
+      this.logger.error(
+        'signUpEmail threw unexpectedly',
+        error?.stack ?? error,
       );
+      throw new RegistrationFailedError(error?.body?.message || error?.message);
     }
 
     const setCookieHeaders = extractSetCookies(response);
@@ -50,6 +52,9 @@ export class RegisterUseCase {
       );
     }
 
-    return { data: await response.json(), setCookieHeaders };
+    return {
+      data: toNumericAuthIds(await response.json()),
+      setCookieHeaders,
+    };
   }
 }

@@ -30,7 +30,9 @@ function buildVisit(overrides: Partial<ConstructorParameters<typeof Visit>[0]> =
 
 describe('Visit (domain entity)', () => {
   it('starts a pending visit and sets actual date and start time', () => {
-    const started = buildVisit().start();
+    const base = buildVisit();
+    expect(base.advisorId).toBe(20);
+    const started = base.start();
 
     expect(started.status).toBe(VisitStatus.IN_PROGRESS);
     expect(started.actualDate).toBeInstanceOf(Date);

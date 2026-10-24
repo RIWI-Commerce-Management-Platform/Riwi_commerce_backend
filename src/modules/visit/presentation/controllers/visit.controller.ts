@@ -14,7 +14,6 @@ import {
 import type { Request } from 'express';
 
 import {
-  ApiHeader,
   ApiOperation,
   ApiParam,
   ApiQuery,
@@ -42,15 +41,7 @@ import { VisitSummaryResponseDto } from '../dtos/visit-summary-response.dto.js';
 import { VisitDetailResponseDto } from '../dtos/visit-detail-response.dto.js';
 
 @ApiTags('Visits')
-@ApiHeader({
-  name: 'x-user-id',
-  required: true,
-  // TEMPORARY: placeholder header while Better Auth is not integrated
-  // (owner: Efraín, E1). It must be replaced by the real session/JWT adapter.
-  description: 'TEMPORARY advisor id header. Will be replaced by Better Auth.',
-  deprecated: true,
-})
-@ApiUnauthorizedResponse({ description: 'Missing or invalid advisor header.' })
+@ApiUnauthorizedResponse({ description: 'No active session.' })
 @UsePipes(
   new ValidationPipe({
     whitelist: true,
@@ -112,7 +103,10 @@ export class VisitsController {
       'Visit details including client/contact information when available.',
     type: VisitDetailResponseDto,
   })
-  @ApiResponse({ status: 404, description: 'Visit not found for this advisor.' })
+  @ApiResponse({
+    status: 404,
+    description: 'Visit not found for this advisor.',
+  })
   async getById(
     @Param('id', ParseIntPipe) id: number,
     @Req() request: Request,
@@ -136,7 +130,10 @@ export class VisitsController {
     status: 400,
     description: 'Visit is not in the PENDING status.',
   })
-  @ApiResponse({ status: 404, description: 'Visit not found for this advisor.' })
+  @ApiResponse({
+    status: 404,
+    description: 'Visit not found for this advisor.',
+  })
   async start(
     @Param('id', ParseIntPipe) id: number,
     @Req() request: Request,
@@ -162,7 +159,10 @@ export class VisitsController {
     description:
       'Invalid payload, invalid result ids, observations over 500 characters or invalid status transition.',
   })
-  @ApiResponse({ status: 404, description: 'Visit not found for this advisor.' })
+  @ApiResponse({
+    status: 404,
+    description: 'Visit not found for this advisor.',
+  })
   async registerResult(
     @Param('id', ParseIntPipe) id: number,
     @Req() request: Request,

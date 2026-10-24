@@ -45,14 +45,15 @@ describe('SessionGuard', () => {
     );
   });
 
-  it('attaches the session and user to the request and allows access', async () => {
-    const session = { id: 'session-1' };
-    const user = { id: 'user-1', email: 'user@example.com' };
+  it('attaches the session and user with numeric ids and allows access', async () => {
+    // Better Auth returns serial ids as strings
+    const session = { id: '7', userId: '3' };
+    const user = { id: '3', email: 'user@example.com' };
     vi.mocked(auth.api.getSession).mockResolvedValue({ session, user } as any);
     const guard = createGuard(false);
 
     await expect(guard.canActivate(context)).resolves.toBe(true);
-    expect((request as any).session).toBe(session);
-    expect((request as any).user).toBe(user);
+    expect((request as any).session).toEqual({ id: 7, userId: 3 });
+    expect((request as any).user).toEqual({ id: 3, email: 'user@example.com' });
   });
 });

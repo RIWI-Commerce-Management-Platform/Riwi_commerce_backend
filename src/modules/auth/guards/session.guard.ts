@@ -7,6 +7,7 @@ import {
 import { Reflector } from '@nestjs/core';
 import { fromNodeHeaders } from 'better-auth/node';
 import { auth } from '../auth.js';
+import { toNumericAuthIds } from '../application/to-numeric-auth-ids.js';
 
 export const IS_PUBLIC_KEY = 'isPublic';
 
@@ -34,8 +35,8 @@ export class SessionGuard implements CanActivate {
       );
     }
 
-    request.session = session.session;
-    request.user = session.user;
+    request.session = toNumericAuthIds(session.session);
+    request.user = toNumericAuthIds(session.user);
 
     return true;
   }

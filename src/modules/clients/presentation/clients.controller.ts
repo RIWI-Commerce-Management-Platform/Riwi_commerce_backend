@@ -35,6 +35,7 @@ import { ClientResponseDto } from './dto/client-response.dto.js';
 import { FindClientsQueryDto } from './dto/find-clients-query.dto.js';
 import { PaginatedClientResponseDto } from './dto/paginated-client-response.dto.js';
 import { PaginatedResponseDto } from '../../../shared/pagination/paginated-response.dto.js';
+import { queryValidationPipe } from '../../../shared/pagination/query-validation.pipe.js';
 
 @ApiTags('Clients')
 @Controller('clients')
@@ -56,7 +57,7 @@ export class ClientsController {
     type: PaginatedClientResponseDto,
   })
   async findClients(
-    @Query() query: FindClientsQueryDto,
+    @Query(queryValidationPipe()) query: FindClientsQueryDto,
   ): Promise<PaginatedClientResponseDto> {
     const result = await this.findClientsUseCase.execute({
       search: query.search,
@@ -110,24 +111,7 @@ export class ClientsController {
   })
   async create(@Body() dto: CreateClientDto): Promise<ClientResponseDto> {
     try {
-      const client = await this.createClientUseCase.execute({
-        nit: dto.nit,
-        businessName: dto.businessName,
-        commercialName: dto.commercialName,
-        address: dto.address,
-        department: dto.department,
-        municipality: dto.municipality,
-        neighborhood: dto.neighborhood,
-        phone: dto.phone,
-        email: dto.email,
-        zoneId: dto.zoneId,
-        clientTypeId: dto.clientTypeId,
-        potentialId: dto.potentialId,
-        clientStatusId: dto.clientStatusId,
-        visitFrequencyDays: dto.visitFrequencyDays,
-        latitude: dto.latitude,
-        longitude: dto.longitude,
-      });
+      const client = await this.createClientUseCase.execute({ ...dto });
 
       return new ClientResponseDto(client);
     } catch (error) {
@@ -154,25 +138,7 @@ export class ClientsController {
     @Body() dto: UpdateClientDto,
   ): Promise<ClientResponseDto> {
     try {
-      const client = await this.updateClientUseCase.execute({
-        id,
-        nit: dto.nit,
-        businessName: dto.businessName,
-        commercialName: dto.commercialName,
-        address: dto.address,
-        department: dto.department,
-        municipality: dto.municipality,
-        neighborhood: dto.neighborhood,
-        phone: dto.phone,
-        email: dto.email,
-        zoneId: dto.zoneId,
-        clientTypeId: dto.clientTypeId,
-        potentialId: dto.potentialId,
-        clientStatusId: dto.clientStatusId,
-        visitFrequencyDays: dto.visitFrequencyDays,
-        latitude: dto.latitude,
-        longitude: dto.longitude,
-      });
+      const client = await this.updateClientUseCase.execute({ id, ...dto });
 
       return new ClientResponseDto(client);
     } catch (error) {

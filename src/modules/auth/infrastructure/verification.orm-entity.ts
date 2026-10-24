@@ -1,9 +1,16 @@
-import { Column, CreateDateColumn, Entity, Index, PrimaryColumn, UpdateDateColumn } from 'typeorm';
+import {
+  Column,
+  CreateDateColumn,
+  Entity,
+  Index,
+  PrimaryGeneratedColumn,
+  UpdateDateColumn,
+} from 'typeorm';
 
 @Entity('verification')
 export class VerificationOrmEntity {
-  @PrimaryColumn('text')
-  id!: string;
+  @PrimaryGeneratedColumn('increment')
+  id!: number;
 
   @Index('verification_identifier_idx')
   @Column('text', { name: 'identifier' })

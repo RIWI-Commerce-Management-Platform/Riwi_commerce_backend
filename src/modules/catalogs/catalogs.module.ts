@@ -12,6 +12,7 @@ import { ClientStatusOrmEntity } from './infrastructure/client-status.orm-entity
 import { PortfolioOrmEntity } from './infrastructure/portfolio.orm-entity.js';
 import { VisitResultOrmEntity } from './infrastructure/visit-result.orm-entity.js';
 import { ZoneOrmEntity } from '../zones/infrastructure/zone.orm-entity.js';
+import { UserOrmEntity } from '../auth/infrastructure/user.orm-entity.js';
 import { TypeOrmCatalogRepository } from './infrastructure/typeorm-catalog.repository.js';
 import { CatalogsSeedService } from './infrastructure/catalogs-seed.service.js';
 import { CatalogsController } from './presentation/catalogs.controller.js';
@@ -25,6 +26,8 @@ import { CatalogsController } from './presentation/catalogs.controller.js';
       PortfolioOrmEntity,
       VisitResultOrmEntity,
       ZoneOrmEntity,
+      // Needed by RolesGuard on the admin-only endpoints
+      UserOrmEntity,
     ]),
   ],
   controllers: [CatalogsController],

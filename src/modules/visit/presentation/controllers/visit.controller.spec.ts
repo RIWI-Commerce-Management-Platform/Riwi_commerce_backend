@@ -36,7 +36,7 @@ function buildVisit(status: VisitStatus = VisitStatus.PENDING) {
 }
 
 function buildRequest(): Request {
-  return { headers: { 'x-user-id': '20' } } as unknown as Request;
+  return { user: { id: 20 } } as unknown as Request;
 }
 
 describe('VisitsController', () => {
@@ -51,9 +51,7 @@ describe('VisitsController', () => {
     mockGetAgenda = { execute: vi.fn().mockResolvedValue([buildVisit()]) };
     mockGetById = { execute: vi.fn().mockResolvedValue(buildVisit()) };
     mockStart = {
-      execute: vi
-        .fn()
-        .mockResolvedValue(buildVisit(VisitStatus.IN_PROGRESS)),
+      execute: vi.fn().mockResolvedValue(buildVisit(VisitStatus.IN_PROGRESS)),
     };
     mockRegisterResult = {
       execute: vi.fn().mockResolvedValue(buildVisit(VisitStatus.VISITED)),

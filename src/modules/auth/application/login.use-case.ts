@@ -3,6 +3,7 @@ import { AuthService } from '@thallesp/nestjs-better-auth';
 import { fromNodeHeaders } from 'better-auth/node';
 import { InvalidCredentialsError } from '../domain/errors/invalid-credentials.error.js';
 import { extractSetCookies, SetCookieHeaders } from './extract-set-cookies.js';
+import { toNumericAuthIds } from './to-numeric-auth-ids.js';
 
 export interface LoginInput {
   email: string;
@@ -35,10 +36,11 @@ export class LoginUseCase {
         asResponse: true,
       });
     } catch (error: any) {
-      this.logger.error('signInEmail threw unexpectedly', error?.stack ?? error);
-      throw new InvalidCredentialsError(
-        error?.body?.message || error?.message,
+      this.logger.error(
+        'signInEmail threw unexpectedly',
+        error?.stack ?? error,
       );
+      throw new InvalidCredentialsError(error?.body?.message || error?.message);
     }
 
     const setCookieHeaders = extractSetCookies(response);
@@ -50,6 +52,9 @@ export class LoginUseCase {
       );
     }
 
-    return { data: await response.json(), setCookieHeaders };
+    return {
+      data: toNumericAuthIds(await response.json()),
+      setCookieHeaders,
+    };
   }
 }

@@ -1,6 +1,5 @@
 import { betterAuth } from 'better-auth';
-import { typeormAdapter } from '@hedystia/better-auth-typeorm';
-import dataSource from '../../shared/config/data-source.js';
+import { Pool } from 'pg';
 import { UserRole } from './domain/user-role.enum.js';
 
 export const auth = betterAuth({
@@ -8,7 +7,24 @@ export const auth = betterAuth({
   baseURL:
     process.env.BETTER_AUTH_URL ??
     `http://localhost:${process.env.PORT ?? 3000}`,
-  database: typeormAdapter(dataSource),
+  // Better Auth's built-in Kysely adapter. The TypeORM adapter can't be used
+  // because it doesn't support numeric ids. The tables are still created by
+  // the TypeORM migrations in ./infrastructure/migrations.
+  database: new Pool({
+    host: process.env.POSTGRES_HOST ?? 'localhost',
+    port: Number.parseInt(process.env.POSTGRES_PORT ?? '', 10) || 5432,
+    user: process.env.POSTGRES_USER,
+    password: process.env.POSTGRES_PASSWORD,
+    database: process.env.POSTGRES_DB,
+  }),
+  advanced: {
+    database: {
+      // Ids are Postgres serial integers, like every other table. Better Auth
+      // still returns them as strings; SessionGuard and toNumericAuthIds()
+      // convert them back to numbers.
+      generateId: 'serial',
+    },
+  },
   user: {
     additionalFields: {
       role: {

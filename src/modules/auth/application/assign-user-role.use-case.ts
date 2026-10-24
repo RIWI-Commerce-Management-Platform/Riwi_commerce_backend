@@ -11,13 +11,13 @@ import { ZoneNotFoundError } from '../domain/errors/zone-not-found.error.js';
 import { UserNotFoundError } from '../domain/errors/user-not-found.error.js';
 
 export interface AssignUserRoleInput {
-  userId: string;
+  userId: number;
   role: UserRole;
   zoneId?: number;
 }
 
 export interface AssignUserRoleResult {
-  id: string;
+  id: number;
   role: UserRole;
   zoneId: number | null;
 }
