@@ -1,4 +1,8 @@
-import { BadRequestException, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  NotFoundException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { OrdersConversionController } from './orders-conversion.controller.js';
 import { ConvertQuoteToOrderUseCase } from '../application/convert-quote-to-order.use-case.js';
@@ -51,16 +55,15 @@ describe('OrdersConversionController (Presentation - Quotes Endpoint)', () => {
     expect(response.orderNumber).toBe('PED-0001');
   });
 
-  it('defaults actorId to 1 when currentAdvisor extraction fails', async () => {
-    vi.mocked(currentAdvisor.extract!).mockRejectedValue(new Error('no session'));
-    const req = { headers: {} } as any;
-    const response = await controller.convertToOrder(10, req);
+  it('rejects the request when there is no authenticated session', async () => {
+    vi.mocked(currentAdvisor.extract!).mockRejectedValue(
+      new UnauthorizedException(),
+    );
 
-    expect(convertQuoteToOrderUseCase.execute).toHaveBeenCalledWith({
-      quoteId: 10,
-      actorId: 1,
-    });
-    expect(response.orderNumber).toBe('PED-0001');
+    await expect(
+      controller.convertToOrder(10, {} as any),
+    ).rejects.toBeInstanceOf(UnauthorizedException);
+    expect(convertQuoteToOrderUseCase.execute).not.toHaveBeenCalled();
   });
 
   it('translates QuoteNotFoundError to NotFoundException', async () => {

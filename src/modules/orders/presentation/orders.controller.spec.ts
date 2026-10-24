@@ -1,4 +1,8 @@
-import { BadRequestException, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  NotFoundException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { OrdersController } from './orders.controller.js';
 import { ConvertQuoteToOrderUseCase } from '../application/convert-quote-to-order.use-case.js';
@@ -86,16 +90,15 @@ describe('OrdersController (Presentation)', () => {
       expect(response.orderNumber).toBe('PED-0001');
     });
 
-    it('defaults actorId to 1 when currentAdvisor extraction fails', async () => {
-      vi.mocked(currentAdvisor.extract!).mockRejectedValue(new Error('fail'));
-      const req = { headers: {} } as any;
-      const response = await controller.createFromQuote(10, req);
+    it('rejects the request when there is no authenticated session', async () => {
+      vi.mocked(currentAdvisor.extract!).mockRejectedValue(
+        new UnauthorizedException(),
+      );
 
-      expect(convertQuoteToOrderUseCase.execute).toHaveBeenCalledWith({
-        quoteId: 10,
-        actorId: 1,
-      });
-      expect(response.orderNumber).toBe('PED-0001');
+      await expect(
+        controller.createFromQuote(10, {} as any),
+      ).rejects.toBeInstanceOf(UnauthorizedException);
+      expect(convertQuoteToOrderUseCase.execute).not.toHaveBeenCalled();
     });
 
     it('translates QuoteNotFoundError to NotFoundException', async () => {
@@ -201,21 +204,19 @@ describe('OrdersController (Presentation)', () => {
       expect(response.orderNumber).toBe('PED-0001');
     });
 
-    it('defaults actorId to 1 when currentAdvisor extraction fails', async () => {
-      vi.mocked(currentAdvisor.extract!).mockRejectedValue(new Error('fail'));
-      const req = { headers: {} } as any;
-      const response = await controller.changeStatus(
-        1,
-        { status: OrderStatus.DISPATCHED },
-        req,
+    it('rejects a status change when there is no authenticated session', async () => {
+      vi.mocked(currentAdvisor.extract!).mockRejectedValue(
+        new UnauthorizedException(),
       );
 
-      expect(changeOrderStatusUseCase.execute).toHaveBeenCalledWith({
-        orderId: 1,
-        newStatus: OrderStatus.DISPATCHED,
-        actorId: 1,
-      });
-      expect(response.orderNumber).toBe('PED-0001');
+      await expect(
+        controller.changeStatus(
+          1,
+          { status: OrderStatus.DISPATCHED },
+          {} as any,
+        ),
+      ).rejects.toBeInstanceOf(UnauthorizedException);
+      expect(changeOrderStatusUseCase.execute).not.toHaveBeenCalled();
     });
 
     it('translates OrderNotFoundError to NotFoundException', async () => {

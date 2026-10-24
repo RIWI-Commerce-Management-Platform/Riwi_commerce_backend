@@ -11,11 +11,7 @@ import {
   Query,
   Req,
 } from '@nestjs/common';
-import {
-  ApiOperation,
-  ApiResponse,
-  ApiTags,
-} from '@nestjs/swagger';
+import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import type { Request } from 'express';
 import { ConvertQuoteToOrderUseCase } from '../application/convert-quote-to-order.use-case.js';
 import { GetOrderByIdUseCase } from '../application/get-order-by-id.use-case.js';
@@ -31,6 +27,7 @@ import { QuoteAlreadyConvertedError } from '../domain/errors/quote-already-conve
 import { InvalidOrderStatusTransitionError } from '../domain/errors/invalid-order-status-transition.error.js';
 import { QuoteNotFoundError } from '../../quotes/domain/errors/quote-not-found.error.js';
 import { CurrentAdvisorProvider } from '../../../shared/auth/domain/current-advisor.provider.js';
+import { queryValidationPipe } from '../../../shared/pagination/query-validation.pipe.js';
 
 @ApiTags('Orders')
 @Controller('orders')
@@ -56,7 +53,7 @@ export class OrdersController {
     @Param('quoteId', ParseIntPipe) quoteId: number,
     @Req() request: Request,
   ): Promise<OrderResponseDto> {
-    const actorId = await this.currentAdvisor.extract(request).catch(() => 1);
+    const actorId = await this.currentAdvisor.extract(request);
 
     try {
       const order = await this.convertQuoteToOrderUseCase.execute({
@@ -86,7 +83,7 @@ export class OrdersController {
     type: PaginatedResponseDto<OrderResponseDto>,
   })
   async list(
-    @Query() query: ListOrdersQueryDto,
+    @Query(queryValidationPipe()) query: ListOrdersQueryDto,
   ): Promise<PaginatedResponseDto<OrderResponseDto>> {
     const result = await this.listOrdersUseCase.execute({
       clientId: query.clientId,
@@ -139,7 +136,7 @@ export class OrdersController {
     @Body() dto: ChangeOrderStatusDto,
     @Req() request: Request,
   ): Promise<OrderResponseDto> {
-    const actorId = await this.currentAdvisor.extract(request).catch(() => 1);
+    const actorId = await this.currentAdvisor.extract(request);
 
     try {
       const updatedOrder = await this.changeOrderStatusUseCase.execute({

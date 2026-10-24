@@ -27,7 +27,7 @@ export class ChangeOrderStatusUseCase {
       action: 'order.status_changed',
       entityType: 'order',
       entityId: savedOrder.id!,
-      actorId: command.actorId ?? 1,
+      actorId: command.actorId,
       description: `Order ${savedOrder.orderNumber} status changed from ${previousStatus} to ${command.newStatus}`,
       metadata: {
         orderNumber: savedOrder.orderNumber,

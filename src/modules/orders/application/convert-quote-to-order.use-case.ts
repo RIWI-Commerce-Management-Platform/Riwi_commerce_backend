@@ -32,9 +32,14 @@ export class ConvertQuoteToOrderUseCase {
       );
     }
 
-    const existingOrder = await this.orderRepository.findByQuoteId(command.quoteId);
+    const existingOrder = await this.orderRepository.findByQuoteId(
+      command.quoteId,
+    );
     if (existingOrder) {
-      throw new QuoteAlreadyConvertedError(command.quoteId, existingOrder.orderNumber);
+      throw new QuoteAlreadyConvertedError(
+        command.quoteId,
+        existingOrder.orderNumber,
+      );
     }
 
     const orderNumber = await this.orderRepository.generateNextOrderNumber();
@@ -65,7 +70,7 @@ export class ConvertQuoteToOrderUseCase {
       action: 'order.created',
       entityType: 'order',
       entityId: savedOrder.id!,
-      actorId: command.actorId ?? 1,
+      actorId: command.actorId,
       description: `Order ${savedOrder.orderNumber} created from Quote ${quote.quoteNumber}`,
       metadata: {
         orderNumber: savedOrder.orderNumber,

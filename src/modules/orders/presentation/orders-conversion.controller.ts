@@ -37,7 +37,7 @@ export class OrdersConversionController {
     @Param('id', ParseIntPipe) id: number,
     @Req() request: Request,
   ): Promise<OrderResponseDto> {
-    const actorId = await this.currentAdvisor.extract(request).catch(() => 1);
+    const actorId = await this.currentAdvisor.extract(request);
 
     try {
       const order = await this.convertQuoteToOrderUseCase.execute({

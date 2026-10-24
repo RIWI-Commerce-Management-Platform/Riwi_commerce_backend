@@ -1,4 +1,4 @@
 export interface ConvertQuoteToOrderCommand {
   quoteId: number;
-  actorId?: number;
+  actorId: number;
 }

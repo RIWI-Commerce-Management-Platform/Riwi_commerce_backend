@@ -34,7 +34,6 @@ import { VisitsController } from './presentation/controllers/visit.controller.js
 
 // TEMPORARY: hardcoded test users while Better Auth is not integrated
 // (owner: Efraín, E1). Remove this controller once the real auth module exists.
-import { TestUsersController } from './presentation/controllers/test-users.controller.js';
 
 @Module({
   imports: [
@@ -47,7 +46,7 @@ import { TestUsersController } from './presentation/controllers/test-users.contr
     ClientsModule,
     ActivityLogModule,
   ],
-  controllers: [VisitsController, TestUsersController],
+  controllers: [VisitsController],
   providers: [
     {
       provide: VisitDao,

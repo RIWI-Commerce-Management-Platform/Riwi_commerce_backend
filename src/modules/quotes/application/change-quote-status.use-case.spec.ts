@@ -88,19 +88,6 @@ describe('ChangeQuoteStatusUseCase', () => {
     );
   });
 
-  it('defaults actorId to 1 when actorId is not provided', async () => {
-    await useCase.execute({
-      quoteId: 1,
-      newStatus: QuoteStatus.SENT,
-    });
-
-    expect(activityLogService.record).toHaveBeenCalledWith(
-      expect.objectContaining({
-        actorId: 1,
-      }),
-    );
-  });
-
   it('throws QuoteNotFoundError if quote does not exist', async () => {
     vi.mocked(quoteRepository.findById!).mockResolvedValue(null);
 
@@ -108,6 +95,7 @@ describe('ChangeQuoteStatusUseCase', () => {
       useCase.execute({
         quoteId: 999,
         newStatus: QuoteStatus.SENT,
+        actorId: 5,
       }),
     ).rejects.toThrow(QuoteNotFoundError);
 
@@ -124,6 +112,7 @@ describe('ChangeQuoteStatusUseCase', () => {
       useCase.execute({
         quoteId: 1,
         newStatus: QuoteStatus.DRAFT,
+        actorId: 5,
       }),
     ).rejects.toThrow(InvalidQuoteStatusTransitionError);
 

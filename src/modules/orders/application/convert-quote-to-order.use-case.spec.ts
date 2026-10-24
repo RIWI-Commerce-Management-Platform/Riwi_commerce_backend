@@ -82,20 +82,10 @@ describe('ConvertQuoteToOrderUseCase (Application)', () => {
     );
   });
 
-  it('defaults actorId to 1 when omitted', async () => {
-    await useCase.execute({ quoteId: 10 });
-
-    expect(activityLogService.record).toHaveBeenCalledWith(
-      expect.objectContaining({
-        actorId: 1,
-      }),
-    );
-  });
-
   it('throws QuoteNotFoundError when quote does not exist', async () => {
     vi.mocked(quoteRepository.findById!).mockResolvedValue(null);
 
-    await expect(useCase.execute({ quoteId: 999 })).rejects.toThrow(
+    await expect(useCase.execute({ quoteId: 999, actorId: 5 })).rejects.toThrow(
       QuoteNotFoundError,
     );
   });
@@ -114,7 +104,7 @@ describe('ConvertQuoteToOrderUseCase (Application)', () => {
     });
     vi.mocked(quoteRepository.findById!).mockResolvedValue(draftQuote);
 
-    await expect(useCase.execute({ quoteId: 11 })).rejects.toThrow(
+    await expect(useCase.execute({ quoteId: 11, actorId: 5 })).rejects.toThrow(
       QuoteNotApprovedForOrderError,
     );
   });
@@ -131,7 +121,7 @@ describe('ConvertQuoteToOrderUseCase (Application)', () => {
     });
     vi.mocked(orderRepository.findByQuoteId!).mockResolvedValue(existingOrder);
 
-    await expect(useCase.execute({ quoteId: 10 })).rejects.toThrow(
+    await expect(useCase.execute({ quoteId: 10, actorId: 5 })).rejects.toThrow(
       QuoteAlreadyConvertedError,
     );
   });

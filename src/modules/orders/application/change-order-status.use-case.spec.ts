@@ -70,6 +70,7 @@ describe('ChangeOrderStatusUseCase (Application)', () => {
       useCase.execute({
         orderId: 99,
         newStatus: OrderStatus.DISPATCHED,
+        actorId: 5,
       }),
     ).rejects.toThrow(OrderNotFoundError);
   });
@@ -79,6 +80,7 @@ describe('ChangeOrderStatusUseCase (Application)', () => {
       useCase.execute({
         orderId: 1,
         newStatus: OrderStatus.DELIVERED,
+        actorId: 5,
       }),
     ).rejects.toThrow(InvalidOrderStatusTransitionError);
   });

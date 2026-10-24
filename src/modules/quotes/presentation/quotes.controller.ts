@@ -38,6 +38,7 @@ import { InvalidQuoteStatusTransitionError } from '../domain/errors/invalid-quot
 import { FileSizeExceededError } from '../../../shared/file-storage/domain/errors/file-size-exceeded.error.js';
 import { InvalidFileTypeError } from '../../../shared/file-storage/domain/errors/invalid-file-type.error.js';
 import { CurrentAdvisorProvider } from '../../../shared/auth/domain/current-advisor.provider.js';
+import { queryValidationPipe } from '../../../shared/pagination/query-validation.pipe.js';
 
 interface UploadedFilePayload {
   buffer: Buffer;
@@ -91,7 +92,7 @@ export class QuotesController {
     type: PaginatedResponseDto<QuoteResponseDto>,
   })
   async list(
-    @Query() query: ListQuotesQueryDto,
+    @Query(queryValidationPipe()) query: ListQuotesQueryDto,
   ): Promise<PaginatedResponseDto<QuoteResponseDto>> {
     const result = await this.listQuotesUseCase.execute({
       clientId: query.clientId,
@@ -200,7 +201,7 @@ export class QuotesController {
     @Body() dto: ChangeQuoteStatusDto,
     @Req() request: Request,
   ): Promise<QuoteResponseDto> {
-    const actorId = await this.currentAdvisor.extract(request).catch(() => 1);
+    const actorId = await this.currentAdvisor.extract(request);
 
     try {
       const updatedQuote = await this.changeQuoteStatusUseCase.execute({

@@ -8,7 +8,7 @@ import { Quote } from '../domain/quote.entity.js';
 export interface ChangeQuoteStatusCommand {
   quoteId: number;
   newStatus: QuoteStatus;
-  actorId?: number;
+  actorId: number;
 }
 
 @Injectable()
@@ -33,7 +33,7 @@ export class ChangeQuoteStatusUseCase {
       action: 'quote.status_changed',
       entityType: 'quote',
       entityId: savedQuote.id!,
-      actorId: command.actorId ?? 1,
+      actorId: command.actorId,
       description: `Quote ${savedQuote.quoteNumber} status changed from ${previousStatus} to ${command.newStatus}`,
       metadata: {
         clientId: savedQuote.clientId,

@@ -1,4 +1,8 @@
-import { BadRequestException, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  NotFoundException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { QuotesController } from './quotes.controller.js';
 import { CreateQuoteUseCase } from '../application/create-quote.use-case.js';
@@ -238,7 +242,7 @@ describe('QuotesController (Presentation)', () => {
 
   describe('PATCH /quotes/:id/status (HU-32)', () => {
     it('successfully changes status and returns updated QuoteResponseDto', async () => {
-      const req = { headers: { 'x-user-id': '15' } } as any;
+      const req = { user: { id: 15 } } as any;
       const response = await controller.changeStatus(
         1,
         { status: QuoteStatus.SENT },
@@ -253,22 +257,15 @@ describe('QuotesController (Presentation)', () => {
       expect(response.quoteNumber).toBe('COT-0001');
     });
 
-    it('defaults actorId to 1 when currentAdvisor extraction fails', async () => {
-      vi.mocked(currentAdvisor.extract!).mockRejectedValue(new Error('no auth'));
-
-      const req = { headers: {} } as any;
-      const response = await controller.changeStatus(
-        1,
-        { status: QuoteStatus.SENT },
-        req,
+    it('rejects the request when there is no authenticated session', async () => {
+      vi.mocked(currentAdvisor.extract!).mockRejectedValue(
+        new UnauthorizedException(),
       );
 
-      expect(changeQuoteStatusUseCase.execute).toHaveBeenCalledWith({
-        quoteId: 1,
-        newStatus: QuoteStatus.SENT,
-        actorId: 1,
-      });
-      expect(response.quoteNumber).toBe('COT-0001');
+      await expect(
+        controller.changeStatus(1, { status: QuoteStatus.SENT }, {} as any),
+      ).rejects.toBeInstanceOf(UnauthorizedException);
+      expect(changeQuoteStatusUseCase.execute).not.toHaveBeenCalled();
     });
 
     it('translates InvalidQuoteStatusTransitionError to BadRequestException', async () => {
@@ -301,16 +298,30 @@ describe('QuotesController (Presentation)', () => {
       const req = { headers: {} } as any;
 
       vi.mocked(createQuoteUseCase.execute!).mockRejectedValueOnce(dbError);
-      await expect(controller.create({ clientId: 1, items: [] }, req)).rejects.toThrow(dbError);
+      await expect(
+        controller.create({ clientId: 1, items: [] }, req),
+      ).rejects.toThrow(dbError);
 
       vi.mocked(getQuoteByIdUseCase.execute!).mockRejectedValueOnce(dbError);
       await expect(controller.getById(1)).rejects.toThrow(dbError);
 
-      vi.mocked(attachQuoteDocumentUseCase.execute!).mockRejectedValueOnce(dbError);
-      await expect(controller.attachDocument(1, { originalname: 'doc.pdf', buffer: Buffer.from('') } as any, req)).rejects.toThrow(dbError);
+      vi.mocked(attachQuoteDocumentUseCase.execute!).mockRejectedValueOnce(
+        dbError,
+      );
+      await expect(
+        controller.attachDocument(
+          1,
+          { originalname: 'doc.pdf', buffer: Buffer.from('') } as any,
+          req,
+        ),
+      ).rejects.toThrow(dbError);
 
-      vi.mocked(changeQuoteStatusUseCase.execute!).mockRejectedValueOnce(dbError);
-      await expect(controller.changeStatus(1, { status: QuoteStatus.SENT }, req)).rejects.toThrow(dbError);
+      vi.mocked(changeQuoteStatusUseCase.execute!).mockRejectedValueOnce(
+        dbError,
+      );
+      await expect(
+        controller.changeStatus(1, { status: QuoteStatus.SENT }, req),
+      ).rejects.toThrow(dbError);
     });
   });
 });
