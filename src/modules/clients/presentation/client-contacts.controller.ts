@@ -20,6 +20,7 @@ import {
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
+import { ForbiddenException } from '@nestjs/common';
 import { CreateClientContactUseCase } from '../application/create-client-contact.use-case.js';
 import { UpdateClientContactUseCase } from '../application/update-client-contact.use-case.js';
 import { ListClientContactsUseCase } from '../application/list-client-contacts.use-case.js';
@@ -30,9 +31,14 @@ import { ClientContactNotFoundError } from '../domain/client-contact-not-found.e
 import { CreateClientContactDto } from './dto/create-client-contact.dto.js';
 import { UpdateClientContactDto } from './dto/update-client-contact.dto.js';
 import { ClientContactResponseDto } from './dto/client-contact-response.dto.js';
+import { CurrentUser } from '../../auth/decorators/current-user.decorator.js';
+import { Roles } from '../../auth/decorators/roles.decorator.js';
+import { UserRole } from '../../auth/domain/user-role.enum.js';
+import { UserOrmEntity } from '../../auth/infrastructure/user.orm-entity.js';
 
 @ApiTags('Client Contacts')
 @Controller('clients/:clientId/contacts')
+@Roles(UserRole.ADMINISTRADOR, UserRole.ASESOR, UserRole.CLIENTE)
 export class ClientContactsController {
   constructor(
     private readonly createClientContactUseCase: CreateClientContactUseCase,
@@ -43,6 +49,7 @@ export class ClientContactsController {
   ) {}
 
   @Post()
+  @Roles(UserRole.ADMINISTRADOR, UserRole.ASESOR)
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({
     summary: 'Create a new contact for a client',
@@ -60,7 +67,9 @@ export class ClientContactsController {
   async create(
     @Param('clientId', ParseIntPipe) clientId: number,
     @Body() dto: CreateClientContactDto,
+    @CurrentUser() user: UserOrmEntity,
   ): Promise<ClientContactResponseDto> {
+    this.assertClientAccess(clientId, user);
     try {
       const contact = await this.createClientContactUseCase.execute({
         clientId,
@@ -95,10 +104,11 @@ export class ClientContactsController {
   @ApiNotFoundResponse({ description: 'Client not found.' })
   async list(
     @Param('clientId', ParseIntPipe) clientId: number,
+    @CurrentUser() user: UserOrmEntity,
   ): Promise<ClientContactResponseDto[]> {
+    this.assertClientAccess(clientId, user);
     try {
-      const contacts =
-        await this.listClientContactsUseCase.execute(clientId);
+      const contacts = await this.listClientContactsUseCase.execute(clientId);
       return contacts.map((c) => new ClientContactResponseDto(c));
     } catch (error) {
       if (error instanceof ClientNotFoundError) {
@@ -109,6 +119,7 @@ export class ClientContactsController {
   }
 
   @Patch(':contactId')
+  @Roles(UserRole.ADMINISTRADOR, UserRole.ASESOR)
   @ApiOperation({ summary: 'Update an existing client contact' })
   @ApiParam({ name: 'clientId', type: Number, example: 1 })
   @ApiParam({ name: 'contactId', type: Number, example: 1 })
@@ -122,7 +133,9 @@ export class ClientContactsController {
     @Param('clientId', ParseIntPipe) clientId: number,
     @Param('contactId', ParseIntPipe) contactId: number,
     @Body() dto: UpdateClientContactDto,
+    @CurrentUser() user: UserOrmEntity,
   ): Promise<ClientContactResponseDto> {
+    this.assertClientAccess(clientId, user);
     try {
       const contact = await this.updateClientContactUseCase.execute({
         clientId,
@@ -148,6 +161,7 @@ export class ClientContactsController {
   }
 
   @Patch(':contactId/primary')
+  @Roles(UserRole.ADMINISTRADOR, UserRole.ASESOR)
   @ApiOperation({
     summary: 'Designate contact as the primary contact for the client',
   })
@@ -161,7 +175,9 @@ export class ClientContactsController {
   async setPrimary(
     @Param('clientId', ParseIntPipe) clientId: number,
     @Param('contactId', ParseIntPipe) contactId: number,
+    @CurrentUser() user: UserOrmEntity,
   ): Promise<ClientContactResponseDto> {
+    this.assertClientAccess(clientId, user);
     try {
       const contact = await this.setPrimaryContactUseCase.execute({
         clientId,
@@ -178,6 +194,7 @@ export class ClientContactsController {
   }
 
   @Delete(':contactId')
+  @Roles(UserRole.ADMINISTRADOR, UserRole.ASESOR)
   @ApiOperation({ summary: 'Deactivate / soft delete a client contact' })
   @ApiParam({ name: 'clientId', type: Number, example: 1 })
   @ApiParam({ name: 'contactId', type: Number, example: 1 })
@@ -189,7 +206,9 @@ export class ClientContactsController {
   async delete(
     @Param('clientId', ParseIntPipe) clientId: number,
     @Param('contactId', ParseIntPipe) contactId: number,
+    @CurrentUser() user: UserOrmEntity,
   ): Promise<ClientContactResponseDto> {
+    this.assertClientAccess(clientId, user);
     try {
       const contact = await this.deleteClientContactUseCase.execute({
         clientId,
@@ -202,6 +221,12 @@ export class ClientContactsController {
         throw new NotFoundException(error.message);
       }
       throw error;
+    }
+  }
+
+  private assertClientAccess(clientId: number, user?: UserOrmEntity): void {
+    if (user?.role === UserRole.CLIENTE && user.idCliente !== clientId) {
+      throw new ForbiddenException('Clients can only access their own record');
     }
   }
 }

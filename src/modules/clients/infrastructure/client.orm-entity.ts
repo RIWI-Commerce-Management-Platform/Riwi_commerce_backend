@@ -4,6 +4,7 @@ import {
   Entity,
   JoinColumn,
   ManyToOne,
+  OneToOne,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
@@ -11,11 +12,19 @@ import type { ZoneOrmEntity } from '../../zones/infrastructure/zone.orm-entity.j
 import type { ClientTypeOrmEntity } from '../../catalogs/infrastructure/client-type.orm-entity.js';
 import type { PotentialOrmEntity } from '../../catalogs/infrastructure/potential.orm-entity.js';
 import type { ClientStatusOrmEntity } from '../../catalogs/infrastructure/client-status.orm-entity.js';
+import { UserOrmEntity } from '../../auth/infrastructure/user.orm-entity.js';
 
 @Entity('clients')
 export class ClientOrmEntity {
-  @PrimaryGeneratedColumn()
+  @PrimaryGeneratedColumn({ name: 'id_cliente' })
   id!: number;
+
+  @Column({ name: 'id_usuario', type: 'text', nullable: true, unique: true })
+  idUsuario!: string | null;
+
+  @OneToOne(() => UserOrmEntity, { nullable: true, onDelete: 'RESTRICT' })
+  @JoinColumn({ name: 'id_usuario', referencedColumnName: 'id' })
+  usuario!: UserOrmEntity | null;
 
   @Column({ type: 'varchar', length: 30, unique: true })
   nit!: string;

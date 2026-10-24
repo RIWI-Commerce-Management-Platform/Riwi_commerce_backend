@@ -18,7 +18,11 @@ describe('TypeOrmClientReader', () => {
       findPotentialById: vi.fn(),
     } as unknown as CatalogRepository;
 
-    const reader = new TypeOrmClientReader(clientRepo, contactRepo, catalogRepo);
+    const reader = new TypeOrmClientReader(
+      clientRepo,
+      contactRepo,
+      catalogRepo,
+    );
     return { reader, clientRepo, contactRepo, catalogRepo };
   };
 

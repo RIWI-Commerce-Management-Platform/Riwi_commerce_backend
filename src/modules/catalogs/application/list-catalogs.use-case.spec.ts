@@ -1,6 +1,9 @@
 import { describe, expect, it, vi } from 'vitest';
 import { ListCatalogsUseCase } from './list-catalogs.use-case.js';
-import { AllCatalogs, CatalogRepository } from '../domain/catalog.repository.js';
+import {
+  AllCatalogs,
+  CatalogRepository,
+} from '../domain/catalog.repository.js';
 
 describe('ListCatalogsUseCase', () => {
   it('should call catalogRepository.findAll and return all catalogs', async () => {

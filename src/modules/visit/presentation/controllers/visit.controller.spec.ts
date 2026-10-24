@@ -1,7 +1,5 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 
-import type { Request } from 'express';
-
 import { VisitsController } from './visit.controller.js';
 
 import { GetVisitAgendaUseCase } from '../../application/use-cases/get-visit-agenda.use-case.js';
@@ -19,6 +17,8 @@ import { CurrentAdvisorProvider } from '../../../../shared/auth/domain/current-a
 import { VisitSummaryResponseDto } from '../dtos/visit-summary-response.dto.js';
 
 import { VisitDetailResponseDto } from '../dtos/visit-detail-response.dto.js';
+import type { CurrentAdvisorRequest } from '../../../../shared/auth/domain/current-advisor.provider.js';
+import type { UserOrmEntity } from '../../../auth/infrastructure/user.orm-entity.js';
 
 function buildVisit(status: VisitStatus = VisitStatus.PENDING) {
   return new Visit({
@@ -35,8 +35,8 @@ function buildVisit(status: VisitStatus = VisitStatus.PENDING) {
   });
 }
 
-function buildRequest(): Request {
-  return { headers: { 'x-user-id': '20' } } as unknown as Request;
+function buildRequest(): CurrentAdvisorRequest {
+  return { user: { role: 'ASESOR', idAsesor: 20 } };
 }
 
 describe('VisitsController', () => {
@@ -90,9 +90,12 @@ describe('VisitsController', () => {
   });
 
   it('starts a visit through the use case', async () => {
-    const result = await controller.start(1, buildRequest());
+    const result = await controller.start(1, buildRequest(), {
+      id: 'user-20',
+      idAsesor: 20,
+    } as UserOrmEntity);
 
-    expect(mockStart.execute).toHaveBeenCalledWith(1, 20);
+    expect(mockStart.execute).toHaveBeenCalledWith(1, 20, 20);
     expect(result.status).toBe(VisitStatus.IN_PROGRESS);
   });
 
@@ -101,13 +104,21 @@ describe('VisitsController', () => {
       endTime: '10:30:00',
       observations: 'obs',
       results: [{ id: 1 }],
-    });
+    }, {
+      id: 'user-20',
+      idAsesor: 20,
+    } as UserOrmEntity);
 
-    expect(mockRegisterResult.execute).toHaveBeenCalledWith(1, 20, {
-      endTime: '10:30:00',
-      observations: 'obs',
-      results: [{ id: 1 }],
-    });
+    expect(mockRegisterResult.execute).toHaveBeenCalledWith(
+      1,
+      20,
+      {
+        endTime: '10:30:00',
+        observations: 'obs',
+        results: [{ id: 1 }],
+      },
+      20,
+    );
     expect(result).toBeInstanceOf(VisitDetailResponseDto);
   });
 });

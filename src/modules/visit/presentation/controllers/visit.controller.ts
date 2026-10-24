@@ -11,10 +11,7 @@ import {
   ValidationPipe,
 } from '@nestjs/common';
 
-import type { Request } from 'express';
-
 import {
-  ApiHeader,
   ApiOperation,
   ApiParam,
   ApiQuery,
@@ -23,7 +20,14 @@ import {
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 
-import { CurrentAdvisorProvider } from '../../../../shared/auth/domain/current-advisor.provider.js';
+import {
+  CurrentAdvisorProvider,
+} from '../../../../shared/auth/domain/current-advisor.provider.js';
+import type { CurrentAdvisorRequest } from '../../../../shared/auth/domain/current-advisor.provider.js';
+import { Roles } from '../../../auth/decorators/roles.decorator.js';
+import { UserRole } from '../../../auth/domain/user-role.enum.js';
+import { CurrentUser } from '../../../auth/decorators/current-user.decorator.js';
+import { UserOrmEntity } from '../../../auth/infrastructure/user.orm-entity.js';
 
 import { GetVisitAgendaUseCase } from '../../application/use-cases/get-visit-agenda.use-case.js';
 
@@ -42,15 +46,7 @@ import { VisitSummaryResponseDto } from '../dtos/visit-summary-response.dto.js';
 import { VisitDetailResponseDto } from '../dtos/visit-detail-response.dto.js';
 
 @ApiTags('Visits')
-@ApiHeader({
-  name: 'x-user-id',
-  required: true,
-  // TEMPORARY: placeholder header while Better Auth is not integrated
-  // (owner: Efraín, E1). It must be replaced by the real session/JWT adapter.
-  description: 'TEMPORARY advisor id header. Will be replaced by Better Auth.',
-  deprecated: true,
-})
-@ApiUnauthorizedResponse({ description: 'Missing or invalid advisor header.' })
+@ApiUnauthorizedResponse({ description: 'Missing or invalid session.' })
 @UsePipes(
   new ValidationPipe({
     whitelist: true,
@@ -58,6 +54,7 @@ import { VisitDetailResponseDto } from '../dtos/visit-detail-response.dto.js';
   }),
 )
 @Controller('visits')
+@Roles(UserRole.ADMINISTRADOR, UserRole.ASESOR)
 export class VisitsController {
   constructor(
     private readonly getVisitAgenda: GetVisitAgendaUseCase,
@@ -89,7 +86,7 @@ export class VisitsController {
     type: [VisitSummaryResponseDto],
   })
   async getAgenda(
-    @Req() request: Request,
+    @Req() request: CurrentAdvisorRequest,
     @Query() query: VisitAgendaQueryDto,
   ): Promise<VisitSummaryResponseDto[]> {
     const advisorId = await this.currentAdvisor.extract(request);
@@ -115,7 +112,7 @@ export class VisitsController {
   @ApiResponse({ status: 404, description: 'Visit not found for this advisor.' })
   async getById(
     @Param('id', ParseIntPipe) id: number,
-    @Req() request: Request,
+    @Req() request: CurrentAdvisorRequest,
   ): Promise<VisitDetailResponseDto> {
     const advisorId = await this.currentAdvisor.extract(request);
 
@@ -139,11 +136,16 @@ export class VisitsController {
   @ApiResponse({ status: 404, description: 'Visit not found for this advisor.' })
   async start(
     @Param('id', ParseIntPipe) id: number,
-    @Req() request: Request,
+    @Req() request: CurrentAdvisorRequest,
+    @CurrentUser() user: UserOrmEntity,
   ): Promise<VisitDetailResponseDto> {
     const advisorId = await this.currentAdvisor.extract(request);
 
-    const visit = await this.startVisit.execute(id, advisorId);
+    const visit = await this.startVisit.execute(
+      id,
+      advisorId,
+      user.idAsesor ?? user.id,
+    );
 
     return new VisitDetailResponseDto(visit);
   }
@@ -165,16 +167,22 @@ export class VisitsController {
   @ApiResponse({ status: 404, description: 'Visit not found for this advisor.' })
   async registerResult(
     @Param('id', ParseIntPipe) id: number,
-    @Req() request: Request,
+    @Req() request: CurrentAdvisorRequest,
     @Body() body: RegisterVisitResultDto,
+    @CurrentUser() user: UserOrmEntity,
   ): Promise<VisitDetailResponseDto> {
     const advisorId = await this.currentAdvisor.extract(request);
 
-    const visit = await this.registerVisitResult.execute(id, advisorId, {
-      endTime: body.endTime,
-      observations: body.observations,
-      results: body.results,
-    });
+    const visit = await this.registerVisitResult.execute(
+      id,
+      advisorId,
+      {
+        endTime: body.endTime,
+        observations: body.observations,
+        results: body.results,
+      },
+      user.idAsesor ?? user.id,
+    );
 
     return new VisitDetailResponseDto(visit);
   }

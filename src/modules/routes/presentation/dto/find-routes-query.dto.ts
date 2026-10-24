@@ -1,6 +1,13 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import { IsBoolean, IsEnum, IsInt, IsOptional, IsPositive, IsString } from 'class-validator';
+import {
+  IsBoolean,
+  IsEnum,
+  IsInt,
+  IsOptional,
+  IsPositive,
+  IsString,
+} from 'class-validator';
 import { PaginationQueryDto } from '../../../../shared/pagination/pagination-query.dto.js';
 import { DayOfWeek } from '../../domain/day-of-week.enum.js';
 import { RouteFrequency } from '../../domain/route-frequency.enum.js';

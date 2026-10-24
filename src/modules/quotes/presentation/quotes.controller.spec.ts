@@ -254,7 +254,9 @@ describe('QuotesController (Presentation)', () => {
     });
 
     it('defaults actorId to 1 when currentAdvisor extraction fails', async () => {
-      vi.mocked(currentAdvisor.extract!).mockRejectedValue(new Error('no auth'));
+      vi.mocked(currentAdvisor.extract!).mockRejectedValue(
+        new Error('no auth'),
+      );
 
       const req = { headers: {} } as any;
       const response = await controller.changeStatus(
@@ -301,16 +303,30 @@ describe('QuotesController (Presentation)', () => {
       const req = { headers: {} } as any;
 
       vi.mocked(createQuoteUseCase.execute!).mockRejectedValueOnce(dbError);
-      await expect(controller.create({ clientId: 1, items: [] }, req)).rejects.toThrow(dbError);
+      await expect(
+        controller.create({ clientId: 1, items: [] }, req),
+      ).rejects.toThrow(dbError);
 
       vi.mocked(getQuoteByIdUseCase.execute!).mockRejectedValueOnce(dbError);
       await expect(controller.getById(1)).rejects.toThrow(dbError);
 
-      vi.mocked(attachQuoteDocumentUseCase.execute!).mockRejectedValueOnce(dbError);
-      await expect(controller.attachDocument(1, { originalname: 'doc.pdf', buffer: Buffer.from('') } as any, req)).rejects.toThrow(dbError);
+      vi.mocked(attachQuoteDocumentUseCase.execute!).mockRejectedValueOnce(
+        dbError,
+      );
+      await expect(
+        controller.attachDocument(
+          1,
+          { originalname: 'doc.pdf', buffer: Buffer.from('') } as any,
+          req,
+        ),
+      ).rejects.toThrow(dbError);
 
-      vi.mocked(changeQuoteStatusUseCase.execute!).mockRejectedValueOnce(dbError);
-      await expect(controller.changeStatus(1, { status: QuoteStatus.SENT }, req)).rejects.toThrow(dbError);
+      vi.mocked(changeQuoteStatusUseCase.execute!).mockRejectedValueOnce(
+        dbError,
+      );
+      await expect(
+        controller.changeStatus(1, { status: QuoteStatus.SENT }, req),
+      ).rejects.toThrow(dbError);
     });
   });
 });

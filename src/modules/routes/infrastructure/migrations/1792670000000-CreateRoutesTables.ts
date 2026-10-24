@@ -9,7 +9,7 @@ import {
 
 /**
  * Migración para la creación de las tablas `routes` (RUTA) y `route_stops` (RUTA_CLIENTE).
- * 
+ *
  * En esta migración configuro la estructura relacional completa para la planeación de rutas,
  * garantizando integridad referencial con las zonas territoriales y los clientes.
  */
@@ -24,7 +24,12 @@ export class CreateRoutesTables1792670000000 implements MigrationInterface {
         columns: [
           { name: 'id', type: 'serial', isPrimary: true },
           { name: 'name', type: 'varchar', length: '150' },
-          { name: 'description', type: 'varchar', length: '500', isNullable: true },
+          {
+            name: 'description',
+            type: 'varchar',
+            length: '500',
+            isNullable: true,
+          },
           { name: 'zone_id', type: 'integer' },
           { name: 'advisor_id', type: 'integer', isNullable: true },
           { name: 'day_of_week', type: 'varchar', length: '20' },

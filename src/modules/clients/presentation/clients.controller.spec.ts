@@ -13,6 +13,8 @@ import { CreateClientDto } from './dto/create-client.dto.js';
 import { UpdateClientDto } from './dto/update-client.dto.js';
 import { FindClientsQueryDto } from './dto/find-clients-query.dto.js';
 import { PaginatedResult } from '../../../shared/pagination/paginated-result.interface.js';
+import { UserRole } from '../../auth/domain/user-role.enum.js';
+import type { UserOrmEntity } from '../../auth/infrastructure/user.orm-entity.js';
 
 describe('ClientsController', () => {
   const dummyClient = new Client({
@@ -70,6 +72,15 @@ describe('ClientsController', () => {
     mockFindClientsUseCase,
     mockGetClientByIdUseCase,
   );
+  const admin = {
+    id: 'admin-1',
+    role: UserRole.ADMINISTRADOR,
+  } as UserOrmEntity;
+  const clientUser = {
+    id: 'client-1',
+    role: UserRole.CLIENTE,
+    idCliente: 1,
+  } as UserOrmEntity;
 
   describe('findClients', () => {
     it('should return paginated clients with coordinates and meta', async () => {
@@ -92,7 +103,7 @@ describe('ClientsController', () => {
       query.page = '1';
       query.limit = '10';
 
-      const response = await controller.findClients(query);
+      const response = await controller.findClients(query, admin);
 
       expect(response.data).toHaveLength(1);
       expect(response.data[0].id).toBe(1);
@@ -100,6 +111,7 @@ describe('ClientsController', () => {
       expect(response.data[0].longitude).toBe(-75.5812);
       expect(response.meta.total).toBe(1);
       expect(findClientsExecute).toHaveBeenCalledWith({
+        clientId: undefined,
         search: 'Andes',
         zoneId: undefined,
         clientTypeId: undefined,
@@ -116,7 +128,7 @@ describe('ClientsController', () => {
     it('should return client response with coordinates when found', async () => {
       getClientByIdExecute.mockResolvedValueOnce(dummyClient);
 
-      const response = await controller.getClientById(1);
+      const response = await controller.getClientById(1, admin);
 
       expect(response.id).toBe(1);
       expect(response.latitude).toBe(6.2442);
@@ -124,12 +136,31 @@ describe('ClientsController', () => {
     });
 
     it('should translate ClientNotFoundError to NotFoundException', async () => {
-      getClientByIdExecute.mockRejectedValueOnce(
-        new ClientNotFoundError(999),
-      );
+      getClientByIdExecute.mockRejectedValueOnce(new ClientNotFoundError(999));
 
-      await expect(controller.getClientById(999)).rejects.toThrow(
+      await expect(controller.getClientById(999, admin)).rejects.toThrow(
         NotFoundException,
+      );
+    });
+
+    it('forces client searches to return only the signed-in client', async () => {
+      findClientsExecute.mockResolvedValueOnce({
+        data: [dummyClient],
+        meta: {
+          total: 1,
+          page: 1,
+          limit: 10,
+          totalPages: 1,
+          hasNextPage: false,
+          hasPreviousPage: false,
+        },
+      });
+      const query = new FindClientsQueryDto();
+      query.page = '1';
+      query.limit = '10';
+      await controller.findClients(query, clientUser);
+      expect(findClientsExecute).toHaveBeenLastCalledWith(
+        expect.objectContaining({ clientId: 1 }),
       );
     });
   });
@@ -184,9 +215,7 @@ describe('ClientsController', () => {
     });
 
     it('should translate ClientNotFoundError to NotFoundException', async () => {
-      updateExecute.mockRejectedValueOnce(
-        new ClientNotFoundError(999),
-      );
+      updateExecute.mockRejectedValueOnce(new ClientNotFoundError(999));
 
       await expect(controller.update(999, dto)).rejects.toThrow(
         NotFoundException,
@@ -198,7 +227,9 @@ describe('ClientsController', () => {
         new ClientNitAlreadyExistsError('900999999-9'),
       );
 
-      await expect(controller.update(1, dto)).rejects.toThrow(ConflictException);
+      await expect(controller.update(1, dto)).rejects.toThrow(
+        ConflictException,
+      );
     });
   });
 
@@ -214,9 +245,7 @@ describe('ClientsController', () => {
     });
 
     it('should translate ClientNotFoundError to NotFoundException', async () => {
-      toggleStatusExecute.mockRejectedValueOnce(
-        new ClientNotFoundError(999),
-      );
+      toggleStatusExecute.mockRejectedValueOnce(new ClientNotFoundError(999));
 
       await expect(
         controller.toggleStatus(999, { isActive: false }),

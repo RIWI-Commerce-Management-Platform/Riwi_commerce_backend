@@ -6,12 +6,10 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
     instrument: ObserveInstrument,
   });
-
   app.enableCors({
     origin: process.env.FRONTEND_URL ?? 'http://localhost:3000',
     credentials: true,
   });
-
   const config = new DocumentBuilder()
     .setTitle('RIWI Commerce')
     .setDescription('RIwi Commerce Management Platform')
@@ -20,11 +18,12 @@ async function bootstrap() {
     .addTag('Clients', 'Client management endpoints')
     .addTag('Client Contacts', 'Client contacts management')
     .addTag('Catalogs', 'System parameter catalogs and seed')
+    .addBearerAuth()
     .build();
   const documentFactory = () => SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('docs', app, documentFactory);
 
-  const port = process.env.PORT ?? 3000
+  const port = process.env.PORT ?? 3000;
 
   await app.listen(port);
 

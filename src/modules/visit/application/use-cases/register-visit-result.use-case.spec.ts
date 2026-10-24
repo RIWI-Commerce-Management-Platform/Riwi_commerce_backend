@@ -38,13 +38,25 @@ describe('RegisterVisitResultUseCase', () => {
   beforeEach(() => {
     mockVisitDao = {
       findByIdAndAdvisor: vi.fn(),
-      save: vi.fn().mockImplementation((visit: Visit) => Promise.resolve(visit)),
+      save: vi
+        .fn()
+        .mockImplementation((visit: Visit) => Promise.resolve(visit)),
     };
     mockCatalogDao = {
-      findByIds: vi.fn().mockResolvedValue([
-        new VisitResultOption({ id: 1, name: 'Visita realizada', isActive: true }),
-        new VisitResultOption({ id: 2, name: 'Pedido capturado', isActive: true }),
-      ]),
+      findByIds: vi
+        .fn()
+        .mockResolvedValue([
+          new VisitResultOption({
+            id: 1,
+            name: 'Visita realizada',
+            isActive: true,
+          }),
+          new VisitResultOption({
+            id: 2,
+            name: 'Pedido capturado',
+            isActive: true,
+          }),
+        ]),
     };
     mockActivityLog = {
       record: vi.fn().mockResolvedValue(undefined),
@@ -58,9 +70,9 @@ describe('RegisterVisitResultUseCase', () => {
   });
 
   it('registers a result and moves the visit to VISITED', async () => {
-    (mockVisitDao.findByIdAndAdvisor as ReturnType<typeof vi.fn>).mockResolvedValue(
-      buildVisit(),
-    );
+    (
+      mockVisitDao.findByIdAndAdvisor as ReturnType<typeof vi.fn>
+    ).mockResolvedValue(buildVisit());
 
     const result = await useCase.execute(1, 20, {
       endTime: '10:30:00',
@@ -70,16 +82,18 @@ describe('RegisterVisitResultUseCase', () => {
 
     expect(result.status).toBe(VisitStatus.VISITED);
     expect(result.endTime).toBe('10:30:00');
-    expect(result.observations).toBe('Cliente interesado en el contrato anual.');
+    expect(result.observations).toBe(
+      'Cliente interesado en el contrato anual.',
+    );
     expect(result.results).toEqual([
       { id: 1, name: 'Visita realizada', observation: undefined },
     ]);
   });
 
   it('persists multiple selected results resolved against the catalog', async () => {
-    (mockVisitDao.findByIdAndAdvisor as ReturnType<typeof vi.fn>).mockResolvedValue(
-      buildVisit(),
-    );
+    (
+      mockVisitDao.findByIdAndAdvisor as ReturnType<typeof vi.fn>
+    ).mockResolvedValue(buildVisit());
 
     await useCase.execute(1, 20, {
       endTime: '10:30:00',
@@ -100,9 +114,9 @@ describe('RegisterVisitResultUseCase', () => {
   });
 
   it('records the result registration in the activity log', async () => {
-    (mockVisitDao.findByIdAndAdvisor as ReturnType<typeof vi.fn>).mockResolvedValue(
-      buildVisit(),
-    );
+    (
+      mockVisitDao.findByIdAndAdvisor as ReturnType<typeof vi.fn>
+    ).mockResolvedValue(buildVisit());
 
     await useCase.execute(1, 20, {
       endTime: '10:30:00',
@@ -120,9 +134,9 @@ describe('RegisterVisitResultUseCase', () => {
   });
 
   it('throws NotFound when the visit does not exist or belongs to another advisor', async () => {
-    (mockVisitDao.findByIdAndAdvisor as ReturnType<typeof vi.fn>).mockResolvedValue(
-      null,
-    );
+    (
+      mockVisitDao.findByIdAndAdvisor as ReturnType<typeof vi.fn>
+    ).mockResolvedValue(null);
 
     await expect(
       useCase.execute(1, 20, {
@@ -134,9 +148,9 @@ describe('RegisterVisitResultUseCase', () => {
   });
 
   it('rejects an empty results list without querying the catalog', async () => {
-    (mockVisitDao.findByIdAndAdvisor as ReturnType<typeof vi.fn>).mockResolvedValue(
-      buildVisit(),
-    );
+    (
+      mockVisitDao.findByIdAndAdvisor as ReturnType<typeof vi.fn>
+    ).mockResolvedValue(buildVisit());
 
     await expect(
       useCase.execute(1, 20, {
@@ -150,9 +164,9 @@ describe('RegisterVisitResultUseCase', () => {
   });
 
   it('rejects result ids that do not exist or are inactive in the catalog', async () => {
-    (mockVisitDao.findByIdAndAdvisor as ReturnType<typeof vi.fn>).mockResolvedValue(
-      buildVisit(),
-    );
+    (
+      mockVisitDao.findByIdAndAdvisor as ReturnType<typeof vi.fn>
+    ).mockResolvedValue(buildVisit());
 
     await expect(
       useCase.execute(1, 20, {
@@ -166,9 +180,9 @@ describe('RegisterVisitResultUseCase', () => {
   });
 
   it('rejects registering a result on a visit that is not in progress', async () => {
-    (mockVisitDao.findByIdAndAdvisor as ReturnType<typeof vi.fn>).mockResolvedValue(
-      buildVisit(VisitStatus.PENDING),
-    );
+    (
+      mockVisitDao.findByIdAndAdvisor as ReturnType<typeof vi.fn>
+    ).mockResolvedValue(buildVisit(VisitStatus.PENDING));
 
     await expect(
       useCase.execute(1, 20, {
@@ -181,9 +195,9 @@ describe('RegisterVisitResultUseCase', () => {
   });
 
   it('rejects observations longer than 500 characters', async () => {
-    (mockVisitDao.findByIdAndAdvisor as ReturnType<typeof vi.fn>).mockResolvedValue(
-      buildVisit(),
-    );
+    (
+      mockVisitDao.findByIdAndAdvisor as ReturnType<typeof vi.fn>
+    ).mockResolvedValue(buildVisit());
 
     await expect(
       useCase.execute(1, 20, {
@@ -196,9 +210,9 @@ describe('RegisterVisitResultUseCase', () => {
   });
 
   it('propagates persistence errors instead of masking them as bad requests', async () => {
-    (mockVisitDao.findByIdAndAdvisor as ReturnType<typeof vi.fn>).mockResolvedValue(
-      buildVisit(),
-    );
+    (
+      mockVisitDao.findByIdAndAdvisor as ReturnType<typeof vi.fn>
+    ).mockResolvedValue(buildVisit());
     (mockVisitDao.save as ReturnType<typeof vi.fn>).mockRejectedValue(
       new Error('database unavailable'),
     );

@@ -4,7 +4,10 @@ import { RouteRepository } from '../domain/route.repository.js';
 import { RouteNotFoundError } from '../domain/errors/route-not-found.error.js';
 import { UnauthorizedZoneError } from '../domain/errors/unauthorized-zone.error.js';
 import { RouteClientReaderPort } from './ports/route-client-reader.port.js';
-import { RouteDistanceCalculatorPort, RouteWaypoint } from './ports/route-distance-calculator.port.js';
+import {
+  RouteDistanceCalculatorPort,
+  RouteWaypoint,
+} from './ports/route-distance-calculator.port.js';
 import { AuthActor } from './dto/auth-actor.dto.js';
 import { UserRole } from '../../auth/domain/user-role.enum.js';
 
@@ -19,7 +22,7 @@ export interface AddRouteStopCommand {
 
 /**
  * Caso de uso: Agregar un cliente como parada a una ruta (HU-18, HU-19 y HU-22).
- * 
+ *
  * En este caso de uso:
  * 1. Verifico la existencia de la ruta y los permisos territoriales del Director Regional.
  * 2. Consulto los datos del cliente a través de mi puerto de lectura (RouteClientReaderPort).
@@ -83,7 +86,8 @@ export class AddRouteStopUseCase {
   private async _recalculateRouteMetrics(route: Route): Promise<void> {
     const stops = route.stops;
     if (stops.length < 2) {
-      const singleStopDuration = stops.length === 1 ? stops[0].estimatedDurationMinutes : 0;
+      const singleStopDuration =
+        stops.length === 1 ? stops[0].estimatedDurationMinutes : 0;
       route.updateMetrics(0, singleStopDuration);
       return;
     }
@@ -111,6 +115,9 @@ export class AddRouteStopUseCase {
       totalStopAttentionMinutes,
     );
 
-    route.updateMetrics(metrics.totalDistanceKm, metrics.estimatedDurationMinutes);
+    route.updateMetrics(
+      metrics.totalDistanceKm,
+      metrics.estimatedDurationMinutes,
+    );
   }
 }

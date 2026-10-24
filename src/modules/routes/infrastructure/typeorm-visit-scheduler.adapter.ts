@@ -11,7 +11,7 @@ import { VisitOrmEntity } from '../../visit/infrastructure/visit.orm-entity.js';
 
 /**
  * Adaptador de infraestructura que implementa `VisitSchedulerPort` (HU-20).
- * 
+ *
  * En este adaptador materializo la integración clave con el módulo de Visitas de Camilo (Épica E4):
  * Al asignar una ruta a un asesor comercial, calculo las fechas efectivas de recorrido
  * según el día de la semana y la frecuencia configurada, creando automáticamente los registros
@@ -27,7 +27,9 @@ export class TypeOrmVisitSchedulerAdapter implements VisitSchedulerPort {
   /**
    * Con este método genero las visitas programadas en la tabla `visits` de PostgreSQL.
    */
-  async scheduleVisitsForRoute(command: ScheduleVisitsCommand): Promise<number> {
+  async scheduleVisitsForRoute(
+    command: ScheduleVisitsCommand,
+  ): Promise<number> {
     if (command.stops.length === 0) {
       return 0;
     }

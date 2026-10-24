@@ -1,7 +1,7 @@
 /**
  * Error de dominio lanzado cuando intento asignar una ruta a un asesor comercial
  * pero aún no le he agregado ninguna parada (clientes a visitar).
- * 
+ *
  * Regla de negocio: No tiene sentido despachar a un asesor con una ruta vacía.
  */
 export class RouteHasNoStopsError extends Error {

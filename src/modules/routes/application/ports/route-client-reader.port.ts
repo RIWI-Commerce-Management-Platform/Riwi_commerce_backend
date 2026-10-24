@@ -14,7 +14,7 @@ export interface RouteClientDetails {
 
 /**
  * Puerto de lectura de clientes para el módulo de rutas.
- * 
+ *
  * En mi arquitectura limpia, este puerto abstracto me permite consultar
  * los clientes y sus coordenadas geográficas sin acoplarme directamente
  * a las tablas ni a la base de datos de Yesid (Épica E2).

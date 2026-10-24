@@ -35,7 +35,7 @@ import { RolesGuard } from '../auth/guards/roles.guard.js';
 
 /**
  * Módulo de Rutas Comerciales (Épica E3 - Alejandro).
- * 
+ *
  * En este módulo configuro la inyección de dependencias de NestJS enlazando cada puerto abstracto
  * con su implementación correspondiente en infraestructura y registrando los casos de uso
  * y el controlador HTTP.
@@ -86,10 +86,6 @@ import { RolesGuard } from '../auth/guards/roles.guard.js';
     SessionGuard,
     RolesGuard,
   ],
-  exports: [
-    RouteRepository,
-    FindRoutesUseCase,
-    GetRouteByIdUseCase,
-  ],
+  exports: [RouteRepository, FindRoutesUseCase, GetRouteByIdUseCase],
 })
 export class RoutesModule {}

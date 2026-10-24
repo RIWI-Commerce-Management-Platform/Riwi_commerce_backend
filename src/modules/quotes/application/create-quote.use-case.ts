@@ -48,6 +48,7 @@ export class CreateQuoteUseCase {
     const quote = new Quote({
       quoteNumber: nextQuoteNumber,
       clientId: command.clientId,
+      advisorId: command.advisorId,
       status: QuoteStatus.DRAFT,
       subtotal: quoteSubtotal,
       total: quoteTotal,

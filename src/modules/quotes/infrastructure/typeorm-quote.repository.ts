@@ -2,7 +2,10 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Quote } from '../domain/quote.entity.js';
-import { QuoteRepository, ListQuotesFilter } from '../domain/quote.repository.js';
+import {
+  QuoteRepository,
+  ListQuotesFilter,
+} from '../domain/quote.repository.js';
 import { QuoteOrmEntity } from './quote.orm-entity.js';
 import { QuoteMapper } from './quote.mapper.js';
 import { PaginatedResult } from '../../../shared/pagination/paginated-result.interface.js';
@@ -33,6 +36,25 @@ export class TypeOrmQuoteRepository implements QuoteRepository {
     return found ? QuoteMapper.toDomain(found) : null;
   }
 
+  async findByIdAndAdvisor(
+    id: number,
+    advisorId: number,
+  ): Promise<Quote | null> {
+    const found = await this.ormRepository.findOne({
+      where: { id, advisorId },
+      relations: { items: true },
+    });
+    return found ? QuoteMapper.toDomain(found) : null;
+  }
+
+  async findByIdAndClient(id: number, clientId: number): Promise<Quote | null> {
+    const found = await this.ormRepository.findOne({
+      where: { id, clientId },
+      relations: { items: true },
+    });
+    return found ? QuoteMapper.toDomain(found) : null;
+  }
+
   async findByQuoteNumber(quoteNumber: string): Promise<Quote | null> {
     const found = await this.ormRepository.findOne({
       where: { quoteNumber },
@@ -44,9 +66,9 @@ export class TypeOrmQuoteRepository implements QuoteRepository {
 
   async generateNextQuoteNumber(): Promise<string> {
     try {
-      const [{ nextval }] = await this.ormRepository.query<{ nextval: string }[]>(
-        "SELECT nextval('quote_number_seq') AS nextval",
-      );
+      const [{ nextval }] = await this.ormRepository.query<
+        { nextval: string }[]
+      >("SELECT nextval('quote_number_seq') AS nextval");
       return `COT-${String(nextval).padStart(4, '0')}`;
     } catch {
       const [latest] = await this.ormRepository.find({
@@ -69,7 +91,9 @@ export class TypeOrmQuoteRepository implements QuoteRepository {
     }
   }
 
-  async findPaginated(filter: ListQuotesFilter): Promise<PaginatedResult<Quote>> {
+  async findPaginated(
+    filter: ListQuotesFilter,
+  ): Promise<PaginatedResult<Quote>> {
     const query = this.ormRepository.createQueryBuilder('quote');
     applyCommercialFilters(query, 'quote', filter);
     query.orderBy('quote.createdAt', 'DESC');

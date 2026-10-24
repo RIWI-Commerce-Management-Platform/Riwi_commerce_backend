@@ -59,9 +59,60 @@ describe('TypeOrmVisitSchedulerAdapter', () => {
     expect(count).toBeGreaterThan(0);
     expect(repo.save).toHaveBeenCalled();
 
-    const savedVisits = vi.mocked(repo.save).mock.calls[0][0] as VisitOrmEntity[];
+    const savedVisits = vi.mocked(repo.save).mock
+      .calls[0][0] as VisitOrmEntity[];
     expect(savedVisits[0].advisorId).toBe(7);
     expect(savedVisits[0].routeId).toBe(10);
     expect(savedVisits[0].status).toBe('PENDING');
+  });
+
+  it('should support BIWEEKLY frequency and handle null suggestedTime', async () => {
+    const repo = createMockVisitRepo();
+    const adapter = new TypeOrmVisitSchedulerAdapter(repo);
+
+    const count = await adapter.scheduleVisitsForRoute({
+      routeId: 10,
+      advisorId: 7,
+      dayOfWeek: DayOfWeek.MONDAY,
+      frequency: RouteFrequency.BIWEEKLY,
+      startDate: new Date('2026-10-26'),
+      endDate: new Date('2026-11-23'),
+      stops: [
+        {
+          clientId: 101,
+          visitOrder: 1,
+          suggestedTime: null,
+          estimatedDurationMinutes: 30,
+        },
+      ],
+    });
+
+    expect(count).toBeGreaterThan(0);
+    expect(repo.save).toHaveBeenCalled();
+  });
+
+  it('should support MONTHLY frequency', async () => {
+    const repo = createMockVisitRepo();
+    const adapter = new TypeOrmVisitSchedulerAdapter(repo);
+
+    const count = await adapter.scheduleVisitsForRoute({
+      routeId: 10,
+      advisorId: 7,
+      dayOfWeek: DayOfWeek.MONDAY,
+      frequency: RouteFrequency.MONTHLY,
+      startDate: new Date('2026-10-26'),
+      endDate: new Date('2026-12-21'),
+      stops: [
+        {
+          clientId: 101,
+          visitOrder: 1,
+          suggestedTime: '14:30:00',
+          estimatedDurationMinutes: 30,
+        },
+      ],
+    });
+
+    expect(count).toBeGreaterThan(0);
+    expect(repo.save).toHaveBeenCalled();
   });
 });

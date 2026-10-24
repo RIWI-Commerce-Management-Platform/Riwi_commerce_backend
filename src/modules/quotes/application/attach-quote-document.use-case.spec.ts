@@ -38,7 +38,9 @@ describe('AttachQuoteDocumentUseCase', () => {
       }),
       getPresignedUrl: vi
         .fn()
-        .mockResolvedValue('https://s3.amazonaws.com/quotes/173000-soporte.pdf'),
+        .mockResolvedValue(
+          'https://s3.amazonaws.com/quotes/173000-soporte.pdf',
+        ),
     };
 
     useCase = new AttachQuoteDocumentUseCase(

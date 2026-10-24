@@ -1,5 +1,11 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { ArrayNotEmpty, IsArray, IsInt, IsOptional, Min } from 'class-validator';
+import {
+  ArrayNotEmpty,
+  IsArray,
+  IsInt,
+  IsOptional,
+  Min,
+} from 'class-validator';
 
 /**
  * DTO para previsualizar el cálculo de distancia y duración de una secuencia de paradas (HU-22).

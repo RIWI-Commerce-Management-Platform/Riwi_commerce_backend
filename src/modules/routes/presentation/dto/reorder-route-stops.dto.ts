@@ -6,7 +6,8 @@ import { ArrayNotEmpty, IsArray, IsInt } from 'class-validator';
  */
 export class ReorderRouteStopsDto {
   @ApiProperty({
-    description: 'Lista ordenada de IDs de clientes según el nuevo recorrido deseado',
+    description:
+      'Lista ordenada de IDs de clientes según el nuevo recorrido deseado',
     example: [103, 101, 102],
     type: [Number],
   })

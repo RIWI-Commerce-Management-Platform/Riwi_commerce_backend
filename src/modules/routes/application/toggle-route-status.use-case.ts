@@ -8,7 +8,7 @@ import { UserRole } from '../../auth/domain/user-role.enum.js';
 
 /**
  * Caso de uso: Alternar estado activo/inactivo de una ruta comercial (HU-21).
- * 
+ *
  * En este caso de uso:
  * 1. Busco la ruta y verifico los permisos territoriales del Director Regional.
  * 2. Si la ruta está activa, la desactivo lógicamente (`is_active = false`, status = INACTIVE).

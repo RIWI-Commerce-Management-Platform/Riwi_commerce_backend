@@ -34,9 +34,17 @@ import { AllCatalogsResponseDto } from './dto/all-catalogs-response.dto.js';
 import { CatalogItemResponseDto } from './dto/catalog-item-response.dto.js';
 import { CreateCatalogItemDto } from './dto/create-catalog-item.dto.js';
 import { UpdateCatalogItemDto } from './dto/update-catalog-item.dto.js';
+import { Roles } from '../../auth/decorators/roles.decorator.js';
+import { UserRole } from '../../auth/domain/user-role.enum.js';
 
 @ApiTags('Catalogs')
 @Controller('catalogs')
+@Roles(
+  UserRole.ADMINISTRADOR,
+  UserRole.DIRECTOR_REGIONAL,
+  UserRole.ASESOR,
+  UserRole.CLIENTE,
+)
 export class CatalogsController {
   constructor(
     private readonly listCatalogsUseCase: ListCatalogsUseCase,
@@ -68,6 +76,7 @@ export class CatalogsController {
   }
 
   @Post('seed/run')
+  @Roles(UserRole.ADMINISTRADOR)
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: 'Manually trigger initial catalogs seed',
@@ -118,6 +127,7 @@ export class CatalogsController {
   }
 
   @Post(':type')
+  @Roles(UserRole.ADMINISTRADOR)
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({ summary: 'Create a new catalog item (Admin)' })
   @ApiParam({
@@ -158,6 +168,7 @@ export class CatalogsController {
   }
 
   @Patch(':type/:id')
+  @Roles(UserRole.ADMINISTRADOR)
   @ApiOperation({
     summary: 'Update an existing catalog item using PATCH (Admin)',
   })

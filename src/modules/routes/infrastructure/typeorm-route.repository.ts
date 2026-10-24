@@ -11,7 +11,7 @@ import { PaginatedResult } from '../../../shared/pagination/paginated-result.int
 
 /**
  * Implementación de persistencia TypeORM para el repositorio RouteRepository.
- * 
+ *
  * En mi repositorio gestiono de forma transaccional el agregado Route junto con
  * todas sus paradas (RouteStop), garantizando atomicidad y consistencia en la base de datos PostgreSQL.
  */
@@ -64,9 +64,12 @@ export class TypeOrmRouteRepository implements RouteRepository {
   /**
    * Con este método obtengo un listado paginado aplicando filtros dinámicos (HU-21).
    */
-  async findPaginated(criteria: RouteFilterCriteria): Promise<PaginatedResult<Route>> {
+  async findPaginated(
+    criteria: RouteFilterCriteria,
+  ): Promise<PaginatedResult<Route>> {
     const page = criteria.page && criteria.page > 0 ? criteria.page : 1;
-    const limit = criteria.limit && criteria.limit > 0 ? Math.min(criteria.limit, 100) : 10;
+    const limit =
+      criteria.limit && criteria.limit > 0 ? Math.min(criteria.limit, 100) : 10;
     const skip = (page - 1) * limit;
 
     const query = this.routeOrmRepository
@@ -78,7 +81,9 @@ export class TypeOrmRouteRepository implements RouteRepository {
     }
 
     if (criteria.advisorId !== undefined) {
-      query.andWhere('route.advisor_id = :advisorId', { advisorId: criteria.advisorId });
+      query.andWhere('route.advisor_id = :advisorId', {
+        advisorId: criteria.advisorId,
+      });
     }
 
     if (criteria.status !== undefined) {
@@ -86,15 +91,21 @@ export class TypeOrmRouteRepository implements RouteRepository {
     }
 
     if (criteria.dayOfWeek !== undefined) {
-      query.andWhere('route.day_of_week = :dayOfWeek', { dayOfWeek: criteria.dayOfWeek });
+      query.andWhere('route.day_of_week = :dayOfWeek', {
+        dayOfWeek: criteria.dayOfWeek,
+      });
     }
 
     if (criteria.frequency !== undefined) {
-      query.andWhere('route.frequency = :frequency', { frequency: criteria.frequency });
+      query.andWhere('route.frequency = :frequency', {
+        frequency: criteria.frequency,
+      });
     }
 
     if (criteria.isActive !== undefined) {
-      query.andWhere('route.is_active = :isActive', { isActive: criteria.isActive });
+      query.andWhere('route.is_active = :isActive', {
+        isActive: criteria.isActive,
+      });
     }
 
     if (criteria.search) {

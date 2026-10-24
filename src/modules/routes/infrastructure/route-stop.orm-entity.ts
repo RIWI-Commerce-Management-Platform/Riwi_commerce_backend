@@ -11,7 +11,7 @@ import type { ClientOrmEntity } from '../../clients/infrastructure/client.orm-en
 
 /**
  * Entidad de persistencia TypeORM para la tabla `route_stops` (RUTA_CLIENTE).
- * 
+ *
  * En este modelo almaceno cada parada de cliente asociada a una ruta comercial,
  * registrando el orden de visita secuencial, la hora sugerida y la duración esperada.
  * Utilizo importación de tipo e identificador por string para evitar ciclos ESM en Node 24.

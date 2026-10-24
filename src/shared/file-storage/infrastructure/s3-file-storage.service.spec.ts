@@ -1,11 +1,14 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest';
+import { Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { S3FileStorageService } from './s3-file-storage.service.js';
 import { FileSizeExceededError } from '../domain/errors/file-size-exceeded.error.js';
 import { InvalidFileTypeError } from '../domain/errors/invalid-file-type.error.js';
 
 vi.mock('@aws-sdk/s3-request-presigner', () => ({
-  getSignedUrl: vi.fn().mockResolvedValue('https://s3.amazonaws.com/test-bucket/presigned-url'),
+  getSignedUrl: vi
+    .fn()
+    .mockResolvedValue('https://s3.amazonaws.com/test-bucket/presigned-url'),
 }));
 
 describe('S3FileStorageService', () => {
@@ -13,6 +16,7 @@ describe('S3FileStorageService', () => {
   let mockConfigService: Partial<ConfigService>;
 
   beforeEach(() => {
+    vi.spyOn(Logger.prototype, 'log').mockImplementation(() => {});
     mockConfigService = {
       get: vi.fn((key: string) => {
         if (key === 'aws.region') return 'us-east-1';
@@ -50,7 +54,9 @@ describe('S3FileStorageService', () => {
 
   it('should upload valid file to S3 and return result', async () => {
     const buffer = Buffer.from('valid pdf content');
-    const sendSpy = vi.spyOn((service as any).s3Client, 'send').mockResolvedValue({} as never);
+    const sendSpy = vi
+      .spyOn((service as any).s3Client, 'send')
+      .mockResolvedValue({} as never);
 
     const result = await service.upload({
       buffer,
@@ -71,7 +77,9 @@ describe('S3FileStorageService', () => {
   });
 
   it('should delete file from S3', async () => {
-    const sendSpy = vi.spyOn((service as any).s3Client, 'send').mockResolvedValue({} as never);
+    const sendSpy = vi
+      .spyOn((service as any).s3Client, 'send')
+      .mockResolvedValue({} as never);
     await service.delete('quotes/test.pdf');
     expect(sendSpy).toHaveBeenCalled();
   });

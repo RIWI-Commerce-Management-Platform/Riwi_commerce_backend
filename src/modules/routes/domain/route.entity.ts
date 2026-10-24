@@ -48,7 +48,7 @@ export interface UpdateRouteGeneralInfoProps {
 
 /**
  * Entidad raíz de agregado (Aggregate Root) que representa una Ruta Comercial (RUTA).
- * 
+ *
  * En mi rol como Alejandro (E3), diseño esta clase pura para encapsular todas las reglas
  * de negocio de planeación territorial: creación en borrador, gestión de paradas ordenadas,
  * cálculo de distancia/tiempo y asignación final a un asesor comercial.
@@ -95,7 +95,9 @@ export class Route {
     this.status = props.status ?? RouteStatus.DRAFT;
     this.totalDistanceKm = props.totalDistanceKm ?? null;
     this.estimatedDurationMinutes = props.estimatedDurationMinutes ?? null;
-    this._stops = props.stops ? [...props.stops].sort((a, b) => a.visitOrder - b.visitOrder) : [];
+    this._stops = props.stops
+      ? [...props.stops].sort((a, b) => a.visitOrder - b.visitOrder)
+      : [];
     this.isActive = props.isActive ?? true;
     this.createdAt = props.createdAt ?? new Date();
     this.updatedAt = props.updatedAt ?? new Date();
@@ -110,7 +112,7 @@ export class Route {
 
   /**
    * Con este método asigno mi ruta a un asesor comercial (Paso 3 del Wizard - HU-20).
-   * 
+   *
    * Regla de negocio:
    * 1. La ruta debe estar activa.
    * 2. La ruta debe tener al menos una parada de cliente configurada.
@@ -134,7 +136,7 @@ export class Route {
 
   /**
    * Con este método agrego un cliente como nueva parada al final del recorrido (HU-18).
-   * 
+   *
    * Regla de negocio:
    * Evito duplicar el cliente en la misma ruta y asigno el siguiente número de orden correlativo.
    */
@@ -163,7 +165,7 @@ export class Route {
 
   /**
    * Con este método remuevo un cliente de las paradas de la ruta (HU-18).
-   * 
+   *
    * Regla de negocio:
    * Al eliminar la parada, reindexo de inmediato las paradas restantes para que
    * el orden de visita (1, 2, 3...) se conserve estrictamente consecutivo.
@@ -181,7 +183,7 @@ export class Route {
 
   /**
    * Con este método reordeno todas las paradas de la ruta mediante una secuencia de IDs de clientes (HU-18 y HU-19).
-   * 
+   *
    * Este método es la base técnica para el drag-and-drop del frontend y la actualización del mapa interactivo.
    */
   reorderStops(orderedClientIds: number[]): void {
@@ -218,7 +220,10 @@ export class Route {
   /**
    * Con este método actualizo los cálculos de distancia total y tiempo estimado (HU-22).
    */
-  updateMetrics(totalDistanceKm: number, estimatedDurationMinutes: number): void {
+  updateMetrics(
+    totalDistanceKm: number,
+    estimatedDurationMinutes: number,
+  ): void {
     if (totalDistanceKm < 0) {
       throw new Error('totalDistanceKm cannot be negative');
     }
@@ -242,7 +247,8 @@ export class Route {
     }
     if (props.description !== undefined) this.description = props.description;
     if (props.zoneId !== undefined) {
-      if (props.zoneId <= 0) throw new Error('Zone ID must be a positive integer');
+      if (props.zoneId <= 0)
+        throw new Error('Zone ID must be a positive integer');
       this.zoneId = props.zoneId;
     }
     if (props.dayOfWeek !== undefined) this.dayOfWeek = props.dayOfWeek;

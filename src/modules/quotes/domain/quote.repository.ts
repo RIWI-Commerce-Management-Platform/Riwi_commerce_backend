@@ -17,7 +17,17 @@ export interface ListQuotesFilter {
 export abstract class QuoteRepository {
   abstract save(quote: Quote): Promise<Quote>;
   abstract findById(id: number): Promise<Quote | null>;
+  abstract findByIdAndAdvisor(
+    id: number,
+    advisorId: number,
+  ): Promise<Quote | null>;
+  abstract findByIdAndClient(
+    id: number,
+    clientId: number,
+  ): Promise<Quote | null>;
   abstract findByQuoteNumber(quoteNumber: string): Promise<Quote | null>;
   abstract generateNextQuoteNumber(): Promise<string>;
-  abstract findPaginated(filter: ListQuotesFilter): Promise<PaginatedResult<Quote>>;
+  abstract findPaginated(
+    filter: ListQuotesFilter,
+  ): Promise<PaginatedResult<Quote>>;
 }

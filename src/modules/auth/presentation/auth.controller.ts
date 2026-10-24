@@ -11,30 +11,36 @@ import {
   Post,
   Req,
   Res,
-  UnauthorizedException,
-  UseGuards,
   UsePipes,
   ValidationPipe,
 } from '@nestjs/common';
-import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { InjectRepository } from '@nestjs/typeorm';
+import {
+  ApiBearerAuth,
+  ApiOperation,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 import type { Request, Response } from 'express';
+import { Repository } from 'typeorm';
+import { AuthService } from '../application/auth.service.js';
+import { BetterAuthGateway } from '../infrastructure/adapters/better-auth.gateway.js';
 import { CurrentSession } from '../decorators/current-session.decorator.js';
 import { CurrentUser } from '../decorators/current-user.decorator.js';
 import { Public } from '../decorators/public.decorator.js';
 import { Roles } from '../decorators/roles.decorator.js';
-import { RolesGuard } from '../guards/roles.guard.js';
 import { UserRole } from '../domain/user-role.enum.js';
+import { UserOrmEntity } from '../infrastructure/user.orm-entity.js';
+import { VerificationOrmEntity } from '../infrastructure/verification.orm-entity.js';
 import { AssignUserRoleDto } from './dto/assign-user-role.dto.js';
+import {
+  ForgotPasswordDto,
+  ResetPasswordDto,
+} from './dto/password-reset.dto.js';
 import { LoginDto } from './dto/login.dto.js';
+import { RefreshTokenDto } from './dto/refresh-token.dto.js';
 import { RegisterDto } from './dto/register.dto.js';
-import { LoginUseCase } from '../application/login.use-case.js';
-import { RegisterUseCase } from '../application/register.use-case.js';
-import { LogoutUseCase } from '../application/logout.use-case.js';
-import { GetCurrentUserUseCase } from '../application/get-current-user.use-case.js';
 import { AssignUserRoleUseCase } from '../application/assign-user-role.use-case.js';
-import { SetCookieHeaders } from '../application/extract-set-cookies.js';
-import { InvalidCredentialsError } from '../domain/errors/invalid-credentials.error.js';
-import { RegistrationFailedError } from '../domain/errors/registration-failed.error.js';
 import { InvalidRoleError } from '../domain/errors/invalid-role.error.js';
 import { ZoneRequiredError } from '../domain/errors/zone-required.error.js';
 import { UnexpectedZoneError } from '../domain/errors/unexpected-zone.error.js';
@@ -51,16 +57,23 @@ import { UserNotFoundError } from '../domain/errors/user-not-found.error.js';
 @Controller('auth')
 export class AuthController {
   constructor(
-    private readonly loginUseCase: LoginUseCase,
-    private readonly registerUseCase: RegisterUseCase,
-    private readonly logoutUseCase: LogoutUseCase,
-    private readonly getCurrentUserUseCase: GetCurrentUserUseCase,
+    private readonly authService: AuthService,
+    private readonly betterAuth: BetterAuthGateway,
+    @InjectRepository(VerificationOrmEntity)
+    private readonly verificationRepository: Repository<VerificationOrmEntity>,
     private readonly assignUserRoleUseCase: AssignUserRoleUseCase,
   ) {}
 
-  private forwardCookies(res: Response, setCookieHeaders: SetCookieHeaders): void {
-    if (setCookieHeaders) {
-      res.setHeader('set-cookie', setCookieHeaders);
+  private forwardCookies(
+    sourceResponse: globalThis.Response,
+    targetResponse: Response,
+  ): void {
+    const cookies =
+      typeof sourceResponse.headers.getSetCookie === 'function'
+        ? sourceResponse.headers.getSetCookie()
+        : sourceResponse.headers.get('set-cookie');
+    if (cookies && (Array.isArray(cookies) ? cookies.length > 0 : true)) {
+      targetResponse.setHeader('set-cookie', cookies);
     }
   }
 
@@ -68,139 +81,153 @@ export class AuthController {
   @Post('login')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Sign in with email and password' })
-  @ApiResponse({
-    status: 200,
-    description: 'Signed in successfully. A session cookie has been set.',
-  })
-  @ApiResponse({
-    status: 401,
-    description: 'Invalid credentials (incorrect email or password).',
-  })
-  async login(
-    @Body() dto: LoginDto,
-    @Req() req: Request,
-    @Res({ passthrough: true }) res: Response,
-  ) {
-    try {
-      const result = await this.loginUseCase.execute({
-        email: dto.email,
-        password: dto.password,
-        rememberMe: dto.rememberMe ?? false,
-        headers: req.headers,
-      });
-      this.forwardCookies(res, result.setCookieHeaders);
-      return result.data;
-    } catch (error) {
-      if (error instanceof InvalidCredentialsError) {
-        throw new UnauthorizedException(error.message);
-      }
-      throw error;
-    }
+  @ApiResponse({ status: 200, description: 'JWT access and refresh tokens.' })
+  @ApiResponse({ status: 401, description: 'Invalid email or password.' })
+  login(@Body() dto: LoginDto) {
+    return this.authService.login(dto);
   }
 
-  @Public()
   @Post('register')
+  @Roles(UserRole.ADMINISTRADOR)
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({
-    summary: 'Register a new user with email and password',
+    summary: 'Create an auth account for an existing advisor or client profile',
   })
   @ApiResponse({
     status: 201,
-    description: 'User registered and signed in automatically.',
+    description: 'Account created and linked to its commercial profile.',
   })
-  @ApiResponse({
-    status: 400,
-    description: 'Invalid input or the user already exists.',
-  })
-  async register(
-    @Body() dto: RegisterDto,
-    @Req() req: Request,
-    @Res({ passthrough: true }) res: Response,
-  ) {
-    try {
-      const result = await this.registerUseCase.execute({
-        name: dto.name,
-        email: dto.email,
-        password: dto.password,
-        headers: req.headers,
-      });
-      this.forwardCookies(res, result.setCookieHeaders);
-      return result.data;
-    } catch (error) {
-      if (error instanceof RegistrationFailedError) {
-        throw new BadRequestException(error.message);
-      }
-      throw error;
-    }
+  @ApiResponse({ status: 409, description: 'The email is already registered.' })
+  register(@Body() dto: RegisterDto) {
+    return this.authService.register(dto);
   }
 
   @Public()
-  @Post('logout')
+  @Post('forgot-password')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Request a password reset email' })
+  @ApiResponse({
+    status: 200,
+    description:
+      'The same response is returned whether or not the email exists.',
+  })
+  async forgotPassword(
+    @Body() body: ForgotPasswordDto,
+  ): Promise<{ status: boolean; message: string }> {
+    if (!body || typeof body.email !== 'string' || !body.email.trim()) {
+      throw new BadRequestException('A valid email address is required');
+    }
+
+    const response = await this.betterAuth.requestPasswordReset(
+      body.email,
+      `${process.env.FRONTEND_URL ?? 'http://localhost:3000'}/reset-password`,
+    );
+    return {
+      status: true,
+      message:
+        response?.message ??
+        'If this email exists in our system, check your email for the reset link',
+    };
+  }
+
+  @Public()
+  @Post('reset-password')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Set a new password using a reset token' })
+  @ApiResponse({ status: 200, description: 'Password reset successfully.' })
+  @ApiResponse({
+    status: 400,
+    description: 'The reset link is invalid, expired, or already used.',
+  })
+  async resetPassword(@Body() body: ResetPasswordDto) {
+    if (
+      !body ||
+      typeof body.token !== 'string' ||
+      typeof body.newPassword !== 'string' ||
+      body.newPassword.length < 8 ||
+      body.newPassword.length > 128
+    ) {
+      throw new BadRequestException(
+        'A valid reset token and a password between 8 and 128 characters are required',
+      );
+    }
+    const verification = await this.verificationRepository.findOneBy({
+      identifier: `reset-password:${body.token}`,
+    });
+    const response = await this.betterAuth.resetPassword(
+      body.token,
+      body.newPassword,
+    );
+    if (verification) {
+      await this.authService.revokeAllSessions(verification.value);
+    }
+    return response;
+  }
+
+  @Public()
+  @Post('refresh')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
-    summary: 'Sign out and invalidate the active cookie/session',
+    summary: 'Rotate the refresh token and issue a new token pair',
   })
-  @ApiResponse({ status: 200, description: 'Signed out successfully.' })
-  async logout(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
-    const result = await this.logoutUseCase.execute(req.headers);
-    this.forwardCookies(res, result.setCookieHeaders);
+  @ApiResponse({ status: 200, description: 'A new token pair.' })
+  @ApiResponse({
+    status: 401,
+    description: 'The refresh token is invalid or expired.',
+  })
+  refresh(@Body() dto: RefreshTokenDto) {
+    return this.authService.refresh(dto.refreshToken);
+  }
 
-    return {
-      success: true,
-      message: 'Session ended successfully',
-    };
+  @Post('logout')
+  @HttpCode(HttpStatus.OK)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Revoke the current JWT session' })
+  @ApiResponse({ status: 200, description: 'Session revoked successfully.' })
+  @ApiResponse({ status: 401, description: 'Missing or invalid access token.' })
+  async logout(
+    @CurrentUser('id') userId: string,
+    @CurrentSession() session: { id: string; authProvider: string },
+    @Req() req: Request,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    if (session.authProvider === 'better-auth') {
+      const authResponse = await this.betterAuth.signOut(req.headers);
+      this.forwardCookies(authResponse, res);
+    } else {
+      await this.authService.logout(userId, session.id);
+    }
+    return { success: true, message: 'Session ended successfully' };
   }
 
   @Get('me')
-  @ApiOperation({
-    summary: 'Get the current session and user information',
-  })
-  @ApiResponse({ status: 200, description: 'Active session information.' })
-  @ApiResponse({
-    status: 401,
-    description: 'Unauthorized / No active session.',
-  })
-  async getMe(@CurrentUser() user: any, @CurrentSession() session: any) {
-    try {
-      const currentUser = await this.getCurrentUserUseCase.execute(user.id);
-      return {
-        user: { ...user, role: currentUser.role, zoneId: currentUser.zoneId },
-        session,
-      };
-    } catch (error) {
-      if (error instanceof UserNotFoundError) {
-        throw new UnauthorizedException(error.message);
-      }
-      throw error;
-    }
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get the current authenticated user and session' })
+  @ApiResponse({ status: 200, description: 'Current user and JWT session.' })
+  @ApiResponse({ status: 401, description: 'Missing or invalid access token.' })
+  getMe(
+    @CurrentUser() user: UserOrmEntity,
+    @CurrentSession() session: { id: string },
+  ) {
+    return { user, session };
   }
 
   @Get('protected')
-  @ApiOperation({ summary: 'Session-guarded test endpoint' })
-  @ApiResponse({
-    status: 200,
-    description: 'Authorized to access the protected resource.',
-  })
-  @ApiResponse({
-    status: 401,
-    description: 'Unauthorized: session is missing or invalid.',
-  })
-  protectedEndpoint(@CurrentUser() user: any) {
-    return {
-      message: 'Access granted',
-      user,
-    };
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'JWT-protected test endpoint' })
+  @ApiResponse({ status: 200, description: 'Access granted.' })
+  @ApiResponse({ status: 401, description: 'Missing or invalid access token.' })
+  protectedEndpoint(@CurrentUser() user: UserOrmEntity) {
+    return { message: 'Access granted', user };
   }
 
   @Patch('users/:userId/role')
-  @UseGuards(RolesGuard)
-  @Roles(UserRole.ADMIN)
-  @ApiOperation({
-    summary: 'Assign or change a user role (Admin only)',
-  })
+  @Roles(UserRole.ADMINISTRADOR)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Assign or change a user role (Admin only)' })
   @ApiResponse({ status: 200, description: 'Role updated successfully.' })
   @ApiResponse({ status: 400, description: 'Invalid role or zone.' })
-  @ApiResponse({ status: 401, description: 'No active session.' })
+  @ApiResponse({ status: 401, description: 'Missing or invalid access token.' })
   @ApiResponse({ status: 403, description: 'The Admin role is required.' })
   @ApiResponse({ status: 404, description: 'User or zone not found.' })
   async assignRole(

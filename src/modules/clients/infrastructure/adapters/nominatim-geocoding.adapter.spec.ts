@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { Logger } from '@nestjs/common';
 import { NominatimGeocodingAdapter } from './nominatim-geocoding.adapter.js';
 
 describe('NominatimGeocodingAdapter', () => {
@@ -7,6 +8,7 @@ describe('NominatimGeocodingAdapter', () => {
 
   beforeEach(() => {
     vi.restoreAllMocks();
+    vi.spyOn(Logger.prototype, 'warn').mockImplementation(() => {});
   });
 
   afterEach(() => {

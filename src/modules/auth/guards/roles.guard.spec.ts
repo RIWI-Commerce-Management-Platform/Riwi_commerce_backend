@@ -17,7 +17,10 @@ describe('RolesGuard', () => {
     switchToHttp: () => ({ getRequest: () => request }),
   } as unknown as ExecutionContext;
 
-  function createGuard(role: UserRole | null, requiredRoles: UserRole[] | null = [UserRole.ADMIN]) {
+  function createGuard(
+    role: UserRole | null,
+    requiredRoles: UserRole[] | null = [UserRole.ADMINISTRADOR],
+  ) {
     const reflector = {
       getAllAndOverride: vi.fn().mockReturnValue(requiredRoles),
     } as unknown as Reflector;
@@ -40,15 +43,15 @@ describe('RolesGuard', () => {
   it('returns 401 when no authenticated user is present', async () => {
     request.user = {} as typeof request.user;
     await expect(
-      createGuard(UserRole.ADMIN).canActivate(context),
+      createGuard(UserRole.ADMINISTRADOR).canActivate(context),
     ).rejects.toBeInstanceOf(UnauthorizedException);
     request.user = { id: 'user-1' };
   });
 
   it('returns 401 when user is not found in database', async () => {
-    await expect(
-      createGuard(null).canActivate(context),
-    ).rejects.toBeInstanceOf(UnauthorizedException);
+    await expect(createGuard(null).canActivate(context)).rejects.toBeInstanceOf(
+      UnauthorizedException,
+    );
   });
 
   it('returns 403 when the current role is not allowed', async () => {
@@ -59,8 +62,11 @@ describe('RolesGuard', () => {
 
   it('allows a user with the required role', async () => {
     await expect(
-      createGuard(UserRole.ADMIN).canActivate(context),
+      createGuard(UserRole.ADMINISTRADOR).canActivate(context),
     ).resolves.toBe(true);
-    expect(request.user).toMatchObject({ role: UserRole.ADMIN, zoneId: null });
+    expect(request.user).toMatchObject({
+      role: UserRole.ADMINISTRADOR,
+      zoneId: null,
+    });
   });
 });

@@ -1,5 +1,8 @@
 import { Injectable } from '@nestjs/common';
-import { OrderRepository, ListOrdersFilter } from '../domain/order.repository.js';
+import {
+  OrderRepository,
+  ListOrdersFilter,
+} from '../domain/order.repository.js';
 import { Order } from '../domain/order.entity.js';
 import { PaginatedResult } from '../../../shared/pagination/paginated-result.interface.js';
 

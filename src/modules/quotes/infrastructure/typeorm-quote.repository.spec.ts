@@ -30,7 +30,9 @@ describe('TypeOrmQuoteRepository (Infrastructure)', () => {
       query: vi.fn().mockResolvedValue([{ nextval: '1' }]),
     };
 
-    repository = new TypeOrmQuoteRepository(ormRepo as Repository<QuoteOrmEntity>);
+    repository = new TypeOrmQuoteRepository(
+      ormRepo as Repository<QuoteOrmEntity>,
+    );
   });
 
   it('saves a quote entity', async () => {
@@ -81,7 +83,9 @@ describe('TypeOrmQuoteRepository (Infrastructure)', () => {
     });
 
     it('falls back to COT-0001 when query fails and no records exist', async () => {
-      vi.mocked(ormRepo.query!).mockRejectedValue(new Error('Sequence missing'));
+      vi.mocked(ormRepo.query!).mockRejectedValue(
+        new Error('Sequence missing'),
+      );
       vi.mocked(ormRepo.find!).mockResolvedValue([]);
 
       const nextNum = await repository.generateNextQuoteNumber();
@@ -89,7 +93,9 @@ describe('TypeOrmQuoteRepository (Infrastructure)', () => {
     });
 
     it('falls back to regex parsing when latest quote exists', async () => {
-      vi.mocked(ormRepo.query!).mockRejectedValue(new Error('Sequence missing'));
+      vi.mocked(ormRepo.query!).mockRejectedValue(
+        new Error('Sequence missing'),
+      );
       vi.mocked(ormRepo.find!).mockResolvedValue([
         { quoteNumber: 'COT-0015' } as QuoteOrmEntity,
       ]);
@@ -99,7 +105,9 @@ describe('TypeOrmQuoteRepository (Infrastructure)', () => {
     });
 
     it('falls back to count when regex does not match', async () => {
-      vi.mocked(ormRepo.query!).mockRejectedValue(new Error('Sequence missing'));
+      vi.mocked(ormRepo.query!).mockRejectedValue(
+        new Error('Sequence missing'),
+      );
       vi.mocked(ormRepo.find!).mockResolvedValue([
         { quoteNumber: 'CUSTOM-QUOTE' } as QuoteOrmEntity,
       ]);
@@ -132,9 +140,12 @@ describe('TypeOrmQuoteRepository (Infrastructure)', () => {
 
       expect(result.data).toHaveLength(1);
       expect(result.meta.total).toBe(1);
-      expect(qbMock.andWhere).toHaveBeenCalledWith('quote.clientId = :clientId', {
-        clientId: 5,
-      });
+      expect(qbMock.andWhere).toHaveBeenCalledWith(
+        'quote.clientId = :clientId',
+        {
+          clientId: 5,
+        },
+      );
       expect(qbMock.andWhere).toHaveBeenCalledWith('quote.status = :status', {
         status: 'DRAFT',
       });

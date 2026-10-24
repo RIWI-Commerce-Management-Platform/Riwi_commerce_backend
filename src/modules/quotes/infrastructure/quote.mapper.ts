@@ -22,6 +22,7 @@ export class QuoteMapper {
       id: orm.id,
       quoteNumber: orm.quoteNumber,
       clientId: orm.clientId,
+      advisorId: orm.advisorId,
       status: orm.status as QuoteStatus,
       subtotal: Number(orm.subtotal),
       total: Number(orm.total),
@@ -40,6 +41,7 @@ export class QuoteMapper {
     }
     orm.quoteNumber = domain.quoteNumber;
     orm.clientId = domain.clientId;
+    orm.advisorId = domain.advisorId;
     orm.status = domain.status;
     orm.subtotal = domain.subtotal;
     orm.total = domain.total;

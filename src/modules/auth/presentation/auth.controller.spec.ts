@@ -4,14 +4,12 @@ import {
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
+import { Repository } from 'typeorm';
 import { AuthController } from './auth.controller.js';
-import { LoginUseCase } from '../application/login.use-case.js';
-import { RegisterUseCase } from '../application/register.use-case.js';
-import { LogoutUseCase } from '../application/logout.use-case.js';
-import { GetCurrentUserUseCase } from '../application/get-current-user.use-case.js';
+import { AuthService } from '../application/auth.service.js';
+import { BetterAuthGateway } from '../infrastructure/adapters/better-auth.gateway.js';
+import { VerificationOrmEntity } from '../infrastructure/verification.orm-entity.js';
 import { AssignUserRoleUseCase } from '../application/assign-user-role.use-case.js';
-import { InvalidCredentialsError } from '../domain/errors/invalid-credentials.error.js';
-import { RegistrationFailedError } from '../domain/errors/registration-failed.error.js';
 import { InvalidRoleError } from '../domain/errors/invalid-role.error.js';
 import { ZoneRequiredError } from '../domain/errors/zone-required.error.js';
 import { UnexpectedZoneError } from '../domain/errors/unexpected-zone.error.js';
@@ -21,21 +19,32 @@ import { UserRole } from '../domain/user-role.enum.js';
 
 describe('AuthController', () => {
   const setup = () => {
-    const loginUseCase = { execute: vi.fn() } as unknown as LoginUseCase;
-    const registerUseCase = { execute: vi.fn() } as unknown as RegisterUseCase;
-    const logoutUseCase = { execute: vi.fn() } as unknown as LogoutUseCase;
-    const getCurrentUserUseCase = {
-      execute: vi.fn(),
-    } as unknown as GetCurrentUserUseCase;
+    const authService = {
+      login: vi.fn(),
+      register: vi.fn(),
+      refresh: vi.fn(),
+      logout: vi.fn(),
+      revokeAllSessions: vi.fn(),
+    } as unknown as AuthService;
+
+    const betterAuth = {
+      requestPasswordReset: vi.fn(),
+      resetPassword: vi.fn(),
+      signOut: vi.fn(),
+    } as unknown as BetterAuthGateway;
+
+    const verificationRepository = {
+      findOneBy: vi.fn(),
+    } as unknown as Repository<VerificationOrmEntity>;
+
     const assignUserRoleUseCase = {
       execute: vi.fn(),
     } as unknown as AssignUserRoleUseCase;
 
     const controller = new AuthController(
-      loginUseCase,
-      registerUseCase,
-      logoutUseCase,
-      getCurrentUserUseCase,
+      authService,
+      betterAuth,
+      verificationRepository,
       assignUserRoleUseCase,
     );
 
@@ -49,10 +58,9 @@ describe('AuthController', () => {
 
     return {
       controller,
-      loginUseCase,
-      registerUseCase,
-      logoutUseCase,
-      getCurrentUserUseCase,
+      authService,
+      betterAuth,
+      verificationRepository,
       assignUserRoleUseCase,
       mockRes,
       mockReq,
@@ -60,89 +68,197 @@ describe('AuthController', () => {
   };
 
   describe('login', () => {
-    it('should login and set cookie header', async () => {
-      const { controller, loginUseCase, mockReq, mockRes } = setup();
-      (loginUseCase.execute as any).mockResolvedValue({
-        data: { user: { id: 'u1' } },
-        setCookieHeaders: ['cookie=1'],
+    it('should login and return tokens and user', async () => {
+      const { controller, authService } = setup();
+      const mockResult = {
+        accessToken: 'access-123',
+        refreshToken: 'refresh-123',
+        user: { id: 'u1', email: 'test@riwi.com' },
+      };
+      (authService.login as any).mockResolvedValue(mockResult);
+
+      const result = await controller.login({
+        email: 'test@riwi.com',
+        password: 'Password123!',
       });
 
-      const result = await controller.login(
-        { email: 'a@b.com', password: '123', rememberMe: true },
-        mockReq,
-        mockRes,
-      );
-
-      expect(mockRes.setHeader).toHaveBeenCalledWith('set-cookie', [
-        'cookie=1',
-      ]);
-      expect(result).toEqual({ user: { id: 'u1' } });
+      expect(authService.login).toHaveBeenCalledWith({
+        email: 'test@riwi.com',
+        password: 'Password123!',
+      });
+      expect(result).toEqual(mockResult);
     });
 
-    it('should throw UnauthorizedException on InvalidCredentialsError', async () => {
-      const { controller, loginUseCase, mockReq, mockRes } = setup();
-      (loginUseCase.execute as any).mockRejectedValue(
-        new InvalidCredentialsError('Bad creds'),
+    it('should throw UnauthorizedException on invalid credentials', async () => {
+      const { controller, authService } = setup();
+      (authService.login as any).mockRejectedValue(
+        new UnauthorizedException('Incorrect email or password'),
       );
 
       await expect(
-        controller.login(
-          { email: 'a@b.com', password: 'wrong' },
-          mockReq,
-          mockRes,
-        ),
+        controller.login({ email: 'test@riwi.com', password: 'wrong' }),
       ).rejects.toThrow(UnauthorizedException);
     });
   });
 
   describe('register', () => {
-    it('should register and set cookie header', async () => {
-      const { controller, registerUseCase, mockReq, mockRes } = setup();
-      (registerUseCase.execute as any).mockResolvedValue({
-        data: { user: { id: 'u2' } },
-        setCookieHeaders: ['cookie=2'],
+    it('should register a new user', async () => {
+      const { controller, authService } = setup();
+      const mockResult = {
+        user: {
+          id: 'u1',
+          name: 'Advisor',
+          email: 'adv@riwi.com',
+          role: UserRole.ASESOR,
+        },
+      };
+      (authService.register as any).mockResolvedValue(mockResult);
+
+      const result = await controller.register({
+        name: 'Advisor',
+        email: 'adv@riwi.com',
+        password: 'Password123!',
       });
 
-      const result = await controller.register(
-        { name: 'Test', email: 'a@b.com', password: '123' },
-        mockReq,
-        mockRes,
-      );
-
-      expect(mockRes.setHeader).toHaveBeenCalledWith('set-cookie', [
-        'cookie=2',
-      ]);
-      expect(result).toEqual({ user: { id: 'u2' } });
+      expect(authService.register).toHaveBeenCalled();
+      expect(result).toEqual(mockResult);
     });
 
-    it('should throw BadRequestException on RegistrationFailedError', async () => {
-      const { controller, registerUseCase, mockReq, mockRes } = setup();
-      (registerUseCase.execute as any).mockRejectedValue(
-        new RegistrationFailedError('User exists'),
+    it('should rethrow errors from authService.register', async () => {
+      const { controller, authService } = setup();
+      (authService.register as any).mockRejectedValue(
+        new BadRequestException('Invalid name, email, or password'),
       );
 
       await expect(
-        controller.register(
-          { name: 'Test', email: 'a@b.com', password: '123' },
-          mockReq,
-          mockRes,
-        ),
+        controller.register({
+          name: '',
+          email: 'invalid',
+          password: '123',
+        }),
       ).rejects.toThrow(BadRequestException);
     });
   });
 
-  describe('logout', () => {
-    it('should log out successfully', async () => {
-      const { controller, logoutUseCase, mockReq, mockRes } = setup();
-      (logoutUseCase.execute as any).mockResolvedValue({
-        setCookieHeaders: ['clear-cookie'],
+  describe('forgotPassword', () => {
+    it('should throw BadRequestException if email is missing or not a string', async () => {
+      const { controller } = setup();
+      await expect(
+        controller.forgotPassword({ email: '' as any }),
+      ).rejects.toThrow(BadRequestException);
+      await expect(controller.forgotPassword(null as any)).rejects.toThrow(
+        BadRequestException,
+      );
+    });
+
+    it('should request password reset and return success message', async () => {
+      const { controller, betterAuth } = setup();
+      (betterAuth.requestPasswordReset as any).mockResolvedValue({
+        message: 'Reset link sent',
       });
 
-      const result = await controller.logout(mockReq, mockRes);
+      const result = await controller.forgotPassword({
+        email: 'user@riwi.com',
+      });
 
+      expect(betterAuth.requestPasswordReset).toHaveBeenCalledWith(
+        'user@riwi.com',
+        expect.stringContaining('/reset-password'),
+      );
+      expect(result).toEqual({ status: true, message: 'Reset link sent' });
+    });
+  });
+
+  describe('resetPassword', () => {
+    it('should throw BadRequestException if token or password is invalid', async () => {
+      const { controller } = setup();
+      await expect(
+        controller.resetPassword({ token: '', newPassword: 'short' }),
+      ).rejects.toThrow(BadRequestException);
+      await expect(controller.resetPassword(null as any)).rejects.toThrow(
+        BadRequestException,
+      );
+    });
+
+    it('should reset password and revoke sessions if verification exists', async () => {
+      const { controller, betterAuth, verificationRepository, authService } =
+        setup();
+      (verificationRepository.findOneBy as any).mockResolvedValue({
+        identifier: 'reset-password:valid-token',
+        value: 'user-id-123',
+      });
+      (betterAuth.resetPassword as any).mockResolvedValue({ status: true });
+
+      const result = await controller.resetPassword({
+        token: 'valid-token',
+        newPassword: 'NewPassword123!',
+      });
+
+      expect(verificationRepository.findOneBy).toHaveBeenCalledWith({
+        identifier: 'reset-password:valid-token',
+      });
+      expect(betterAuth.resetPassword).toHaveBeenCalledWith(
+        'valid-token',
+        'NewPassword123!',
+      );
+      expect(authService.revokeAllSessions).toHaveBeenCalledWith('user-id-123');
+      expect(result).toEqual({ status: true });
+    });
+  });
+
+  describe('refresh', () => {
+    it('should refresh tokens', async () => {
+      const { controller, authService } = setup();
+      const mockTokens = {
+        accessToken: 'new-access',
+        refreshToken: 'new-refresh',
+      };
+      (authService.refresh as any).mockResolvedValue(mockTokens);
+
+      const result = await controller.refresh({ refreshToken: 'old-refresh' });
+
+      expect(authService.refresh).toHaveBeenCalledWith('old-refresh');
+      expect(result).toEqual(mockTokens);
+    });
+  });
+
+  describe('logout', () => {
+    it('should logout via betterAuth when session authProvider is better-auth', async () => {
+      const { controller, betterAuth, mockReq, mockRes } = setup();
+      const mockResponse = {
+        headers: {
+          getSetCookie: () => ['clear-cookie=1'],
+        },
+      } as any;
+      (betterAuth.signOut as any).mockResolvedValue(mockResponse);
+
+      const result = await controller.logout(
+        'u1',
+        { id: 's1', authProvider: 'better-auth' },
+        mockReq,
+        mockRes,
+      );
+
+      expect(betterAuth.signOut).toHaveBeenCalledWith(mockReq.headers);
       expect(mockRes.setHeader).toHaveBeenCalledWith('set-cookie', [
-        'clear-cookie',
+        'clear-cookie=1',
       ]);
+      expect(result).toEqual({
+        success: true,
+        message: 'Session ended successfully',
+      });
+    });
+
+    it('should logout via authService when session authProvider is not better-auth', async () => {
+      const { controller, authService, mockReq, mockRes } = setup();
+      const result = await controller.logout(
+        'u1',
+        { id: 's1', authProvider: 'jwt' },
+        mockReq,
+        mockRes,
+      );
+
+      expect(authService.logout).toHaveBeenCalledWith('u1', 's1');
       expect(result).toEqual({
         success: true,
         message: 'Session ended successfully',
@@ -151,41 +267,21 @@ describe('AuthController', () => {
   });
 
   describe('getMe', () => {
-    it('should return merged user and session', async () => {
-      const { controller, getCurrentUserUseCase } = setup();
-      (getCurrentUserUseCase.execute as any).mockResolvedValue({
-        id: 'u1',
-        role: UserRole.ASESOR,
-        zoneId: 2,
-      });
+    it('should return user and session', () => {
+      const { controller } = setup();
+      const user = { id: 'u1', name: 'Test User' } as any;
+      const session = { id: 's1' };
 
-      const result = await controller.getMe(
-        { id: 'u1', name: 'User' },
-        { id: 's1' },
-      );
+      const result = controller.getMe(user, session);
 
-      expect(result).toEqual({
-        user: { id: 'u1', name: 'User', role: UserRole.ASESOR, zoneId: 2 },
-        session: { id: 's1' },
-      });
-    });
-
-    it('should throw UnauthorizedException when user is not found', async () => {
-      const { controller, getCurrentUserUseCase } = setup();
-      (getCurrentUserUseCase.execute as any).mockRejectedValue(
-        new UserNotFoundError(),
-      );
-
-      await expect(
-        controller.getMe({ id: 'u1' }, { id: 's1' }),
-      ).rejects.toThrow(UnauthorizedException);
+      expect(result).toEqual({ user, session });
     });
   });
 
   describe('protectedEndpoint', () => {
     it('should return user info with access granted', () => {
       const { controller } = setup();
-      const result = controller.protectedEndpoint({ id: 'u1' });
+      const result = controller.protectedEndpoint({ id: 'u1' } as any);
       expect(result).toEqual({
         message: 'Access granted',
         user: { id: 'u1' },
@@ -272,20 +368,13 @@ describe('AuthController', () => {
     });
 
     it('should rethrow unexpected errors', async () => {
-      const { controller, loginUseCase, registerUseCase, getCurrentUserUseCase, assignUserRoleUseCase, mockReq, mockRes } = setup();
-      const err = new Error('Unexpected error');
-
-      (loginUseCase.execute as any).mockRejectedValueOnce(err);
-      await expect(controller.login({ email: 'a@b.com', password: '123' }, mockReq, mockRes)).rejects.toThrow(err);
-
-      (registerUseCase.execute as any).mockRejectedValueOnce(err);
-      await expect(controller.register({ name: 'A', email: 'a@b.com', password: '123' }, mockReq, mockRes)).rejects.toThrow(err);
-
-      (getCurrentUserUseCase.execute as any).mockRejectedValueOnce(err);
-      await expect(controller.getMe({ id: 'u1' }, {})).rejects.toThrow(err);
+      const { controller, assignUserRoleUseCase } = setup();
+      const err = new Error('Database down');
 
       (assignUserRoleUseCase.execute as any).mockRejectedValueOnce(err);
-      await expect(controller.assignRole('u1', { role: UserRole.ADMIN })).rejects.toThrow(err);
+      await expect(
+        controller.assignRole('u1', { role: UserRole.ADMIN }),
+      ).rejects.toThrow(err);
     });
   });
 });

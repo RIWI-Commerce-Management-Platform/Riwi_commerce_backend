@@ -12,7 +12,9 @@ import { InvalidVisitObservationsError } from './errors/invalid-visit-observatio
 
 import { EmptyVisitResultsError } from './errors/empty-visit-results.error.js';
 
-function buildVisit(overrides: Partial<ConstructorParameters<typeof Visit>[0]> = {}) {
+function buildVisit(
+  overrides: Partial<ConstructorParameters<typeof Visit>[0]> = {},
+) {
   return new Visit({
     id: 1,
     clientId: 10,

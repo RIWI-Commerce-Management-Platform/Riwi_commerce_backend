@@ -35,6 +35,12 @@ export class TypeOrmClientRepository implements ClientRepository {
   ): Promise<PaginatedResult<Client>> {
     const qb = this.repository.createQueryBuilder('client');
 
+    if (criteria.clientId !== undefined) {
+      qb.andWhere('client.id_cliente = :clientId', {
+        clientId: criteria.clientId,
+      });
+    }
+
     if (criteria.search && criteria.search.trim().length > 0) {
       const searchTerm = `%${criteria.search.trim().toLowerCase()}%`;
       qb.andWhere(
@@ -94,4 +100,3 @@ export class TypeOrmClientRepository implements ClientRepository {
     };
   }
 }
-

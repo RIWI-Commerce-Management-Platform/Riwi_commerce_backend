@@ -11,8 +11,14 @@ export default () => ({
     name: process.env.POSTGRES_DB,
   },
   jwt: {
-    secret: process.env.JWT_SECRET ?? 'dev-secret-change-me',
-    expiresIn: process.env.JWT_EXPIRES_IN ?? '1h',
+    secret: process.env.JWT_SECRET,
+    accessTtlSeconds:
+      parseInt(process.env.JWT_ACCESS_TTL_SECONDS ?? '', 10) || 900,
+    refreshTtlSeconds:
+      parseInt(process.env.JWT_REFRESH_TTL_SECONDS ?? '', 10) || 604800,
+  },
+  redis: {
+    url: process.env.REDIS_URL ?? 'redis://localhost:6379',
   },
   aws: {
     region: process.env.AWS_REGION ?? 'us-east-1',
@@ -22,6 +28,8 @@ export default () => ({
   },
     betterAuth: {
     secret: process.env.BETTER_AUTH_SECRET,
-    url: process.env.BETTER_AUTH_URL ?? `http://localhost:${process.env.PORT ?? 3000}`,
+    url:
+      process.env.BETTER_AUTH_URL ??
+      `http://localhost:${process.env.PORT ?? 3000}`,
   },
 });

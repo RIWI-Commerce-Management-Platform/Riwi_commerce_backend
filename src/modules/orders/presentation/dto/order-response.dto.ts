@@ -42,7 +42,9 @@ export class OrderResponseDto {
     this.status = order.status;
     this.subtotal = order.subtotal;
     this.total = order.total;
-    this.items = (order.items ?? []).map((item) => new OrderItemResponseDto(item));
+    this.items = (order.items ?? []).map(
+      (item) => new OrderItemResponseDto(item),
+    );
     this.createdAt = order.createdAt;
     this.updatedAt = order.updatedAt;
   }

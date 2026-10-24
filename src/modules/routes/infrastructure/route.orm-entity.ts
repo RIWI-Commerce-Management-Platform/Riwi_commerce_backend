@@ -13,7 +13,7 @@ import type { ZoneOrmEntity } from '../../zones/infrastructure/zone.orm-entity.j
 
 /**
  * Entidad de persistencia TypeORM para la tabla `routes` (RUTA).
- * 
+ *
  * En este modelo mapeo las rutas comerciales creadas por el Director Regional,
  * incluyendo datos generales de programación semanal, zona territorial, asesor
  * asignado y métricas de recorrido.
@@ -69,7 +69,11 @@ export class RouteOrmEntity {
   })
   totalDistanceKm!: number | null;
 
-  @Column({ name: 'estimated_duration_minutes', type: 'integer', nullable: true })
+  @Column({
+    name: 'estimated_duration_minutes',
+    type: 'integer',
+    nullable: true,
+  })
   estimatedDurationMinutes!: number | null;
 
   @Column({ name: 'is_active', type: 'boolean', default: true })

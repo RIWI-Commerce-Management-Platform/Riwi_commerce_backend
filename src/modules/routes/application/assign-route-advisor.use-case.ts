@@ -9,7 +9,7 @@ import { UserRole } from '../../auth/domain/user-role.enum.js';
 
 /**
  * Caso de uso: Asignar una ruta comercial a un asesor y programar sus visitas (HU-20).
- * 
+ *
  * En este caso de uso implemento el Paso 3 del Wizard:
  * 1. Busco la ruta y verifico los permisos territoriales del Director Regional.
  * 2. Asigno el asesor a la ruta mediante el método de dominio `assignAdvisor()`,

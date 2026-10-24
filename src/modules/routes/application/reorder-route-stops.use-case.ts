@@ -4,13 +4,16 @@ import { RouteRepository } from '../domain/route.repository.js';
 import { RouteNotFoundError } from '../domain/errors/route-not-found.error.js';
 import { UnauthorizedZoneError } from '../domain/errors/unauthorized-zone.error.js';
 import { RouteClientReaderPort } from './ports/route-client-reader.port.js';
-import { RouteDistanceCalculatorPort, RouteWaypoint } from './ports/route-distance-calculator.port.js';
+import {
+  RouteDistanceCalculatorPort,
+  RouteWaypoint,
+} from './ports/route-distance-calculator.port.js';
 import { AuthActor } from './dto/auth-actor.dto.js';
 import { UserRole } from '../../auth/domain/user-role.enum.js';
 
 /**
  * Caso de uso: Reordenar las paradas de la ruta comercial (HU-18, HU-19 y HU-22).
- * 
+ *
  * En este caso de uso:
  * 1. Verifico la existencia de la ruta y los permisos del Director Regional.
  * 2. Aplico el nuevo orden secuencial en el agregado Route (drag-and-drop o reordenamiento del mapa).
@@ -55,7 +58,8 @@ export class ReorderRouteStopsUseCase {
   private async _recalculateRouteMetrics(route: Route): Promise<void> {
     const stops = route.stops;
     if (stops.length < 2) {
-      const singleStopDuration = stops.length === 1 ? stops[0].estimatedDurationMinutes : 0;
+      const singleStopDuration =
+        stops.length === 1 ? stops[0].estimatedDurationMinutes : 0;
       route.updateMetrics(0, singleStopDuration);
       return;
     }
@@ -83,6 +87,9 @@ export class ReorderRouteStopsUseCase {
       totalStopAttentionMinutes,
     );
 
-    route.updateMetrics(metrics.totalDistanceKm, metrics.estimatedDurationMinutes);
+    route.updateMetrics(
+      metrics.totalDistanceKm,
+      metrics.estimatedDurationMinutes,
+    );
   }
 }

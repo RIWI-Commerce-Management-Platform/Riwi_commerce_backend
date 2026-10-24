@@ -2,10 +2,9 @@ import 'reflect-metadata';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { DataSource } from 'typeorm';
-
 /**
  * Standalone DataSource for the TypeORM CLI (migration:generate/run/revert)
- * and for Better Auth's typeormAdapter (auth.ts). Separate from the runtime
+ * and for the Better Auth TypeORM adapter. Separate from the runtime
  * connection in app.module.ts because the CLI runs outside Nest's DI and
  * ConfigModule — run it via `npm run typeorm`, which loads .env with Node's
  * --env-file flag before this file executes.
@@ -15,7 +14,7 @@ import { DataSource } from 'typeorm';
  * glob resolves correctly in both places this DataSource actually runs:
  * - CLI, via `tsx` against the .ts sources directly (this file at
  *   src/shared/config/data-source.ts).
- * - The live app (imported by auth.ts into a NestJS provider), running
+ * - The live app (imported by the Better Auth infrastructure adapter), running
  *   compiled output where this file is dist/shared/config/data-source.js —
  *   a literal '.ts' glob here would make TypeORM dynamic-import raw
  *   TypeScript source into plain Node, which can't parse it

@@ -8,7 +8,7 @@ import { UserRole } from '../../auth/domain/user-role.enum.js';
 
 /**
  * Caso de uso: Consultar y listar rutas comerciales con filtros y paginación (HU-21).
- * 
+ *
  * En este caso de uso:
  * 1. Aplico restricciones de seguridad basadas en roles (RBAC):
  *    - Si el usuario es Director Regional, fuerzo la consulta a su zona asignada.

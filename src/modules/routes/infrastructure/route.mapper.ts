@@ -8,7 +8,7 @@ import { RouteStopOrmEntity } from './route-stop.orm-entity.js';
 
 /**
  * Mapper bidireccional entre las entidades de dominio y las entidades de persistencia TypeORM.
- * 
+ *
  * En mi arquitectura limpia, este traductor garantiza que la capa de dominio permanezca pura,
  * abstrayendo conversiones de fechas, números flotantes y relaciones de base de datos.
  */

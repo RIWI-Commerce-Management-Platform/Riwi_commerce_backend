@@ -13,7 +13,7 @@ export interface RouteStopProps {
 
 /**
  * Entidad de dominio que representa una parada específica dentro de la ruta comercial (RUTA_CLIENTE).
- * 
+ *
  * En mi modelo, cada parada asocia a un cliente con un orden de visita secuencial (1, 2, 3...),
  * una hora sugerida de llegada y un tiempo estimado de atención comercial.
  */

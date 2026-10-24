@@ -4,7 +4,7 @@ import { RouteStatus } from './route-status.enum.js';
 
 /**
  * Criterios de filtrado dinámico para la consulta y listado de rutas comerciales (HU-21).
- * 
+ *
  * En mi panel de control como Director Regional, utilizo estos filtros para supervisar
  * las rutas por asesor, zona geográfica, estado operativo o día de la semana.
  */

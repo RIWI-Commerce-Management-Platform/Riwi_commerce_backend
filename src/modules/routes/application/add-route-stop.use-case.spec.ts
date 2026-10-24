@@ -1,8 +1,14 @@
 import { describe, expect, it, vi } from 'vitest';
 import { AddRouteStopUseCase } from './add-route-stop.use-case.js';
 import { RouteRepository } from '../domain/route.repository.js';
-import { RouteClientReaderPort, RouteClientDetails } from './ports/route-client-reader.port.js';
-import { RouteDistanceCalculatorPort, RouteMetricsResult } from './ports/route-distance-calculator.port.js';
+import {
+  RouteClientReaderPort,
+  RouteClientDetails,
+} from './ports/route-client-reader.port.js';
+import {
+  RouteDistanceCalculatorPort,
+  RouteMetricsResult,
+} from './ports/route-distance-calculator.port.js';
 import { Route } from '../domain/route.entity.js';
 import { DayOfWeek } from '../domain/day-of-week.enum.js';
 import { RouteFrequency } from '../domain/route-frequency.enum.js';
@@ -40,7 +46,9 @@ describe('AddRouteStopUseCase', () => {
     delete: vi.fn(),
   });
 
-  const createMockClientReader = (client = mockClient): RouteClientReaderPort => ({
+  const createMockClientReader = (
+    client = mockClient,
+  ): RouteClientReaderPort => ({
     findById: vi.fn().mockResolvedValue(client),
     findByIds: vi.fn().mockResolvedValue([client]),
   });
@@ -101,9 +109,9 @@ describe('AddRouteStopUseCase', () => {
       zoneId: 2,
     };
 
-    await expect(
-      useCase.execute(1, { clientId: 101 }, actor),
-    ).rejects.toThrow(UnauthorizedZoneError);
+    await expect(useCase.execute(1, { clientId: 101 }, actor)).rejects.toThrow(
+      UnauthorizedZoneError,
+    );
   });
 
   it('should throw error if client does not exist', async () => {
@@ -148,7 +156,7 @@ describe('AddRouteStopUseCase', () => {
       ...mockClient,
       id: 102,
       latitude: 11.002,
-      longitude: -74.810,
+      longitude: -74.81,
     };
 
     const repo = createMockRepo(route);

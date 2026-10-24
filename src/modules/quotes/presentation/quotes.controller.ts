@@ -200,7 +200,8 @@ export class QuotesController {
     @Body() dto: ChangeQuoteStatusDto,
     @Req() request: Request,
   ): Promise<QuoteResponseDto> {
-    const actorId = await this.currentAdvisor.extract(request).catch(() => 1);
+    const actorId =
+      (await this.currentAdvisor.extract(request).catch(() => 1)) ?? undefined;
 
     try {
       const updatedQuote = await this.changeQuoteStatusUseCase.execute({

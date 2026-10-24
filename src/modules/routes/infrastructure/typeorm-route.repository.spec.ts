@@ -45,25 +45,33 @@ describe('TypeOrmRouteRepository', () => {
 
   const createMockDataSource = () => {
     return {
-      transaction: vi.fn().mockImplementation((cb: (manager: any) => Promise<any>) => {
-        const manager = {
-          getRepository: vi.fn().mockImplementation((entity) => {
-            if (entity === RouteOrmEntity) {
-              return {
-                save: vi.fn().mockImplementation((r) => Promise.resolve({ ...r, id: r.id || 1 })),
-              };
-            }
-            if (entity === RouteStopOrmEntity) {
-              return {
-                delete: vi.fn().mockResolvedValue(undefined),
-                save: vi.fn().mockImplementation((stops) => Promise.resolve(stops)),
-              };
-            }
-            return {};
-          }),
-        };
-        return cb(manager);
-      }),
+      transaction: vi
+        .fn()
+        .mockImplementation((cb: (manager: any) => Promise<any>) => {
+          const manager = {
+            getRepository: vi.fn().mockImplementation((entity) => {
+              if (entity === RouteOrmEntity) {
+                return {
+                  save: vi
+                    .fn()
+                    .mockImplementation((r) =>
+                      Promise.resolve({ ...r, id: r.id || 1 }),
+                    ),
+                };
+              }
+              if (entity === RouteStopOrmEntity) {
+                return {
+                  delete: vi.fn().mockResolvedValue(undefined),
+                  save: vi
+                    .fn()
+                    .mockImplementation((stops) => Promise.resolve(stops)),
+                };
+              }
+              return {};
+            }),
+          };
+          return cb(manager);
+        }),
     } as unknown as DataSource;
   };
 
@@ -74,7 +82,11 @@ describe('TypeOrmRouteRepository', () => {
     } as unknown as Repository<RouteOrmEntity>;
     const stopRepo = {} as Repository<RouteStopOrmEntity>;
 
-    const repo = new TypeOrmRouteRepository(routeRepo, stopRepo, createMockDataSource());
+    const repo = new TypeOrmRouteRepository(
+      routeRepo,
+      stopRepo,
+      createMockDataSource(),
+    );
     const result = await repo.findById(1);
 
     expect(result).not.toBeNull();
@@ -89,7 +101,11 @@ describe('TypeOrmRouteRepository', () => {
     } as unknown as Repository<RouteOrmEntity>;
     const stopRepo = {} as Repository<RouteStopOrmEntity>;
 
-    const repo = new TypeOrmRouteRepository(routeRepo, stopRepo, createMockDataSource());
+    const repo = new TypeOrmRouteRepository(
+      routeRepo,
+      stopRepo,
+      createMockDataSource(),
+    );
     const result = await repo.findByNameAndZone('Ruta 1', 1);
 
     expect(result).not.toBeNull();
@@ -103,7 +119,11 @@ describe('TypeOrmRouteRepository', () => {
     } as unknown as Repository<RouteOrmEntity>;
     const stopRepo = {} as Repository<RouteStopOrmEntity>;
 
-    const repo = new TypeOrmRouteRepository(routeRepo, stopRepo, createMockDataSource());
+    const repo = new TypeOrmRouteRepository(
+      routeRepo,
+      stopRepo,
+      createMockDataSource(),
+    );
     const result = await repo.findPaginated({
       zoneId: 1,
       advisorId: 5,
@@ -146,7 +166,11 @@ describe('TypeOrmRouteRepository', () => {
     } as unknown as Repository<RouteOrmEntity>;
     const stopRepo = {} as Repository<RouteStopOrmEntity>;
 
-    const repo = new TypeOrmRouteRepository(routeRepo, stopRepo, createMockDataSource());
+    const repo = new TypeOrmRouteRepository(
+      routeRepo,
+      stopRepo,
+      createMockDataSource(),
+    );
     await repo.delete(1);
 
     expect(routeRepo.delete).toHaveBeenCalledWith(1);

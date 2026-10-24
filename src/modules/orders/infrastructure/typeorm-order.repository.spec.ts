@@ -31,7 +31,9 @@ describe('TypeOrmOrderRepository (Infrastructure)', () => {
       query: vi.fn().mockResolvedValue([{ nextval: '1' }]),
     };
 
-    repository = new TypeOrmOrderRepository(ormRepo as Repository<OrderOrmEntity>);
+    repository = new TypeOrmOrderRepository(
+      ormRepo as Repository<OrderOrmEntity>,
+    );
   });
 
   it('saves an order entity', async () => {
@@ -95,7 +97,9 @@ describe('TypeOrmOrderRepository (Infrastructure)', () => {
     });
 
     it('falls back to PED-0001 when query fails and no records exist', async () => {
-      vi.mocked(ormRepo.query!).mockRejectedValue(new Error('Sequence missing'));
+      vi.mocked(ormRepo.query!).mockRejectedValue(
+        new Error('Sequence missing'),
+      );
       vi.mocked(ormRepo.find!).mockResolvedValue([]);
 
       const nextNum = await repository.generateNextOrderNumber();
@@ -103,7 +107,9 @@ describe('TypeOrmOrderRepository (Infrastructure)', () => {
     });
 
     it('falls back to regex parsing when latest order exists', async () => {
-      vi.mocked(ormRepo.query!).mockRejectedValue(new Error('Sequence missing'));
+      vi.mocked(ormRepo.query!).mockRejectedValue(
+        new Error('Sequence missing'),
+      );
       vi.mocked(ormRepo.find!).mockResolvedValue([
         { orderNumber: 'PED-0010' } as OrderOrmEntity,
       ]);
@@ -113,7 +119,9 @@ describe('TypeOrmOrderRepository (Infrastructure)', () => {
     });
 
     it('falls back to count when regex does not match', async () => {
-      vi.mocked(ormRepo.query!).mockRejectedValue(new Error('Sequence missing'));
+      vi.mocked(ormRepo.query!).mockRejectedValue(
+        new Error('Sequence missing'),
+      );
       vi.mocked(ormRepo.find!).mockResolvedValue([
         { orderNumber: 'CUSTOM-ORDER' } as OrderOrmEntity,
       ]);
@@ -146,9 +154,12 @@ describe('TypeOrmOrderRepository (Infrastructure)', () => {
 
       expect(result.data).toHaveLength(1);
       expect(result.meta.total).toBe(1);
-      expect(qbMock.andWhere).toHaveBeenCalledWith('order.clientId = :clientId', {
-        clientId: 5,
-      });
+      expect(qbMock.andWhere).toHaveBeenCalledWith(
+        'order.clientId = :clientId',
+        {
+          clientId: 5,
+        },
+      );
       expect(qbMock.andWhere).toHaveBeenCalledWith('order.status = :status', {
         status: 'CREATED',
       });

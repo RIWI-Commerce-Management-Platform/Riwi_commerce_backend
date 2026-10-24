@@ -32,9 +32,14 @@ export class ConvertQuoteToOrderUseCase {
       );
     }
 
-    const existingOrder = await this.orderRepository.findByQuoteId(command.quoteId);
+    const existingOrder = await this.orderRepository.findByQuoteId(
+      command.quoteId,
+    );
     if (existingOrder) {
-      throw new QuoteAlreadyConvertedError(command.quoteId, existingOrder.orderNumber);
+      throw new QuoteAlreadyConvertedError(
+        command.quoteId,
+        existingOrder.orderNumber,
+      );
     }
 
     const orderNumber = await this.orderRepository.generateNextOrderNumber();

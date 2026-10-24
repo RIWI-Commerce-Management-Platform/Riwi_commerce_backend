@@ -52,7 +52,9 @@ describe('OrdersConversionController (Presentation - Quotes Endpoint)', () => {
   });
 
   it('defaults actorId to 1 when currentAdvisor extraction fails', async () => {
-    vi.mocked(currentAdvisor.extract!).mockRejectedValue(new Error('no session'));
+    vi.mocked(currentAdvisor.extract!).mockRejectedValue(
+      new Error('no session'),
+    );
     const req = { headers: {} } as any;
     const response = await controller.convertToOrder(10, req);
 

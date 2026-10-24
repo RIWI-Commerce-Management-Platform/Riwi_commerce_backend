@@ -26,7 +26,7 @@ export interface CreateRouteDraftCommand {
 
 /**
  * Caso de uso: Crear ruta comercial en estado borrador (HU-17).
- * 
+ *
  * En este caso de uso implemento el Paso 1 del Wizard de creación de rutas:
  * 1. Valido que si el usuario es Director Regional, pertenezca a la zona de la ruta.
  * 2. Valido que el nombre de la ruta no esté repetido en la misma zona.
@@ -36,7 +36,10 @@ export interface CreateRouteDraftCommand {
 export class CreateRouteDraftUseCase {
   constructor(private readonly routeRepository: RouteRepository) {}
 
-  async execute(command: CreateRouteDraftCommand, actor?: AuthActor): Promise<Route> {
+  async execute(
+    command: CreateRouteDraftCommand,
+    actor?: AuthActor,
+  ): Promise<Route> {
     // 1. Verifico la seguridad territorial del Director Regional
     if (actor && actor.role === UserRole.DIRECTOR_REGIONAL) {
       if (actor.zoneId && actor.zoneId !== command.zoneId) {

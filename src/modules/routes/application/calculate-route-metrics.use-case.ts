@@ -1,6 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { RouteClientReaderPort } from './ports/route-client-reader.port.js';
-import { RouteDistanceCalculatorPort, RouteMetricsResult, RouteWaypoint } from './ports/route-distance-calculator.port.js';
+import {
+  RouteDistanceCalculatorPort,
+  RouteMetricsResult,
+  RouteWaypoint,
+} from './ports/route-distance-calculator.port.js';
 
 /**
  * Parámetros para calcular métricas de un recorrido estimado de clientes (HU-22).
@@ -12,7 +16,7 @@ export interface CalculateRouteMetricsCommand {
 
 /**
  * Caso de uso: Calcular distancia en km y tiempo estimado de un recorrido (HU-22).
- * 
+ *
  * En este caso de uso:
  * 1. Recibo una lista ordenada de IDs de clientes.
  * 2. Consulto sus coordenadas geográficas mediante `RouteClientReaderPort`.
@@ -25,7 +29,9 @@ export class CalculateRouteMetricsUseCase {
     private readonly distanceCalculator: RouteDistanceCalculatorPort,
   ) {}
 
-  async execute(command: CalculateRouteMetricsCommand): Promise<RouteMetricsResult> {
+  async execute(
+    command: CalculateRouteMetricsCommand,
+  ): Promise<RouteMetricsResult> {
     if (command.clientIds.length === 0) {
       return { totalDistanceKm: 0, estimatedDurationMinutes: 0 };
     }

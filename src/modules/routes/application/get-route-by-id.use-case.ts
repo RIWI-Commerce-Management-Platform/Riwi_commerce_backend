@@ -3,7 +3,10 @@ import { Route } from '../domain/route.entity.js';
 import { RouteRepository } from '../domain/route.repository.js';
 import { RouteNotFoundError } from '../domain/errors/route-not-found.error.js';
 import { UnauthorizedZoneError } from '../domain/errors/unauthorized-zone.error.js';
-import { RouteClientReaderPort, RouteClientDetails } from './ports/route-client-reader.port.js';
+import {
+  RouteClientReaderPort,
+  RouteClientDetails,
+} from './ports/route-client-reader.port.js';
 import { AuthActor } from './dto/auth-actor.dto.js';
 import { UserRole } from '../../auth/domain/user-role.enum.js';
 
@@ -30,7 +33,7 @@ export interface EnrichedRouteDetails {
 
 /**
  * Caso de uso: Obtener el detalle de una ruta comercial por su ID (HU-19 y HU-21).
- * 
+ *
  * En este caso de uso:
  * 1. Busco la ruta en el repositorio y valido que exista.
  * 2. Valido que el Director Regional tenga autorización sobre la zona.
@@ -63,7 +66,8 @@ export class GetRouteByIdUseCase {
 
     // 2. Consulto los clientes de las paradas para enriquecer con coordenadas
     const clientIds = route.stops.map((s) => s.clientId);
-    const clients = clientIds.length > 0 ? await this.clientReader.findByIds(clientIds) : [];
+    const clients =
+      clientIds.length > 0 ? await this.clientReader.findByIds(clientIds) : [];
     const clientMap = new Map(clients.map((c) => [c.id, c]));
 
     const enrichedStops: EnrichedRouteStop[] = route.stops.map((stop) => ({

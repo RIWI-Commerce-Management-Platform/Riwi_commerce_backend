@@ -16,5 +16,7 @@ export abstract class OrderRepository {
   abstract findByQuoteId(quoteId: number): Promise<Order | null>;
   abstract findByOrderNumber(orderNumber: string): Promise<Order | null>;
   abstract generateNextOrderNumber(): Promise<string>;
-  abstract findPaginated(filter: ListOrdersFilter): Promise<PaginatedResult<Order>>;
+  abstract findPaginated(
+    filter: ListOrdersFilter,
+  ): Promise<PaginatedResult<Order>>;
 }

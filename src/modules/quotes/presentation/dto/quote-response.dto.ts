@@ -54,8 +54,10 @@ export class QuoteResponseDto {
   documentKey?: string | null;
 
   @ApiPropertyOptional({
-    description: 'Presigned URL for viewing or downloading the commercial document',
-    example: 'https://comercial-360-bucket.s3.amazonaws.com/quotes/1730000000-soporte.pdf?...',
+    description:
+      'Presigned URL for viewing or downloading the commercial document',
+    example:
+      'https://comercial-360-bucket.s3.amazonaws.com/quotes/1730000000-soporte.pdf?...',
   })
   documentUrl?: string | null;
 

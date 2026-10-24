@@ -2,7 +2,10 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Order } from '../domain/order.entity.js';
-import { OrderRepository, ListOrdersFilter } from '../domain/order.repository.js';
+import {
+  OrderRepository,
+  ListOrdersFilter,
+} from '../domain/order.repository.js';
 import { OrderOrmEntity } from './order.orm-entity.js';
 import { OrderMapper } from './order.mapper.js';
 import { PaginatedResult } from '../../../shared/pagination/paginated-result.interface.js';
@@ -53,9 +56,9 @@ export class TypeOrmOrderRepository implements OrderRepository {
 
   async generateNextOrderNumber(): Promise<string> {
     try {
-      const [{ nextval }] = await this.ormRepository.query<{ nextval: string }[]>(
-        "SELECT nextval('order_number_seq') AS nextval",
-      );
+      const [{ nextval }] = await this.ormRepository.query<
+        { nextval: string }[]
+      >("SELECT nextval('order_number_seq') AS nextval");
       return `PED-${String(nextval).padStart(4, '0')}`;
     } catch {
       const [latest] = await this.ormRepository.find({
@@ -78,7 +81,9 @@ export class TypeOrmOrderRepository implements OrderRepository {
     }
   }
 
-  async findPaginated(filter: ListOrdersFilter): Promise<PaginatedResult<Order>> {
+  async findPaginated(
+    filter: ListOrdersFilter,
+  ): Promise<PaginatedResult<Order>> {
     const query = this.ormRepository.createQueryBuilder('order');
     applyCommercialFilters(query, 'order', filter);
     query.orderBy('order.createdAt', 'DESC');

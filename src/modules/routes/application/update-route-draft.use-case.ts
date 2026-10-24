@@ -26,7 +26,7 @@ export interface UpdateRouteDraftCommand {
 
 /**
  * Caso de uso: Actualizar datos generales de una ruta comercial (HU-17 y HU-21).
- * 
+ *
  * En este caso de uso:
  * 1. Busco la ruta y verifico que exista.
  * 2. Valido que el Director Regional tenga permisos sobre la zona territorial.
@@ -59,7 +59,10 @@ export class UpdateRouteDraftUseCase {
 
     // 2. Si cambia el nombre o la zona, valido unicidad
     const targetZoneId = command.zoneId ?? route.zoneId;
-    if (command.name && (command.name !== route.name || targetZoneId !== route.zoneId)) {
+    if (
+      command.name &&
+      (command.name !== route.name || targetZoneId !== route.zoneId)
+    ) {
       const existing = await this.routeRepository.findByNameAndZone(
         command.name,
         targetZoneId,

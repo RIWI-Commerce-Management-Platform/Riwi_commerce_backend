@@ -7,7 +7,7 @@ import { ClientRepository } from '../../clients/domain/client.repository.js';
 
 /**
  * Adaptador de infraestructura que implementa `RouteClientReaderPort`.
- * 
+ *
  * En este adaptador consumo el repositorio de clientes de Yesid (Épica E2)
  * para extraer las coordenadas geográficas, zona y datos comerciales necesarios
  * para planificar las rutas y renderizarlas en el mapa interactivo.

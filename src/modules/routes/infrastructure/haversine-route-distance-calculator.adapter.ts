@@ -7,7 +7,7 @@ import {
 
 /**
  * Adaptador de infraestructura que implementa `RouteDistanceCalculatorPort` (HU-22).
- * 
+ *
  * En este adaptador calculo la distancia geodésica acumulada entre paradas consecutivas
  * utilizando la fórmula de Haversine, complementada con un factor de corrección de trazado
  * vial urbano (1.3x) y una velocidad promedio estimada de 25 km/h para ciudades colombianas,
@@ -48,9 +48,12 @@ export class HaversineRouteDistanceCalculatorAdapter implements RouteDistanceCal
 
     // Aplico el factor de corrección para aproximar la red de calles reales
     const realisticDistanceKm = rawDistanceKm * this.URBAN_DETOUR_FACTOR;
-    const drivingTimeMinutes = (realisticDistanceKm / this.AVERAGE_URBAN_SPEED_KMH) * 60;
+    const drivingTimeMinutes =
+      (realisticDistanceKm / this.AVERAGE_URBAN_SPEED_KMH) * 60;
 
-    const totalMinutes = Math.round(drivingTimeMinutes + totalStopDurationMinutes);
+    const totalMinutes = Math.round(
+      drivingTimeMinutes + totalStopDurationMinutes,
+    );
     const roundedDistanceKm = Math.round(realisticDistanceKm * 100) / 100;
 
     return {

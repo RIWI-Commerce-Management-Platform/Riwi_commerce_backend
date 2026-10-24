@@ -35,19 +35,43 @@ describe('RoutesController', () => {
   };
 
   const createMockUseCases = () => ({
-    createRouteDraftUseCase: { execute: vi.fn().mockResolvedValue(mockRoute) } as any,
-    updateRouteDraftUseCase: { execute: vi.fn().mockResolvedValue(mockRoute) } as any,
-    addRouteStopUseCase: { execute: vi.fn().mockResolvedValue(mockRoute) } as any,
-    removeRouteStopUseCase: { execute: vi.fn().mockResolvedValue(mockRoute) } as any,
-    reorderRouteStopsUseCase: { execute: vi.fn().mockResolvedValue(mockRoute) } as any,
-    assignRouteAdvisorUseCase: { execute: vi.fn().mockResolvedValue(mockRoute) } as any,
+    createRouteDraftUseCase: {
+      execute: vi.fn().mockResolvedValue(mockRoute),
+    } as any,
+    updateRouteDraftUseCase: {
+      execute: vi.fn().mockResolvedValue(mockRoute),
+    } as any,
+    addRouteStopUseCase: {
+      execute: vi.fn().mockResolvedValue(mockRoute),
+    } as any,
+    removeRouteStopUseCase: {
+      execute: vi.fn().mockResolvedValue(mockRoute),
+    } as any,
+    reorderRouteStopsUseCase: {
+      execute: vi.fn().mockResolvedValue(mockRoute),
+    } as any,
+    assignRouteAdvisorUseCase: {
+      execute: vi.fn().mockResolvedValue(mockRoute),
+    } as any,
     calculateRouteMetricsUseCase: {
-      execute: vi.fn().mockResolvedValue({ totalDistanceKm: 10, estimatedDurationMinutes: 60 }),
+      execute: vi
+        .fn()
+        .mockResolvedValue({
+          totalDistanceKm: 10,
+          estimatedDurationMinutes: 60,
+        }),
     } as any,
     findRoutesUseCase: {
       execute: vi.fn().mockResolvedValue({
         data: [mockRoute],
-        meta: { total: 1, page: 1, limit: 10, totalPages: 1, hasNextPage: false, hasPreviousPage: false },
+        meta: {
+          total: 1,
+          page: 1,
+          limit: 10,
+          totalPages: 1,
+          hasNextPage: false,
+          hasPreviousPage: false,
+        },
       }),
     } as any,
     getRouteByIdUseCase: {
@@ -56,7 +80,9 @@ describe('RoutesController', () => {
         stops: [],
       }),
     } as any,
-    toggleRouteStatusUseCase: { execute: vi.fn().mockResolvedValue(mockRoute) } as any,
+    toggleRouteStatusUseCase: {
+      execute: vi.fn().mockResolvedValue(mockRoute),
+    } as any,
   });
 
   it('should create route draft successfully', async () => {
@@ -152,7 +178,10 @@ describe('RoutesController', () => {
 
     const result = await controller.getById(1, mockUser);
     expect(result.id).toBe(1);
-    expect(useCases.getRouteByIdUseCase.execute).toHaveBeenCalledWith(1, expect.any(Object));
+    expect(useCases.getRouteByIdUseCase.execute).toHaveBeenCalledWith(
+      1,
+      expect.any(Object),
+    );
   });
 
   it('should translate RouteNotFoundError to NotFoundException', async () => {
@@ -291,7 +320,10 @@ describe('RoutesController', () => {
 
     const result = await controller.toggleStatus(1, mockUser);
     expect(result.id).toBe(1);
-    expect(useCases.toggleRouteStatusUseCase.execute).toHaveBeenCalledWith(1, expect.any(Object));
+    expect(useCases.toggleRouteStatusUseCase.execute).toHaveBeenCalledWith(
+      1,
+      expect.any(Object),
+    );
   });
 
   it('should update route general info', async () => {
@@ -309,7 +341,11 @@ describe('RoutesController', () => {
       useCases.toggleRouteStatusUseCase,
     );
 
-    const result = await controller.updateDraft(1, { name: 'Nuevo Nombre' }, mockUser);
+    const result = await controller.updateDraft(
+      1,
+      { name: 'Nuevo Nombre' },
+      mockUser,
+    );
     expect(result.id).toBe(1);
   });
 
@@ -347,7 +383,11 @@ describe('RoutesController', () => {
       useCases.toggleRouteStatusUseCase,
     );
 
-    const result = await controller.reorderStops(1, { orderedClientIds: [102, 101] }, mockUser);
+    const result = await controller.reorderStops(
+      1,
+      { orderedClientIds: [102, 101] },
+      mockUser,
+    );
     expect(result.id).toBe(1);
   });
 });

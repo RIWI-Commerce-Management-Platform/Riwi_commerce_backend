@@ -16,7 +16,7 @@ export interface RouteMetricsResult {
 
 /**
  * Puerto abstracto para el cálculo de distancia y tiempo estimado de viaje (HU-22).
- * 
+ *
  * En mi arquitectura, este puerto me permite desacoplar la lógica de cálculo
  * (ya sea fórmula matemática geodésica de Haversine o consumo de la API de OSRM)
  * de mis casos de uso.

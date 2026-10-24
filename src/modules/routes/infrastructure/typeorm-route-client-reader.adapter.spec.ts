@@ -21,7 +21,7 @@ describe('TypeOrmRouteClientReaderAdapter', () => {
     clientStatusId: 1,
     visitFrequencyDays: 7,
     latitude: 10.99,
-    longitude: -74.80,
+    longitude: -74.8,
     isActive: true,
     createdAt: new Date(),
     updatedAt: new Date(),
