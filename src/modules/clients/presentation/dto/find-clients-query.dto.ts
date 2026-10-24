@@ -1,4 +1,5 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
+import { IsOptional } from 'class-validator';
 import { PaginationQueryDto } from '../../../../shared/pagination/pagination-query.dto.js';
 
 export class FindClientsQueryDto extends PaginationQueryDto {
@@ -7,6 +8,7 @@ export class FindClientsQueryDto extends PaginationQueryDto {
       'Partial case-insensitive search over NIT, business name, or commercial name',
     example: 'Andes',
   })
+  @IsOptional()
   search?: string;
 
   @ApiPropertyOptional({
@@ -14,6 +16,7 @@ export class FindClientsQueryDto extends PaginationQueryDto {
     example: 1,
     type: Number,
   })
+  @IsOptional()
   zoneId?: number | string;
 
   @ApiPropertyOptional({
@@ -21,6 +24,7 @@ export class FindClientsQueryDto extends PaginationQueryDto {
     example: 1,
     type: Number,
   })
+  @IsOptional()
   clientTypeId?: number | string;
 
   @ApiPropertyOptional({
@@ -28,12 +32,14 @@ export class FindClientsQueryDto extends PaginationQueryDto {
     example: 1,
     type: Number,
   })
+  @IsOptional()
   potentialId?: number | string;
 
   @ApiPropertyOptional({
     description: 'Filter by Municipality or City',
     example: 'Medellín',
   })
+  @IsOptional()
   municipality?: string;
 
   @ApiPropertyOptional({
@@ -41,6 +47,7 @@ export class FindClientsQueryDto extends PaginationQueryDto {
     example: true,
     type: Boolean,
   })
+  @IsOptional()
   isActive?: boolean | string;
 
   get parsedIsActive(): boolean | undefined {
@@ -84,4 +91,3 @@ function parseFilterId(value: number | string | undefined): number | undefined {
   const parsed = Number(value);
   return Number.isInteger(parsed) ? parsed : undefined;
 }
-

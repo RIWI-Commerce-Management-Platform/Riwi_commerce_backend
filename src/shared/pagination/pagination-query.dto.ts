@@ -1,4 +1,5 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
+import { IsOptional } from 'class-validator';
 
 export class PaginationQueryDto {
   @ApiPropertyOptional({
@@ -7,15 +8,18 @@ export class PaginationQueryDto {
     minimum: 1,
     type: Number,
   })
+  @IsOptional()
   page?: number | string;
 
   @ApiPropertyOptional({
-    description: 'Number of items per page (minimum 1, maximum 100, default 10)',
+    description:
+      'Number of items per page (minimum 1, maximum 100, default 10)',
     default: 10,
     minimum: 1,
     maximum: 100,
     type: Number,
   })
+  @IsOptional()
   limit?: number | string;
 
   get parsedPage(): number {
@@ -31,4 +35,3 @@ export class PaginationQueryDto {
     return Math.min(parsed, 100);
   }
 }
-

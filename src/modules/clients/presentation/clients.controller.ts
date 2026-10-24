@@ -35,6 +35,7 @@ import { ClientResponseDto } from './dto/client-response.dto.js';
 import { FindClientsQueryDto } from './dto/find-clients-query.dto.js';
 import { PaginatedClientResponseDto } from './dto/paginated-client-response.dto.js';
 import { PaginatedResponseDto } from '../../../shared/pagination/paginated-response.dto.js';
+import { queryValidationPipe } from '../../../shared/pagination/query-validation.pipe.js';
 
 @ApiTags('Clients')
 @Controller('clients')
@@ -56,7 +57,7 @@ export class ClientsController {
     type: PaginatedClientResponseDto,
   })
   async findClients(
-    @Query() query: FindClientsQueryDto,
+    @Query(queryValidationPipe()) query: FindClientsQueryDto,
   ): Promise<PaginatedClientResponseDto> {
     const result = await this.findClientsUseCase.execute({
       search: query.search,
