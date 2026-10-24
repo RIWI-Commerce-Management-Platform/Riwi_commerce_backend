@@ -16,6 +16,17 @@ export class ListOrdersQueryDto extends PaginationQueryDto {
   clientId?: number;
 
   @ApiPropertyOptional({
+    description:
+      'Filter orders by advisor (user id). Ignored for advisors, who only see their own orders.',
+    example: 5,
+    type: Number,
+  })
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  advisorId?: number;
+
+  @ApiPropertyOptional({
     description: 'Filter orders by order status',
     enum: OrderStatus,
     example: OrderStatus.CREATED,

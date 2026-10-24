@@ -31,7 +31,7 @@ function buildVisit(status: VisitStatus = VisitStatus.PENDING) {
     startTime: null,
     endTime: null,
     status,
-    objective: 'Presentar catalogo',
+    objective: 'Present the catalog',
   });
 }
 

@@ -12,7 +12,9 @@ import { InvalidVisitObservationsError } from './errors/invalid-visit-observatio
 
 import { EmptyVisitResultsError } from './errors/empty-visit-results.error.js';
 
-function buildVisit(overrides: Partial<ConstructorParameters<typeof Visit>[0]> = {}) {
+function buildVisit(
+  overrides: Partial<ConstructorParameters<typeof Visit>[0]> = {},
+) {
   return new Visit({
     id: 1,
     clientId: 10,
@@ -23,7 +25,7 @@ function buildVisit(overrides: Partial<ConstructorParameters<typeof Visit>[0]> =
     startTime: null,
     endTime: null,
     status: VisitStatus.PENDING,
-    objective: 'Presentar catalogo',
+    objective: 'Present the catalog',
     ...overrides,
   });
 }
@@ -60,13 +62,13 @@ describe('Visit (domain entity)', () => {
 
     const completed = visit.registerResult({
       endTime: '10:30:00',
-      observations: 'Cliente interesado.',
+      observations: 'Interested client.',
       results: [{ id: 1, name: 'Visita realizada' }],
     });
 
     expect(completed.status).toBe(VisitStatus.VISITED);
     expect(completed.endTime).toBe('10:30:00');
-    expect(completed.observations).toBe('Cliente interesado.');
+    expect(completed.observations).toBe('Interested client.');
     expect(completed.results).toHaveLength(1);
     expect(completed.results[0].name).toBe('Visita realizada');
   });

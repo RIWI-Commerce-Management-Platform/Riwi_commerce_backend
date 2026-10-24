@@ -66,4 +66,22 @@ describe('FindRoutesUseCase', () => {
       expect.objectContaining({ zoneId: 3 }),
     );
   });
+
+  it('limits an advisor to their own routes (HU-06)', async () => {
+    const repo: RouteRepository = {
+      findById: vi.fn(),
+      findByNameAndZone: vi.fn(),
+      findPaginated: vi.fn().mockResolvedValue({ data: [], meta: {} as any }),
+      save: vi.fn(),
+      delete: vi.fn(),
+    };
+
+    const useCase = new FindRoutesUseCase(repo);
+
+    await useCase.execute({ advisorId: 99 }, { id: 7, role: UserRole.ASESOR });
+
+    expect(repo.findPaginated).toHaveBeenCalledWith(
+      expect.objectContaining({ advisorId: 7 }),
+    );
+  });
 });

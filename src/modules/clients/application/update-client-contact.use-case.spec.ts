@@ -28,7 +28,9 @@ describe('UpdateClientContactUseCase', () => {
       unsetPrimaryByClientId: vi.fn(),
     } as unknown as ClientContactRepository;
 
-    const useCase = new UpdateClientContactUseCase(contactRepository);
+    const useCase = new UpdateClientContactUseCase(contactRepository, {
+      record: vi.fn(),
+    } as any);
 
     return { useCase, contactRepository };
   };

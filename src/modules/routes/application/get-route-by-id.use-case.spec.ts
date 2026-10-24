@@ -102,4 +102,42 @@ describe('GetRouteByIdUseCase', () => {
       UnauthorizedZoneError,
     );
   });
+
+  describe('advisor scope (HU-06)', () => {
+    const buildUseCase = (route: Route) => {
+      const repo: RouteRepository = {
+        findById: vi.fn().mockResolvedValue(route),
+        findByNameAndZone: vi.fn(),
+        findPaginated: vi.fn(),
+        save: vi.fn(),
+        delete: vi.fn(),
+      };
+      const clientReader: RouteClientReaderPort = {
+        findById: vi.fn(),
+        findByIds: vi.fn().mockResolvedValue([clientDetails]),
+      };
+      return new GetRouteByIdUseCase(repo, clientReader);
+    };
+
+    it('lets an advisor read a route assigned to them', async () => {
+      const route = createRouteWithStops();
+      route.assignAdvisor(7);
+
+      const result = await buildUseCase(route).execute(1, {
+        id: 7,
+        role: UserRole.ASESOR,
+      });
+
+      expect(result.route.advisorId).toBe(7);
+    });
+
+    it("hides another advisor's route as not found", async () => {
+      const route = createRouteWithStops();
+      route.assignAdvisor(9);
+
+      await expect(
+        buildUseCase(route).execute(1, { id: 7, role: UserRole.ASESOR }),
+      ).rejects.toThrow(RouteNotFoundError);
+    });
+  });
 });

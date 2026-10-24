@@ -10,12 +10,10 @@ import { RouteFrequency } from '../domain/route-frequency.enum.js';
 import { VisitOrmEntity } from '../../visit/infrastructure/visit.orm-entity.js';
 
 /**
- * Adaptador de infraestructura que implementa `VisitSchedulerPort` (HU-20).
- *
- * En este adaptador materializo la integración clave con el módulo de Visitas de Camilo (Épica E4):
- * Al asignar una ruta a un asesor comercial, calculo las fechas efectivas de recorrido
- * según el día de la semana y la frecuencia configurada, creando automáticamente los registros
- * en la tabla `visits` en estado PENDING para que aparezcan de inmediato en la agenda del asesor.
+ * VisitSchedulerPort implementation (HU-20), the integration with the
+ * visits module (epic E4). When a route is assigned, it works out the dates
+ * that match the route's day of the week and frequency and inserts PENDING
+ * rows in `visits`, so they show up in the advisor's agenda right away.
  */
 @Injectable()
 export class TypeOrmVisitSchedulerAdapter implements VisitSchedulerPort {
@@ -24,14 +22,12 @@ export class TypeOrmVisitSchedulerAdapter implements VisitSchedulerPort {
     private readonly visitRepository: Repository<VisitOrmEntity>,
   ) {}
 
-  /**
-   * Con este método genero las visitas programadas en la tabla `visits` de PostgreSQL.
-   */
+  /** Creates the scheduled visits in the `visits` table. */
   async scheduleVisitsForRoute(
     command: ScheduleVisitsCommand,
   ): Promise<number> {
-    // Al reasignar una ruta, descarto las visitas aún pendientes de la asignación
-    // anterior para no duplicar la agenda. Las visitas ya realizadas se conservan.
+    // On reassignment, drop the previous assignment's pending visits so the
+    // agenda isn't duplicated. Visits already done are kept.
     await this.visitRepository.delete({
       routeId: command.routeId,
       status: 'PENDING',
@@ -75,9 +71,7 @@ export class TypeOrmVisitSchedulerAdapter implements VisitSchedulerPort {
     return saved.length;
   }
 
-  /**
-   * Calcula las fechas exactas en el calendario que coinciden con el día de la semana y frecuencia.
-   */
+  /** Calendar dates that match the day of the week and the frequency. */
   private _computeScheduledDates(
     startDate: Date,
     endDate: Date | null | undefined,
@@ -87,12 +81,12 @@ export class TypeOrmVisitSchedulerAdapter implements VisitSchedulerPort {
     const targetDayIndex = this._mapDayOfWeekToIndex(dayOfWeek);
     const start = new Date(startDate);
 
-    // Ajusto la fecha de inicio al primer día que coincida con el día de la semana
+    // Move the start date to the first matching day of the week
     while (start.getUTCDay() !== targetDayIndex) {
       start.setUTCDate(start.getUTCDate() + 1);
     }
 
-    // Si no hay fecha fin, proyecto un horizonte de 4 semanas
+    // Without an end date, schedule 4 weeks ahead
     const horizonLimit = endDate
       ? new Date(endDate)
       : new Date(start.getTime() + 28 * 24 * 60 * 60 * 1000);
@@ -109,9 +103,7 @@ export class TypeOrmVisitSchedulerAdapter implements VisitSchedulerPort {
     return dates;
   }
 
-  /**
-   * Mapea el enum DayOfWeek al índice estándar de JavaScript (0: Domingo, 1: Lunes, etc.).
-   */
+  /** DayOfWeek -> JavaScript day index (0: Sunday, 1: Monday, ...). */
   private _mapDayOfWeekToIndex(day: DayOfWeek): number {
     switch (day) {
       case DayOfWeek.SUNDAY:
@@ -131,9 +123,7 @@ export class TypeOrmVisitSchedulerAdapter implements VisitSchedulerPort {
     }
   }
 
-  /**
-   * Determina el salto en días según la frecuencia de repetición.
-   */
+  /** Days between runs for the frequency. */
   private _getFrequencyStepDays(frequency: RouteFrequency): number {
     switch (frequency) {
       case RouteFrequency.WEEKLY:
@@ -145,9 +135,7 @@ export class TypeOrmVisitSchedulerAdapter implements VisitSchedulerPort {
     }
   }
 
-  /**
-   * Combina la fecha programada con la hora sugerida de visita (ej: '09:30:00').
-   */
+  /** Combines the scheduled date with the suggested time (e.g. '09:30:00'). */
   private _combineDateAndTime(date: Date, suggestedTime: string | null): Date {
     const combined = new Date(date);
     if (!suggestedTime) {

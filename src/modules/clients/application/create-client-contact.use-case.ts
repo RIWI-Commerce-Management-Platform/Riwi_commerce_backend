@@ -3,8 +3,10 @@ import { ClientContact } from '../domain/client-contact.entity.js';
 import { ClientContactRepository } from '../domain/client-contact.repository.js';
 import { ClientRepository } from '../domain/client.repository.js';
 import { ClientNotFoundError } from '../domain/client-not-found.error.js';
+import { ActivityLogService } from '../../../shared/activity-log/domain/activity-log.service.js';
 
 export interface CreateClientContactInput {
+  actorId?: number;
   clientId: number;
   name: string;
   position: string;
@@ -19,6 +21,7 @@ export class CreateClientContactUseCase {
   constructor(
     private readonly clientRepository: ClientRepository,
     private readonly contactRepository: ClientContactRepository,
+    private readonly activityLog: ActivityLogService,
   ) {}
 
   async execute(input: CreateClientContactInput): Promise<ClientContact> {
@@ -53,6 +56,19 @@ export class CreateClientContactUseCase {
       updatedAt: now,
     });
 
-    return this.contactRepository.save(contact);
+    const saved = await this.contactRepository.save(contact);
+
+    if (input.actorId !== undefined) {
+      await this.activityLog.record({
+        action: 'client.contact_created',
+        entityType: 'client_contact',
+        entityId: saved.id!,
+        clientId: saved.clientId,
+        actorId: input.actorId,
+        description: `Contact ${saved.name} created`,
+      });
+    }
+
+    return saved;
   }
 }

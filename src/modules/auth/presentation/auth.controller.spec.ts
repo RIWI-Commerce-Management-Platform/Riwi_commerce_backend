@@ -18,6 +18,8 @@ import { UnexpectedZoneError } from '../domain/errors/unexpected-zone.error.js';
 import { ZoneNotFoundError } from '../domain/errors/zone-not-found.error.js';
 import { UserNotFoundError } from '../domain/errors/user-not-found.error.js';
 import { UserRole } from '../domain/user-role.enum.js';
+import { InvalidResetTokenError } from '../domain/errors/invalid-reset-token.error.js';
+import { SocialLoginUnavailableError } from '../domain/errors/social-login-unavailable.error.js';
 
 describe('AuthController', () => {
   const setup = () => {
@@ -31,12 +33,19 @@ describe('AuthController', () => {
       execute: vi.fn(),
     } as unknown as AssignUserRoleUseCase;
 
+    const requestPasswordResetUseCase = { execute: vi.fn() };
+    const resetPasswordUseCase = { execute: vi.fn() };
+    const startMicrosoftLoginUseCase = { execute: vi.fn() };
+
     const controller = new AuthController(
       loginUseCase,
       registerUseCase,
       logoutUseCase,
       getCurrentUserUseCase,
       assignUserRoleUseCase,
+      requestPasswordResetUseCase as any,
+      resetPasswordUseCase as any,
+      startMicrosoftLoginUseCase as any,
     );
 
     const mockRes = {
@@ -54,6 +63,9 @@ describe('AuthController', () => {
       logoutUseCase,
       getCurrentUserUseCase,
       assignUserRoleUseCase,
+      requestPasswordResetUseCase,
+      resetPasswordUseCase,
+      startMicrosoftLoginUseCase,
       mockRes,
       mockReq,
     };
@@ -305,6 +317,81 @@ describe('AuthController', () => {
       await expect(
         controller.assignRole(1, { role: UserRole.ADMIN }),
       ).rejects.toThrow(err);
+    });
+  });
+
+  describe('forgotPassword', () => {
+    it('requests the reset link with the default frontend page', async () => {
+      const { controller, requestPasswordResetUseCase } = setup();
+
+      const result = await controller.forgotPassword({
+        email: 'ana@example.com',
+      });
+
+      expect(requestPasswordResetUseCase.execute).toHaveBeenCalledWith({
+        email: 'ana@example.com',
+        redirectTo: 'http://localhost:3000/reset-password',
+      });
+      expect(result.success).toBe(true);
+    });
+  });
+
+  describe('resetPassword', () => {
+    it('updates the password', async () => {
+      const { controller, resetPasswordUseCase } = setup();
+
+      await expect(
+        controller.resetPassword({ token: 't', newPassword: 'Password123!' }),
+      ).resolves.toEqual({
+        success: true,
+        message: 'Password updated successfully',
+      });
+      expect(resetPasswordUseCase.execute).toHaveBeenCalledWith({
+        token: 't',
+        newPassword: 'Password123!',
+      });
+    });
+
+    it('maps an invalid token to 400', async () => {
+      const { controller, resetPasswordUseCase } = setup();
+      resetPasswordUseCase.execute.mockRejectedValue(
+        new InvalidResetTokenError(),
+      );
+
+      await expect(
+        controller.resetPassword({ token: 'x', newPassword: 'Password123!' }),
+      ).rejects.toThrow(BadRequestException);
+    });
+  });
+
+  describe('microsoftLogin', () => {
+    it('returns the authorization url and forwards the state cookie', async () => {
+      const { controller, startMicrosoftLoginUseCase, mockReq, mockRes } =
+        setup();
+      startMicrosoftLoginUseCase.execute.mockResolvedValue({
+        url: 'https://login.microsoftonline.com/x',
+        setCookieHeaders: ['state=1'],
+      });
+
+      const result = await controller.microsoftLogin({}, mockReq, mockRes);
+
+      expect(result).toEqual({ url: 'https://login.microsoftonline.com/x' });
+      expect(startMicrosoftLoginUseCase.execute).toHaveBeenCalledWith(
+        expect.objectContaining({ callbackURL: 'http://localhost:3000' }),
+      );
+      expect(mockRes.setHeader).toHaveBeenCalledWith('set-cookie', ['state=1']);
+    });
+
+    it('maps a missing provider configuration to 400', async () => {
+      const { controller, startMicrosoftLoginUseCase, mockReq, mockRes } =
+        setup();
+      startMicrosoftLoginUseCase.execute.mockRejectedValue(
+        new SocialLoginUnavailableError('Microsoft'),
+      );
+
+      await expect(
+        controller.microsoftLogin({}, mockReq, mockRes),
+      ).rejects.toThrow(BadRequestException);
     });
   });
 });

@@ -26,6 +26,12 @@ export class QuoteOrmEntity {
   @JoinColumn({ name: 'client_id' })
   client?: ClientOrmEntity;
 
+  @Column({ name: 'advisor_id', type: 'int', nullable: true })
+  advisorId!: number | null;
+
+  @Column({ name: 'visit_id', type: 'int', nullable: true })
+  visitId!: number | null;
+
   @Column({ type: 'varchar', length: 30 })
   status!: string;
 
@@ -38,7 +44,12 @@ export class QuoteOrmEntity {
   @Column({ type: 'text', nullable: true })
   notes!: string | null;
 
-  @Column({ name: 'document_key', type: 'varchar', length: 255, nullable: true })
+  @Column({
+    name: 'document_key',
+    type: 'varchar',
+    length: 255,
+    nullable: true,
+  })
   documentKey!: string | null;
 
   @OneToMany(() => QuoteItemOrmEntity, (item) => item.quote, {

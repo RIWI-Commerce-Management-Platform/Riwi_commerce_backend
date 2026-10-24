@@ -35,6 +35,9 @@ export class OrderOrmEntity {
   @JoinColumn({ name: 'client_id' })
   client?: ClientOrmEntity;
 
+  @Column({ name: 'advisor_id', type: 'int', nullable: true })
+  advisorId!: number | null;
+
   @Column({ type: 'varchar', length: 30 })
   status!: string;
 

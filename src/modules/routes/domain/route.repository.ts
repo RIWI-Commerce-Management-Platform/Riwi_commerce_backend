@@ -3,36 +3,39 @@ import { RouteFilterCriteria } from './route-filter.criteria.js';
 import { PaginatedResult } from '../../../shared/pagination/paginated-result.interface.js';
 
 /**
- * Puerto de repositorio para el agregado Route.
- * 
- * En mi arquitectura limpia, este contrato abstracto define las operaciones de persistencia
- * que necesita mi capa de aplicación sin depender de TypeORM ni de la base de datos concreta.
- * La implementación real residirá en la capa de infraestructura (TypeOrmRouteRepository).
+ * Repository port for the Route aggregate. The application layer depends on
+ * it; TypeOrmRouteRepository implements it in the infrastructure layer.
  */
 export abstract class RouteRepository {
   /**
-   * Con este método busco una ruta por su ID numérico incluyendo sus paradas ordenadas.
+   * Finds a route by id, including its ordered stops.
    */
   abstract findById(id: number): Promise<Route | null>;
 
   /**
-   * Con este método busco una ruta por nombre dentro de una zona específica,
-   * para validar que no existan duplicados en el mismo territorio.
+   * Finds a route by name within a zone, to reject duplicate names in the
+   * same territory.
    */
-  abstract findByNameAndZone(name: string, zoneId: number): Promise<Route | null>;
+  abstract findByNameAndZone(
+    name: string,
+    zoneId: number,
+  ): Promise<Route | null>;
 
   /**
-   * Con este método obtengo un listado paginado y filtrado de rutas para supervisión (HU-21).
+   * Paginated, filtered route list for supervision (HU-21).
    */
-  abstract findPaginated(criteria: RouteFilterCriteria): Promise<PaginatedResult<Route>>;
+  abstract findPaginated(
+    criteria: RouteFilterCriteria,
+  ): Promise<PaginatedResult<Route>>;
 
   /**
-   * Con este método guardo o actualizo una ruta y todas sus paradas de manera atómica.
+   * Inserts or updates a route and all of its stops atomically.
    */
   abstract save(route: Route): Promise<Route>;
 
   /**
-   * Con este método elimino físicamente una ruta si fuese requerido (aunque priorizamos desactivación lógica).
+   * Physically deletes a route. Deactivation is the normal path; this is
+   * only for exceptional cases.
    */
   abstract delete(id: number): Promise<void>;
 }

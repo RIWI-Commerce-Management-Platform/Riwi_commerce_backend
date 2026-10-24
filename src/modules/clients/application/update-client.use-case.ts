@@ -4,8 +4,10 @@ import { ClientRepository } from '../domain/client.repository.js';
 import { ClientNotFoundError } from '../domain/client-not-found.error.js';
 import { ClientNitAlreadyExistsError } from '../domain/client-nit-already-exists.error.js';
 import { GeocodingPort } from './ports/geocoding.port.js';
+import { ActivityLogService } from '../../../shared/activity-log/domain/activity-log.service.js';
 
 export interface UpdateClientInput {
+  actorId?: number;
   id: number;
   nit?: string;
   businessName?: string;
@@ -30,6 +32,7 @@ export class UpdateClientUseCase {
   constructor(
     private readonly clientRepository: ClientRepository,
     private readonly geocodingPort: GeocodingPort,
+    private readonly activityLog: ActivityLogService,
   ) {}
 
   async execute(input: UpdateClientInput): Promise<Client> {
@@ -51,8 +54,7 @@ export class UpdateClientUseCase {
       input.municipality !== undefined &&
       input.municipality !== client.municipality;
     const departmentChanged =
-      input.department !== undefined &&
-      input.department !== client.department;
+      input.department !== undefined && input.department !== client.department;
 
     let lat = input.latitude;
     let lng = input.longitude;
@@ -96,6 +98,19 @@ export class UpdateClientUseCase {
       longitude: lng,
     });
 
-    return this.clientRepository.save(client);
+    const saved = await this.clientRepository.save(client);
+
+    if (input.actorId !== undefined) {
+      await this.activityLog.record({
+        action: 'client.updated',
+        entityType: 'client',
+        entityId: saved.id!,
+        clientId: saved.id!,
+        actorId: input.actorId,
+        description: 'Client data updated',
+      });
+    }
+
+    return saved;
   }
 }

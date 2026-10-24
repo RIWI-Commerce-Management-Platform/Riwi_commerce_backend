@@ -2,11 +2,11 @@ import { ApiProperty } from '@nestjs/swagger';
 import { IsInt, IsPositive } from 'class-validator';
 
 /**
- * DTO para asignar una ruta a un asesor comercial y generar sus visitas programadas (HU-20).
+ * Body to assign a route to an advisor and schedule its visits (HU-20).
  */
 export class AssignRouteAdvisorDto {
   @ApiProperty({
-    description: 'ID del asesor comercial asignado',
+    description: 'Id (user id) of the assigned advisor',
     example: 5,
   })
   @IsInt()

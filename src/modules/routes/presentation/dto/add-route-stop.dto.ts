@@ -2,11 +2,11 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { IsInt, IsOptional, IsPositive, IsString, Min } from 'class-validator';
 
 /**
- * DTO para agregar un cliente como parada dentro de una ruta comercial (HU-18).
+ * Body to add a client as a stop of a route (HU-18).
  */
 export class AddRouteStopDto {
   @ApiProperty({
-    description: 'ID del cliente a incorporar en la ruta',
+    description: 'Id of the client to add to the route',
     example: 101,
   })
   @IsInt()
@@ -14,7 +14,7 @@ export class AddRouteStopDto {
   clientId!: number;
 
   @ApiPropertyOptional({
-    description: 'Hora estimada o sugerida de llegada al cliente',
+    description: 'Suggested arrival time at the client',
     example: '09:30:00',
   })
   @IsOptional()
@@ -22,7 +22,7 @@ export class AddRouteStopDto {
   suggestedTime?: string;
 
   @ApiPropertyOptional({
-    description: 'Duración estimada de la atención comercial en minutos',
+    description: 'Estimated minutes spent with the client',
     example: 30,
     default: 30,
   })

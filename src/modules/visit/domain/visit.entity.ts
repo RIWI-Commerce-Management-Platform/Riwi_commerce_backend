@@ -1,6 +1,7 @@
 import { EmptyVisitResultsError } from './errors/empty-visit-results.error.js';
 import { InvalidVisitObservationsError } from './errors/invalid-visit-observations.error.js';
 import { InvalidVisitStatusError } from './errors/invalid-visit-status.error.js';
+import { InvalidVisitRescheduleDateError } from './errors/invalid-visit-reschedule-date.error.js';
 
 export enum VisitStatus {
   PENDING = 'PENDING',
@@ -34,7 +35,13 @@ export interface VisitProps {
   clientPotential?: string | null;
   observations?: string | null;
   results?: VisitResult[];
+  /** "Commercial management" section of the visit form (HU-27). */
+  quoteGenerated?: boolean;
+  orderGenerated?: boolean;
 }
+
+/** Statuses a visit that hasn't happened yet can be in. */
+const NOT_STARTED_STATUSES = [VisitStatus.PENDING, VisitStatus.RESCHEDULE];
 
 export class Visit {
   constructor(private readonly props: VisitProps) {}
@@ -99,8 +106,16 @@ export class Visit {
     return this.props.results ?? [];
   }
 
+  get quoteGenerated(): boolean {
+    return this.props.quoteGenerated ?? false;
+  }
+
+  get orderGenerated(): boolean {
+    return this.props.orderGenerated ?? false;
+  }
+
   start(): Visit {
-    if (this.props.status !== VisitStatus.PENDING) {
+    if (!NOT_STARTED_STATUSES.includes(this.props.status)) {
       throw new InvalidVisitStatusError(this.props.status, 'started');
     }
 
@@ -141,6 +156,81 @@ export class Visit {
       observations: data.observations,
       results: data.results,
     });
+  }
+
+  /**
+   * Moves a visit that hasn't started to a new date (HU-26). The new date
+   * can't be in the past.
+   */
+  reschedule(newDate: Date, reason?: string | null, now = new Date()): Visit {
+    if (!NOT_STARTED_STATUSES.includes(this.props.status)) {
+      throw new InvalidVisitStatusError(this.props.status, 'rescheduled');
+    }
+    if (Number.isNaN(newDate.getTime()) || newDate.getTime() < now.getTime()) {
+      throw new InvalidVisitRescheduleDateError(newDate);
+    }
+    this.assertObservationsLength(reason);
+
+    return new Visit({
+      ...this.props,
+      status: VisitStatus.RESCHEDULE,
+      scheduledAt: newDate,
+      observations: reason ?? this.props.observations ?? null,
+    });
+  }
+
+  /** Records that the visit didn't happen (HU-26). */
+  markNotVisited(reason?: string | null): Visit {
+    if (
+      !NOT_STARTED_STATUSES.includes(this.props.status) &&
+      this.props.status !== VisitStatus.IN_PROGRESS
+    ) {
+      throw new InvalidVisitStatusError(
+        this.props.status,
+        'marked as not visited',
+      );
+    }
+    this.assertObservationsLength(reason);
+
+    return new Visit({
+      ...this.props,
+      status: VisitStatus.NOT_VISITED,
+      observations: reason ?? this.props.observations ?? null,
+    });
+  }
+
+  /**
+   * Whether the visit generated a quote or an order (HU-27). Only a visit
+   * that is in progress or done can generate them.
+   */
+  registerCommercialOutcome(outcome: {
+    quoteGenerated: boolean;
+    orderGenerated: boolean;
+  }): Visit {
+    if (
+      this.props.status !== VisitStatus.IN_PROGRESS &&
+      this.props.status !== VisitStatus.VISITED
+    ) {
+      throw new InvalidVisitStatusError(
+        this.props.status,
+        'given a commercial outcome',
+      );
+    }
+
+    return new Visit({
+      ...this.props,
+      quoteGenerated: outcome.quoteGenerated,
+      orderGenerated: outcome.orderGenerated,
+    });
+  }
+
+  private assertObservationsLength(text?: string | null): void {
+    if (text && text.length > MAX_VISIT_OBSERVATIONS_LENGTH) {
+      throw new InvalidVisitObservationsError(
+        text.length,
+        MAX_VISIT_OBSERVATIONS_LENGTH,
+      );
+    }
   }
 
   toJSON(): VisitProps {

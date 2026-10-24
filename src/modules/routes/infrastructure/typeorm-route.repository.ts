@@ -10,10 +10,8 @@ import { RouteMapper } from './route.mapper.js';
 import { PaginatedResult } from '../../../shared/pagination/paginated-result.interface.js';
 
 /**
- * Implementación de persistencia TypeORM para el repositorio RouteRepository.
- * 
- * En mi repositorio gestiono de forma transaccional el agregado Route junto con
- * todas sus paradas (RouteStop), garantizando atomicidad y consistencia en la base de datos PostgreSQL.
+ * TypeORM implementation of RouteRepository. Saves the Route aggregate and
+ * all of its stops in one transaction.
  */
 @Injectable()
 export class TypeOrmRouteRepository implements RouteRepository {
@@ -25,9 +23,7 @@ export class TypeOrmRouteRepository implements RouteRepository {
     private readonly dataSource: DataSource,
   ) {}
 
-  /**
-   * Con este método busco una ruta por su ID cargando todas sus paradas ordenadas.
-   */
+  /** Finds a route by id with its ordered stops. */
   async findById(id: number): Promise<Route | null> {
     const orm = await this.routeOrmRepository
       .createQueryBuilder('route')
@@ -43,9 +39,7 @@ export class TypeOrmRouteRepository implements RouteRepository {
     return RouteMapper.toDomain(orm);
   }
 
-  /**
-   * Con este método busco si ya existe una ruta con el mismo nombre en la zona indicada.
-   */
+  /** Finds a route with the same name in the zone. */
   async findByNameAndZone(name: string, zoneId: number): Promise<Route | null> {
     const orm = await this.routeOrmRepository
       .createQueryBuilder('route')
@@ -61,12 +55,13 @@ export class TypeOrmRouteRepository implements RouteRepository {
     return RouteMapper.toDomain(orm);
   }
 
-  /**
-   * Con este método obtengo un listado paginado aplicando filtros dinámicos (HU-21).
-   */
-  async findPaginated(criteria: RouteFilterCriteria): Promise<PaginatedResult<Route>> {
+  /** Paginated list with the optional filters (HU-21). */
+  async findPaginated(
+    criteria: RouteFilterCriteria,
+  ): Promise<PaginatedResult<Route>> {
     const page = criteria.page && criteria.page > 0 ? criteria.page : 1;
-    const limit = criteria.limit && criteria.limit > 0 ? Math.min(criteria.limit, 100) : 10;
+    const limit =
+      criteria.limit && criteria.limit > 0 ? Math.min(criteria.limit, 100) : 10;
     const skip = (page - 1) * limit;
 
     const query = this.routeOrmRepository
@@ -78,7 +73,9 @@ export class TypeOrmRouteRepository implements RouteRepository {
     }
 
     if (criteria.advisorId !== undefined) {
-      query.andWhere('route.advisor_id = :advisorId', { advisorId: criteria.advisorId });
+      query.andWhere('route.advisor_id = :advisorId', {
+        advisorId: criteria.advisorId,
+      });
     }
 
     if (criteria.status !== undefined) {
@@ -86,15 +83,21 @@ export class TypeOrmRouteRepository implements RouteRepository {
     }
 
     if (criteria.dayOfWeek !== undefined) {
-      query.andWhere('route.day_of_week = :dayOfWeek', { dayOfWeek: criteria.dayOfWeek });
+      query.andWhere('route.day_of_week = :dayOfWeek', {
+        dayOfWeek: criteria.dayOfWeek,
+      });
     }
 
     if (criteria.frequency !== undefined) {
-      query.andWhere('route.frequency = :frequency', { frequency: criteria.frequency });
+      query.andWhere('route.frequency = :frequency', {
+        frequency: criteria.frequency,
+      });
     }
 
     if (criteria.isActive !== undefined) {
-      query.andWhere('route.is_active = :isActive', { isActive: criteria.isActive });
+      query.andWhere('route.is_active = :isActive', {
+        isActive: criteria.isActive,
+      });
     }
 
     if (criteria.search) {
@@ -121,9 +124,7 @@ export class TypeOrmRouteRepository implements RouteRepository {
     };
   }
 
-  /**
-   * Con este método persisto atómicamente la ruta y sincronizo sus paradas en PostgreSQL.
-   */
+  /** Saves the route and syncs its stops atomically. */
   async save(route: Route): Promise<Route> {
     return await this.dataSource.transaction(async (manager) => {
       const routeOrmRepo = manager.getRepository(RouteOrmEntity);
@@ -131,7 +132,6 @@ export class TypeOrmRouteRepository implements RouteRepository {
 
       const orm = RouteMapper.toOrm(route);
 
-      // 1. Guardo la entidad principal de ruta
       const savedOrm = await routeOrmRepo.save({
         ...(orm.id ? { id: orm.id } : {}),
         name: orm.name,
@@ -150,12 +150,11 @@ export class TypeOrmRouteRepository implements RouteRepository {
         isActive: orm.isActive,
       });
 
-      // 2. Si ya existía, sincronizo las paradas eliminando las anteriores y reinsertando
+      // For an existing route, replace its stops
       if (route.id) {
         await stopOrmRepo.delete({ routeId: savedOrm.id });
       }
 
-      // 3. Guardo las paradas con su orden secuencial
       if (route.stops && route.stops.length > 0) {
         const stopsToSave = route.stops.map((stopDomain) => {
           const stopOrm = RouteMapper.toStopOrm(stopDomain, savedOrm.id);
@@ -171,9 +170,7 @@ export class TypeOrmRouteRepository implements RouteRepository {
     });
   }
 
-  /**
-   * Con este método elimino físicamente una ruta si se requiriera.
-   */
+  /** Physically deletes a route. */
   async delete(id: number): Promise<void> {
     await this.routeOrmRepository.delete(id);
   }

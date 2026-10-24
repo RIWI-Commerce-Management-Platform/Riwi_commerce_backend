@@ -16,6 +16,17 @@ export class ListQuotesQueryDto extends PaginationQueryDto {
   clientId?: number;
 
   @ApiPropertyOptional({
+    description:
+      'Filter quotes by advisor (user id). Ignored for advisors, who only see their own quotes.',
+    example: 5,
+    type: Number,
+  })
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  advisorId?: number;
+
+  @ApiPropertyOptional({
     description: 'Filter quotes by quote status',
     enum: QuoteStatus,
     example: QuoteStatus.APPROVED,

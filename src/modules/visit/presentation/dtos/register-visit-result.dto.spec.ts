@@ -15,7 +15,7 @@ describe('RegisterVisitResultDto', () => {
   it('accepts a valid payload', async () => {
     const errors = await validateDto({
       endTime: '16:30:00',
-      observations: 'Cliente interesado.',
+      observations: 'Interested client.',
       results: [{ id: 1 }, { id: 2, observation: 'Con seguimiento' }],
     });
 
@@ -49,7 +49,9 @@ describe('RegisterVisitResultDto', () => {
       results: [{ id: 1 }],
     });
 
-    expect(errors.some((error) => error.property === 'observations')).toBe(true);
+    expect(errors.some((error) => error.property === 'observations')).toBe(
+      true,
+    );
   });
 
   it('rejects an empty results list', async () => {

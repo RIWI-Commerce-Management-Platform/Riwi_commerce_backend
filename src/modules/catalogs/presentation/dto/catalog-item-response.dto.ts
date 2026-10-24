@@ -10,7 +10,7 @@ export class CatalogItemResponseDto {
   @ApiPropertyOptional({ example: 1 })
   order?: number;
 
-  @ApiPropertyOptional({ example: 'Línea de alimentos no perecederos' })
+  @ApiPropertyOptional({ example: 'Non-perishable food line' })
   description?: string;
 
   @ApiProperty({ example: true })

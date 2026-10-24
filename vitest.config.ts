@@ -22,6 +22,7 @@ export default defineConfig({
         '**/*.module.ts',
         'src/main.ts',
         'src/shared/config/**',
+        'src/seeds/**',
       ],
     },
   },

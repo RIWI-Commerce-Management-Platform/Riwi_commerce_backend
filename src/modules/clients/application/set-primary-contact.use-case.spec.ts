@@ -26,7 +26,9 @@ describe('SetPrimaryContactUseCase', () => {
       save: vi.fn((c) => Promise.resolve(c)),
     } as unknown as ClientContactRepository;
 
-    const useCase = new SetPrimaryContactUseCase(contactRepo);
+    const useCase = new SetPrimaryContactUseCase(contactRepo, {
+      record: vi.fn(),
+    } as any);
     return { useCase, contactRepo };
   };
 

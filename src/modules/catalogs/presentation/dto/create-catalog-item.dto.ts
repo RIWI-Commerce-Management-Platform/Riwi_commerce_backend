@@ -28,7 +28,7 @@ export class CreateCatalogItemDto {
   order?: number;
 
   @ApiPropertyOptional({
-    example: 'Línea de productos masivos y aseo',
+    example: 'Mass consumer and cleaning products line',
     description: 'Description (applicable to portfolios)',
   })
   @IsOptional()

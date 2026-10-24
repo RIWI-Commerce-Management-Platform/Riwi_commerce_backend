@@ -20,7 +20,9 @@ type MockRepository = {
   manager: { transaction: ReturnType<typeof vi.fn> };
 };
 
-function buildVisitEntity(overrides: Partial<VisitOrmEntity> = {}): VisitOrmEntity {
+function buildVisitEntity(
+  overrides: Partial<VisitOrmEntity> = {},
+): VisitOrmEntity {
   const entity = new VisitOrmEntity();
   entity.id = 1;
   entity.clientId = 10;
@@ -31,7 +33,7 @@ function buildVisitEntity(overrides: Partial<VisitOrmEntity> = {}): VisitOrmEnti
   entity.startTime = '09:00:00';
   entity.endTime = '10:30:00';
   entity.status = VisitStatus.VISITED;
-  entity.objective = 'Presentar catalogo';
+  entity.objective = 'Present the catalog';
   entity.observations = 'obs';
   Object.assign(entity, overrides);
   return entity;
@@ -173,7 +175,9 @@ describe('TypeOrmVisitDao', () => {
       { id: 1, name: 'Visita realizada', observation: undefined },
       { id: 2, name: 'Pedido capturado', observation: 'Con seguimiento' },
     ]);
-    expect(mockLinkRepository.find).toHaveBeenCalledWith({ where: { visitId: 1 } });
+    expect(mockLinkRepository.find).toHaveBeenCalledWith({
+      where: { visitId: 1 },
+    });
     expect(mockOptionRepository.find).toHaveBeenCalledTimes(1);
   });
 
@@ -198,16 +202,16 @@ describe('TypeOrmVisitDao', () => {
       actualDate: new Date('2026-10-20'),
       startTime: '09:00',
       endTime: '10:00',
-      objective: 'Presentar catalogo',
+      objective: 'Present the catalog',
       observations: 'obs',
-      results: [
-        { id: 1, name: 'Visita realizada', observation: 'Nota' },
-      ],
+      results: [{ id: 1, name: 'Visita realizada', observation: 'Nota' }],
     });
 
     mockRepository.save.mockResolvedValue(buildVisitEntity());
     mockLinkRepository.find.mockResolvedValue([buildLink(1, 'Nota')]);
-    mockOptionRepository.find.mockResolvedValue([buildOption(1, 'Visita realizada')]);
+    mockOptionRepository.find.mockResolvedValue([
+      buildOption(1, 'Visita realizada'),
+    ]);
 
     const saved = await dao.save(visitDomain);
     expect(saved.id).toBe(1);
@@ -227,7 +231,9 @@ describe('TypeOrmVisitDao', () => {
       results: [],
     });
 
-    mockRepository.save.mockResolvedValue(buildVisitEntity({ id: 2, status: VisitStatus.PENDING }));
+    mockRepository.save.mockResolvedValue(
+      buildVisitEntity({ id: 2, status: VisitStatus.PENDING }),
+    );
     mockLinkRepository.find.mockResolvedValue([]);
 
     const saved = await dao.save(visitDomain);

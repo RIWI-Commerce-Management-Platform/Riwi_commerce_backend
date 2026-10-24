@@ -1,6 +1,9 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Route } from '../../domain/route.entity.js';
-import { EnrichedRouteDetails, EnrichedRouteStop } from '../../application/get-route-by-id.use-case.js';
+import {
+  EnrichedRouteDetails,
+  EnrichedRouteStop,
+} from '../../application/get-route-by-id.use-case.js';
 
 export class ClientDetailsResponseDto {
   @ApiProperty({ example: 101 })
@@ -52,10 +55,10 @@ export class RouteResponseDto {
   @ApiProperty({ example: 1 })
   id!: number;
 
-  @ApiProperty({ example: 'Ruta Semanal Barranquilla Norte' })
+  @ApiProperty({ example: 'Barranquilla North weekly route' })
   name!: string;
 
-  @ApiPropertyOptional({ example: 'Ruta de clientes mayoristas', nullable: true })
+  @ApiPropertyOptional({ example: 'Wholesale clients route', nullable: true })
   description!: string | null;
 
   @ApiProperty({ example: 1 })
@@ -117,9 +120,10 @@ export class RouteResponseDto {
     dto.frequency = route.frequency;
     dto.startTime = route.startTime;
     dto.endTime = route.endTime;
-    dto.startDate = route.startDate instanceof Date
-      ? route.startDate.toISOString().split('T')[0]
-      : String(route.startDate);
+    dto.startDate =
+      route.startDate instanceof Date
+        ? route.startDate.toISOString().split('T')[0]
+        : String(route.startDate);
     dto.endDate = route.endDate
       ? route.endDate instanceof Date
         ? route.endDate.toISOString().split('T')[0]
@@ -168,9 +172,12 @@ export class RouteResponseDto {
 }
 
 export class RouteMetricsResponseDto {
-  @ApiProperty({ example: 18.5, description: 'Distancia total acumulada en kilómetros' })
+  @ApiProperty({ example: 18.5, description: 'Total distance in kilometers' })
   totalDistanceKm!: number;
 
-  @ApiProperty({ example: 145, description: 'Tiempo total estimado en minutos (traslado + atención)' })
+  @ApiProperty({
+    example: 145,
+    description: 'Total estimated minutes (travel + visits)',
+  })
   estimatedDurationMinutes!: number;
 }

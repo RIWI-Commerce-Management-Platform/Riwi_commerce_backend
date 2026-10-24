@@ -30,6 +30,7 @@ import { ClientContactNotFoundError } from '../domain/client-contact-not-found.e
 import { CreateClientContactDto } from './dto/create-client-contact.dto.js';
 import { UpdateClientContactDto } from './dto/update-client-contact.dto.js';
 import { ClientContactResponseDto } from './dto/client-contact-response.dto.js';
+import { CurrentUser } from '../../auth/decorators/current-user.decorator.js';
 
 @ApiTags('Client Contacts')
 @Controller('clients/:clientId/contacts')
@@ -60,6 +61,7 @@ export class ClientContactsController {
   async create(
     @Param('clientId', ParseIntPipe) clientId: number,
     @Body() dto: CreateClientContactDto,
+    @CurrentUser('id') actorId?: number,
   ): Promise<ClientContactResponseDto> {
     try {
       const contact = await this.createClientContactUseCase.execute({
@@ -70,6 +72,7 @@ export class ClientContactsController {
         mobile: dto.mobile,
         email: dto.email,
         isPrimary: dto.isPrimary,
+        actorId,
       });
 
       return new ClientContactResponseDto(contact);
@@ -97,8 +100,7 @@ export class ClientContactsController {
     @Param('clientId', ParseIntPipe) clientId: number,
   ): Promise<ClientContactResponseDto[]> {
     try {
-      const contacts =
-        await this.listClientContactsUseCase.execute(clientId);
+      const contacts = await this.listClientContactsUseCase.execute(clientId);
       return contacts.map((c) => new ClientContactResponseDto(c));
     } catch (error) {
       if (error instanceof ClientNotFoundError) {
@@ -122,6 +124,7 @@ export class ClientContactsController {
     @Param('clientId', ParseIntPipe) clientId: number,
     @Param('contactId', ParseIntPipe) contactId: number,
     @Body() dto: UpdateClientContactDto,
+    @CurrentUser('id') actorId?: number,
   ): Promise<ClientContactResponseDto> {
     try {
       const contact = await this.updateClientContactUseCase.execute({
@@ -133,6 +136,7 @@ export class ClientContactsController {
         mobile: dto.mobile,
         email: dto.email,
         isPrimary: dto.isPrimary,
+        actorId,
       });
 
       return new ClientContactResponseDto(contact);
@@ -161,11 +165,13 @@ export class ClientContactsController {
   async setPrimary(
     @Param('clientId', ParseIntPipe) clientId: number,
     @Param('contactId', ParseIntPipe) contactId: number,
+    @CurrentUser('id') actorId?: number,
   ): Promise<ClientContactResponseDto> {
     try {
       const contact = await this.setPrimaryContactUseCase.execute({
         clientId,
         contactId,
+        actorId,
       });
 
       return new ClientContactResponseDto(contact);
@@ -189,11 +195,13 @@ export class ClientContactsController {
   async delete(
     @Param('clientId', ParseIntPipe) clientId: number,
     @Param('contactId', ParseIntPipe) contactId: number,
+    @CurrentUser('id') actorId?: number,
   ): Promise<ClientContactResponseDto> {
     try {
       const contact = await this.deleteClientContactUseCase.execute({
         clientId,
         contactId,
+        actorId,
       });
 
       return new ClientContactResponseDto(contact);

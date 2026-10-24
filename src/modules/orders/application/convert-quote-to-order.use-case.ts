@@ -58,6 +58,7 @@ export class ConvertQuoteToOrderUseCase {
       orderNumber,
       quoteId: quote.id!,
       clientId: quote.clientId,
+      advisorId: quote.advisorId,
       status: OrderStatus.CREATED,
       subtotal: quote.subtotal,
       total: quote.total,

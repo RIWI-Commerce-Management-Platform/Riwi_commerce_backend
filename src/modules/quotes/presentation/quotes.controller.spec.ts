@@ -28,6 +28,8 @@ describe('QuotesController (Presentation)', () => {
   let changeQuoteStatusUseCase: Partial<ChangeQuoteStatusUseCase>;
   let listQuotesUseCase: Partial<ListQuotesUseCase>;
   let currentAdvisor: Partial<CurrentAdvisorProvider>;
+  let currentActor: { extract: ReturnType<typeof vi.fn> };
+  const actor = { id: 7, role: 'ASESOR', zoneId: null };
 
   const mockQuote = new Quote({
     id: 1,
@@ -79,6 +81,9 @@ describe('QuotesController (Presentation)', () => {
       }),
     };
 
+    currentActor = {
+      extract: vi.fn().mockResolvedValue(actor),
+    };
     currentAdvisor = {
       extract: vi.fn().mockResolvedValue(15),
     };
@@ -90,17 +95,24 @@ describe('QuotesController (Presentation)', () => {
       changeQuoteStatusUseCase as ChangeQuoteStatusUseCase,
       listQuotesUseCase as ListQuotesUseCase,
       currentAdvisor as CurrentAdvisorProvider,
+      currentActor as any,
     );
   });
 
   describe('POST /quotes (HU-30)', () => {
     it('creates a new quote and returns QuoteResponseDto', async () => {
-      const response = await controller.create({
-        clientId: 10,
-        items: [{ productName: 'Laptop', quantity: 1, unitPrice: 150 }],
-      });
+      const response = await controller.create(
+        {
+          clientId: 10,
+          visitId: 3,
+          items: [{ productName: 'Laptop', quantity: 1, unitPrice: 150 }],
+        },
+        {} as any,
+      );
 
-      expect(createQuoteUseCase.execute).toHaveBeenCalled();
+      expect(createQuoteUseCase.execute).toHaveBeenCalledWith(
+        expect.objectContaining({ clientId: 10, advisorId: 15, visitId: 3 }),
+      );
       expect(response.quoteNumber).toBe('COT-0001');
     });
 
@@ -110,10 +122,13 @@ describe('QuotesController (Presentation)', () => {
       );
 
       await expect(
-        controller.create({
-          clientId: 999,
-          items: [{ productName: 'Laptop', quantity: 1, unitPrice: 150 }],
-        }),
+        controller.create(
+          {
+            clientId: 999,
+            items: [{ productName: 'Laptop', quantity: 1, unitPrice: 150 }],
+          },
+          {} as any,
+        ),
       ).rejects.toThrow(NotFoundException);
     });
   });
@@ -126,7 +141,7 @@ describe('QuotesController (Presentation)', () => {
       query.clientId = 10;
       query.status = QuoteStatus.DRAFT;
 
-      const result = await controller.list(query);
+      const result = await controller.list(query, {} as any);
 
       expect(result.data).toHaveLength(1);
       expect(result.meta.total).toBe(1);
@@ -137,15 +152,16 @@ describe('QuotesController (Presentation)', () => {
           page: 1,
           limit: 10,
         }),
+        actor,
       );
     });
   });
 
   describe('GET /quotes/:id', () => {
     it('returns quote details with presigned url', async () => {
-      const response = await controller.getById(1);
+      const response = await controller.getById(1, {} as any);
 
-      expect(getQuoteByIdUseCase.execute).toHaveBeenCalledWith(1);
+      expect(getQuoteByIdUseCase.execute).toHaveBeenCalledWith(1, actor);
       expect(response.id).toBe(1);
       expect(response.documentUrl).toBe(
         'https://s3.amazonaws.com/quotes/173000-doc.pdf',
@@ -157,7 +173,9 @@ describe('QuotesController (Presentation)', () => {
         new QuoteNotFoundError(999),
       );
 
-      await expect(controller.getById(999)).rejects.toThrow(NotFoundException);
+      await expect(controller.getById(999, {} as any)).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 
@@ -303,7 +321,7 @@ describe('QuotesController (Presentation)', () => {
       ).rejects.toThrow(dbError);
 
       vi.mocked(getQuoteByIdUseCase.execute!).mockRejectedValueOnce(dbError);
-      await expect(controller.getById(1)).rejects.toThrow(dbError);
+      await expect(controller.getById(1, {} as any)).rejects.toThrow(dbError);
 
       vi.mocked(attachQuoteDocumentUseCase.execute!).mockRejectedValueOnce(
         dbError,

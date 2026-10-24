@@ -1,5 +1,5 @@
 /**
- * Error de dominio lanzado cuando busco una ruta por su ID y no existe en la base de datos.
+ * Thrown when no route exists with the given id.
  */
 export class RouteNotFoundError extends Error {
   constructor(id: number) {

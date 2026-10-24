@@ -11,7 +11,7 @@ import {
 
 export class UpdateCatalogItemDto {
   @ApiPropertyOptional({
-    example: 'Distribuidor Mayorista Actualizado',
+    example: 'Updated wholesale distributor',
     description: 'Updated name of the catalog item',
   })
   @IsOptional()
@@ -30,7 +30,7 @@ export class UpdateCatalogItemDto {
   order?: number;
 
   @ApiPropertyOptional({
-    example: 'Descripción actualizada de la línea de producto',
+    example: 'Updated description of the product line',
     description: 'Updated description',
   })
   @IsOptional()

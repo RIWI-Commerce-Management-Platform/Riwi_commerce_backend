@@ -3,6 +3,9 @@ import type { PaginatedResult } from './paginated-result.interface.js';
 
 export interface CommercialQueryFilter {
   clientId?: number;
+  advisorId?: number;
+  /** Zone of the client; needs a `client` relation on the entity. */
+  zoneId?: number;
   status?: string;
   startDate?: string;
   endDate?: string;
@@ -24,6 +27,18 @@ export function applyCommercialFilters<T extends ObjectLiteral>(
     query.andWhere(`${alias}.clientId = :clientId`, {
       clientId: filter.clientId,
     });
+  }
+
+  if (filter.advisorId !== undefined) {
+    query.andWhere(`${alias}.advisorId = :advisorId`, {
+      advisorId: filter.advisorId,
+    });
+  }
+
+  if (filter.zoneId !== undefined) {
+    query
+      .innerJoin(`${alias}.client`, `${alias}_client`)
+      .andWhere(`${alias}_client.zoneId = :zoneId`, { zoneId: filter.zoneId });
   }
 
   if (filter.status) {

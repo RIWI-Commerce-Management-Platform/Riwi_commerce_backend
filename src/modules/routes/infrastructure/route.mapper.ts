@@ -7,15 +7,11 @@ import { RouteOrmEntity } from './route.orm-entity.js';
 import { RouteStopOrmEntity } from './route-stop.orm-entity.js';
 
 /**
- * Mapper bidireccional entre las entidades de dominio y las entidades de persistencia TypeORM.
- * 
- * En mi arquitectura limpia, este traductor garantiza que la capa de dominio permanezca pura,
- * abstrayendo conversiones de fechas, números flotantes y relaciones de base de datos.
+ * Maps between the Route/RouteStop domain entities and the TypeORM
+ * entities, including date and decimal conversions.
  */
 export class RouteMapper {
-  /**
-   * Convierto un RouteOrmEntity de la base de datos a mi entidad pura de dominio Route.
-   */
+  /** RouteOrmEntity -> Route. */
   static toDomain(orm: RouteOrmEntity): Route {
     const stops = orm.stops
       ? orm.stops
@@ -48,9 +44,7 @@ export class RouteMapper {
     });
   }
 
-  /**
-   * Convierto mi entidad pura de dominio Route a un RouteOrmEntity para persistir con TypeORM.
-   */
+  /** Route -> RouteOrmEntity. */
   static toOrm(domain: Route): RouteOrmEntity {
     const orm = new RouteOrmEntity();
     if (domain.id !== undefined) {
@@ -84,9 +78,7 @@ export class RouteMapper {
     return orm;
   }
 
-  /**
-   * Convierto un RouteStopOrmEntity a mi entidad pura de dominio RouteStop.
-   */
+  /** RouteStopOrmEntity -> RouteStop. */
   static toStopDomain(orm: RouteStopOrmEntity): RouteStop {
     return new RouteStop({
       id: orm.id,
@@ -99,9 +91,7 @@ export class RouteMapper {
     });
   }
 
-  /**
-   * Convierto un RouteStop de dominio a RouteStopOrmEntity.
-   */
+  /** RouteStop -> RouteStopOrmEntity. */
   static toStopOrm(domain: RouteStop, routeId?: number): RouteStopOrmEntity {
     const orm = new RouteStopOrmEntity();
     if (domain.id !== undefined) {

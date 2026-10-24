@@ -46,6 +46,12 @@ export class VisitOrmEntity {
   @Column({ type: 'varchar', length: 500, nullable: true })
   observations: string | null;
 
+  @Column({ name: 'quote_generated', type: 'boolean', default: false })
+  quoteGenerated: boolean;
+
+  @Column({ name: 'order_generated', type: 'boolean', default: false })
+  orderGenerated: boolean;
+
   // Visit results are loaded explicitly by the repository (join through
   // visit_result_links). No @OneToMany here on purpose: a bidirectional
   // ORM relation creates a circular ESM import with VisitResultLinkOrmEntity

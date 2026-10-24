@@ -33,12 +33,12 @@ describe('UpdateRouteDraftUseCase', () => {
 
     const result = await useCase.execute(1, {
       name: 'Ruta Actualizada',
-      description: 'Nueva descripción',
+      description: 'New description',
       dayOfWeek: DayOfWeek.TUESDAY,
     });
 
     expect(result.name).toBe('Ruta Actualizada');
-    expect(result.description).toBe('Nueva descripción');
+    expect(result.description).toBe('New description');
     expect(result.dayOfWeek).toBe(DayOfWeek.TUESDAY);
   });
 

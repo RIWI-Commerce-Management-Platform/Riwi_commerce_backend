@@ -24,7 +24,8 @@ export class CreateQuoteUseCase {
       throw new ClientNotFoundError(command.clientId);
     }
 
-    const nextQuoteNumber = await this.quoteRepository.generateNextQuoteNumber();
+    const nextQuoteNumber =
+      await this.quoteRepository.generateNextQuoteNumber();
 
     const items = command.items.map((itemCommand) => {
       const itemSubtotal = this.roundToTwoDecimals(
@@ -48,6 +49,8 @@ export class CreateQuoteUseCase {
     const quote = new Quote({
       quoteNumber: nextQuoteNumber,
       clientId: command.clientId,
+      advisorId: command.advisorId ?? null,
+      visitId: command.visitId ?? null,
       status: QuoteStatus.DRAFT,
       subtotal: quoteSubtotal,
       total: quoteTotal,

@@ -13,12 +13,12 @@ import { DayOfWeek } from '../../domain/day-of-week.enum.js';
 import { RouteFrequency } from '../../domain/route-frequency.enum.js';
 
 /**
- * DTO para la creación del borrador de una ruta comercial (Paso 1 del Wizard - HU-17).
+ * Body to create a route draft (wizard step 1, HU-17).
  */
 export class CreateRouteDraftDto {
   @ApiProperty({
-    description: 'Nombre descriptivo de la ruta comercial',
-    example: 'Ruta Semanal Barranquilla Norte',
+    description: 'Descriptive name of the route',
+    example: 'Barranquilla North weekly route',
     maxLength: 150,
   })
   @IsString()
@@ -27,8 +27,8 @@ export class CreateRouteDraftDto {
   name!: string;
 
   @ApiPropertyOptional({
-    description: 'Descripción u objetivo comercial del recorrido',
-    example: 'Cobertura de clientes mayoristas en el sector norte',
+    description: 'Description or commercial goal of the route',
+    example: 'Coverage of wholesale clients in the north sector',
     maxLength: 500,
   })
   @IsOptional()
@@ -37,7 +37,7 @@ export class CreateRouteDraftDto {
   description?: string;
 
   @ApiProperty({
-    description: 'ID de la zona territorial a la que pertenece la ruta',
+    description: 'Id of the zone the route belongs to',
     example: 1,
   })
   @IsInt()
@@ -45,7 +45,7 @@ export class CreateRouteDraftDto {
   zoneId!: number;
 
   @ApiProperty({
-    description: 'Día de la semana fijado para recorrer la ruta',
+    description: 'Day of the week the route runs on',
     enum: DayOfWeek,
     example: DayOfWeek.MONDAY,
   })
@@ -53,7 +53,7 @@ export class CreateRouteDraftDto {
   dayOfWeek!: DayOfWeek;
 
   @ApiProperty({
-    description: 'Frecuencia de repetición de la ruta',
+    description: 'How often the route repeats',
     enum: RouteFrequency,
     example: RouteFrequency.WEEKLY,
   })
@@ -61,7 +61,7 @@ export class CreateRouteDraftDto {
   frequency!: RouteFrequency;
 
   @ApiPropertyOptional({
-    description: 'Hora sugerida de inicio de la jornada',
+    description: 'Suggested start time of the working day',
     example: '08:00:00',
   })
   @IsOptional()
@@ -69,7 +69,7 @@ export class CreateRouteDraftDto {
   startTime?: string;
 
   @ApiPropertyOptional({
-    description: 'Hora sugerida de finalización de la jornada',
+    description: 'Suggested end time of the working day',
     example: '17:00:00',
   })
   @IsOptional()
@@ -77,14 +77,14 @@ export class CreateRouteDraftDto {
   endTime?: string;
 
   @ApiProperty({
-    description: 'Fecha de inicio de vigencia de la ruta (YYYY-MM-DD)',
+    description: 'Date the route starts running (YYYY-MM-DD)',
     example: '2026-10-26',
   })
   @IsDateString()
   startDate!: string;
 
   @ApiPropertyOptional({
-    description: 'Fecha de fin de vigencia de la ruta (opcional, YYYY-MM-DD)',
+    description: 'Date the route stops running (optional, YYYY-MM-DD)',
     example: '2026-12-31',
   })
   @IsOptional()
