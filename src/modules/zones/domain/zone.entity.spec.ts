@@ -19,4 +19,25 @@ describe('Zone Entity', () => {
     zone.deactivate();
     expect(zone.isActive).toBe(false);
   });
+
+  it('should update only the provided fields', () => {
+    const zone = new Zone({
+      id: 1,
+      name: 'Malambo',
+      isActive: false,
+      createdAt: new Date('2026-01-01'),
+      updatedAt: new Date('2026-01-01'),
+    });
+
+    zone.update({ isActive: true });
+    expect(zone.name).toBe('Malambo');
+    expect(zone.isActive).toBe(true);
+
+    zone.update({ name: 'Malambo Centro' });
+    expect(zone.name).toBe('Malambo Centro');
+    expect(zone.isActive).toBe(true);
+    expect(zone.updatedAt.getTime()).toBeGreaterThan(
+      new Date('2026-01-01').getTime(),
+    );
+  });
 });

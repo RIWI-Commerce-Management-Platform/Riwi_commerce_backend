@@ -25,4 +25,10 @@ export class Zone {
     this.isActive = false;
     this.updatedAt = new Date();
   }
+
+  update(changes: { name?: string; isActive?: boolean }): void {
+    if (changes.name !== undefined) this.name = changes.name;
+    if (changes.isActive !== undefined) this.isActive = changes.isActive;
+    this.updatedAt = new Date();
+  }
 }
