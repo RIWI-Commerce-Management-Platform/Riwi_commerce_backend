@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { extractSetCookies } from './extract-set-cookies.js';
+import { extractSetCookies, parseAuthResponse } from './extract-set-cookies.js';
 
 describe('extractSetCookies', () => {
   it('should use getSetCookie when available', () => {
@@ -46,5 +46,41 @@ describe('extractSetCookies', () => {
     } as unknown as Response;
 
     expect(extractSetCookies(mockResponse)).toBeNull();
+  });
+
+  describe('parseAuthResponse', () => {
+    it('returns data and cookies when response is ok', async () => {
+      const mockResponse = {
+        ok: true,
+        headers: {
+          getSetCookie: () => ['cookie=val'],
+        },
+        json: async () => ({ token: 'abc' }),
+      } as unknown as Response;
+
+      const result = await parseAuthResponse(mockResponse, Error);
+      expect(result).toEqual({
+        data: { token: 'abc' },
+        setCookieHeaders: ['cookie=val'],
+      });
+    });
+
+    it('throws ErrorClass when response is not ok', async () => {
+      const mockResponse = {
+        ok: false,
+        statusText: 'Unauthorized',
+        headers: {
+          getSetCookie: () => null,
+          get: () => null,
+        },
+        json: async () => {
+          throw new Error('fail parse');
+        },
+      } as unknown as Response;
+
+      await expect(
+        parseAuthResponse(mockResponse, class CustomError extends Error {}),
+      ).rejects.toThrow('Unauthorized');
+    });
   });
 });

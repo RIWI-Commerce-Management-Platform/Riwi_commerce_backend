@@ -2,7 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { AuthService } from '@thallesp/nestjs-better-auth';
 import { fromNodeHeaders } from 'better-auth/node';
 import { RegistrationFailedError } from '../domain/errors/registration-failed.error.js';
-import { extractSetCookies, SetCookieHeaders } from './extract-set-cookies.js';
+import { parseAuthResponse, SetCookieHeaders } from './extract-set-cookies.js';
 
 export interface RegisterInput {
   name: string;
@@ -42,15 +42,6 @@ export class RegisterUseCase {
       throw new RegistrationFailedError(error?.body?.message || error?.message);
     }
 
-    const setCookieHeaders = extractSetCookies(response);
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new RegistrationFailedError(
-        errorData?.message || errorData?.statusText,
-      );
-    }
-
-    return { data: await response.json(), setCookieHeaders };
+    return parseAuthResponse(response, RegistrationFailedError);
   }
 }

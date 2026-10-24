@@ -92,4 +92,43 @@ describe('RemoveRouteStopUseCase', () => {
       UnauthorizedZoneError,
     );
   });
+
+  it('should recalculate metrics with waypoints when 2 or more stops remain', async () => {
+    const route = new Route({
+      id: 1,
+      name: 'Ruta 1',
+      zoneId: 1,
+      dayOfWeek: DayOfWeek.MONDAY,
+      frequency: RouteFrequency.WEEKLY,
+      startDate: new Date('2026-10-26'),
+    });
+    route.addStop(101, '09:00:00', 30);
+    route.addStop(102, '10:00:00', 30);
+    route.addStop(103, '11:00:00', 30);
+
+    const repo = createMockRepo(route);
+    const clientReader = createMockClientReader();
+    vi.mocked(clientReader.findByIds).mockResolvedValue([
+      { id: 102, latitude: 6.2442, longitude: -75.5812 } as any,
+      { id: 103, latitude: 6.25, longitude: -75.57 } as any,
+    ]);
+    const distanceCalculator = createMockDistanceCalculator();
+    vi.mocked(distanceCalculator.calculateMetrics).mockResolvedValue({
+      totalDistanceKm: 5.5,
+      estimatedDurationMinutes: 65,
+    });
+
+    const useCase = new RemoveRouteStopUseCase(
+      repo,
+      clientReader,
+      distanceCalculator,
+    );
+
+    const result = await useCase.execute(1, 101);
+
+    expect(result.stops).toHaveLength(2);
+    expect(result.totalDistanceKm).toBe(5.5);
+    expect(result.estimatedDurationMinutes).toBe(65);
+    expect(distanceCalculator.calculateMetrics).toHaveBeenCalled();
+  });
 });

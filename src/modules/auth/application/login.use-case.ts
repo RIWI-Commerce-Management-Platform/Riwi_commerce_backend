@@ -2,7 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { AuthService } from '@thallesp/nestjs-better-auth';
 import { fromNodeHeaders } from 'better-auth/node';
 import { InvalidCredentialsError } from '../domain/errors/invalid-credentials.error.js';
-import { extractSetCookies, SetCookieHeaders } from './extract-set-cookies.js';
+import { parseAuthResponse, SetCookieHeaders } from './extract-set-cookies.js';
 
 export interface LoginInput {
   email: string;
@@ -42,15 +42,6 @@ export class LoginUseCase {
       throw new InvalidCredentialsError(error?.body?.message || error?.message);
     }
 
-    const setCookieHeaders = extractSetCookies(response);
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new InvalidCredentialsError(
-        errorData?.message || errorData?.statusText,
-      );
-    }
-
-    return { data: await response.json(), setCookieHeaders };
+    return parseAuthResponse(response, InvalidCredentialsError);
   }
 }

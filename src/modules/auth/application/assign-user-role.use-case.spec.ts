@@ -3,6 +3,8 @@ import { Repository } from 'typeorm';
 import { AssignUserRoleUseCase } from './assign-user-role.use-case.js';
 import { UserOrmEntity } from '../infrastructure/user.orm-entity.js';
 import { ZoneOrmEntity } from '../../zones/infrastructure/zone.orm-entity.js';
+import { AdvisorOrmEntity } from '../../advisors/infrastructure/advisor.orm-entity.js';
+import { ClientOrmEntity } from '../../clients/infrastructure/client.orm-entity.js';
 import { UserRole } from '../domain/user-role.enum.js';
 import { InvalidRoleError } from '../domain/errors/invalid-role.error.js';
 import { ZoneRequiredError } from '../domain/errors/zone-required.error.js';
@@ -11,7 +13,7 @@ import { ZoneNotFoundError } from '../domain/errors/zone-not-found.error.js';
 import { UserNotFoundError } from '../domain/errors/user-not-found.error.js';
 
 describe('AssignUserRoleUseCase', () => {
-  const setup = () => {
+  const setup = (advisorRepoMock?: any, clientRepoMock?: any) => {
     const userRepo = {
       findOneBy: vi.fn(),
       save: vi.fn(),
@@ -21,8 +23,33 @@ describe('AssignUserRoleUseCase', () => {
       findOneBy: vi.fn(),
     } as unknown as Repository<ZoneOrmEntity>;
 
-    const useCase = new AssignUserRoleUseCase(userRepo, zoneRepo);
-    return { useCase, userRepo, zoneRepo };
+    const advRepo =
+      advisorRepoMock ??
+      ({
+        findOneBy: vi.fn().mockResolvedValue(null),
+        save: vi.fn(),
+      } as unknown as Repository<AdvisorOrmEntity>);
+
+    const cliRepo =
+      clientRepoMock ??
+      ({
+        findOneBy: vi.fn().mockResolvedValue(null),
+        save: vi.fn(),
+      } as unknown as Repository<ClientOrmEntity>);
+
+    const useCase = new AssignUserRoleUseCase(
+      userRepo,
+      zoneRepo,
+      advRepo,
+      cliRepo,
+    );
+    return {
+      useCase,
+      userRepo,
+      zoneRepo,
+      advisorRepo: advRepo,
+      clientRepo: cliRepo,
+    };
   };
 
   it('should throw InvalidRoleError when role is not a valid UserRole', async () => {
@@ -148,5 +175,94 @@ describe('AssignUserRoleUseCase', () => {
     });
     expect(mockUser.role).toBe(UserRole.ADMIN);
     expect(mockUser.zoneId).toBeNull();
+  });
+
+  it('should assign ASESOR role when matching advisor profile exists', async () => {
+    const advRepo = {
+      findOneBy: vi.fn(),
+      save: vi.fn(),
+    };
+    const { useCase, userRepo } = setup(advRepo);
+    const mockUser = {
+      id: 'u3',
+      email: 'adv@riwi.com',
+      role: UserRole.CLIENTE,
+    } as UserOrmEntity;
+    const mockAdvisor = {
+      idAsesor: 1,
+      correo: 'adv@riwi.com',
+      idUsuario: 'u3',
+    };
+
+    (userRepo.findOneBy as any).mockResolvedValue(mockUser);
+    (advRepo.findOneBy as any).mockResolvedValue(mockAdvisor);
+    (userRepo.save as any).mockImplementation((u: any) => Promise.resolve(u));
+
+    const result = await useCase.execute({
+      userId: 'u3',
+      role: UserRole.ASESOR,
+    });
+    expect(result.role).toBe(UserRole.ASESOR);
+  });
+
+  it('should assign CLIENTE role when matching client profile exists', async () => {
+    const cliRepo = {
+      findOneBy: vi.fn(),
+      save: vi.fn(),
+    };
+    const { useCase, userRepo } = setup(undefined, cliRepo);
+    const mockUser = {
+      id: 'u4',
+      email: 'cli@riwi.com',
+      role: UserRole.ASESOR,
+    } as UserOrmEntity;
+    const mockClient = { id: 2, email: 'cli@riwi.com', idUsuario: 'u4' };
+
+    (userRepo.findOneBy as any).mockResolvedValue(mockUser);
+    (cliRepo.findOneBy as any).mockResolvedValue(mockClient);
+    (userRepo.save as any).mockImplementation((u: any) => Promise.resolve(u));
+
+    const result = await useCase.execute({
+      userId: 'u4',
+      role: UserRole.CLIENTE,
+    });
+    expect(result.role).toBe(UserRole.CLIENTE);
+  });
+
+  it('should unlink advisor and client when changing to DIRECTOR_REGIONAL or ADMINISTRADOR', async () => {
+    const advRepo = { findOneBy: vi.fn(), save: vi.fn() };
+    const cliRepo = { findOneBy: vi.fn(), save: vi.fn() };
+    const { useCase, userRepo, zoneRepo } = setup(advRepo, cliRepo);
+
+    const mockUser = {
+      id: 'u5',
+      email: 'admin@riwi.com',
+      role: UserRole.ASESOR,
+    } as UserOrmEntity;
+    const mockAdvisor = {
+      idAsesor: 1,
+      correo: 'admin@riwi.com',
+      idUsuario: 'u5',
+    };
+    const mockClient = { id: 2, email: 'admin@riwi.com', idUsuario: 'u5' };
+
+    (userRepo.findOneBy as any).mockResolvedValue(mockUser);
+    (advRepo.findOneBy as any).mockResolvedValue(mockAdvisor);
+    (cliRepo.findOneBy as any).mockResolvedValue(mockClient);
+    (zoneRepo.findOneBy as any).mockResolvedValue({ id: 1 } as ZoneOrmEntity);
+    (userRepo.save as any).mockImplementation((u: any) => Promise.resolve(u));
+
+    await useCase.execute({
+      userId: 'u5',
+      role: UserRole.DIRECTOR_REGIONAL,
+      zoneId: 1,
+    });
+    expect(mockAdvisor.idUsuario).toBeNull();
+    expect(mockClient.idUsuario).toBeNull();
+    expect(advRepo.save).toHaveBeenCalledWith(mockAdvisor);
+    expect(cliRepo.save).toHaveBeenCalledWith(mockClient);
+
+    await useCase.execute({ userId: 'u5', role: UserRole.ADMINISTRADOR });
+    expect(advRepo.save).toHaveBeenCalled();
   });
 });

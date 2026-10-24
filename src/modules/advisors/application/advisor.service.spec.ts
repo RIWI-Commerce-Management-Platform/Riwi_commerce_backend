@@ -232,5 +232,55 @@ describe('AdvisorService', () => {
         idUsuario: 'user-1',
       }),
     ).rejects.toThrow(ConflictException);
+
+    const queryError3 = new QueryFailedError(
+      'query',
+      [],
+      new Error('duplicate'),
+    );
+    (queryError3 as any).driverError = {
+      code: '23505',
+      constraint: 'other_unique_constraint',
+    };
+    advisorRepository.save.mockRejectedValueOnce(queryError3);
+
+    await expect(
+      service.create({
+        nombre: 'Ana Pérez',
+        correo: 'ana@example.com',
+        telefono: '3001234567',
+        idUsuario: 'user-1',
+      }),
+    ).rejects.toThrow('An advisor with the same unique value already exists');
+  });
+
+  it('validates types and matching user email', async () => {
+    await expect(
+      service.create({
+        nombre: 123 as any,
+        correo: 'ana@example.com',
+        telefono: '3001234567',
+      }),
+    ).rejects.toThrow(BadRequestException);
+
+    await expect(
+      service.create({
+        nombre: 'Ana Pérez',
+        correo: 'mismatch@example.com',
+        telefono: '3001234567',
+        idUsuario: 'user-1',
+      }),
+    ).rejects.toThrow('The advisor email must match the linked user email');
+  });
+
+  it('updates advisor with user link checking exceptId', async () => {
+    const updated = await service.update(1, {
+      idUsuario: 'user-1',
+    });
+    expect(updated).toBeDefined();
+    expect(advisorQuery.andWhere).toHaveBeenCalledWith(
+      'advisor.idAsesor <> :exceptId',
+      { exceptId: 1 },
+    );
   });
 });
