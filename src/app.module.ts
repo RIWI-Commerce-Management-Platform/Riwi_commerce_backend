@@ -19,6 +19,7 @@ import { ReportsModule } from './modules/reports/reports.module.js';
 import { IndicatorsModule } from './modules/indicators/indicators.module.js';
 import { UsersModule } from './modules/users/users.module.js';
 import { DashboardModule } from './modules/dashboard/dashboard.module.js';
+import { VisitMapModule } from './modules/visit-map/visit-map.module.js';
 
 export const { ObserveModule, ObserveInstrument } = createObserveModule();
 
@@ -65,6 +66,7 @@ export const { ObserveModule, ObserveInstrument } = createObserveModule();
     IndicatorsModule,
     UsersModule,
     DashboardModule,
+    VisitMapModule,
   ],
   controllers: [AppController],
   providers: [AppService],
