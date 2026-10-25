@@ -27,7 +27,12 @@ export class SessionGuard implements CanActivate {
 
     const request = context.switchToHttp().getRequest();
     const headers = fromNodeHeaders(request.headers || {});
-    const session = await auth.api.getSession({ headers });
+    // Skip the cookie cache so a revoked session (e.g. a deactivated advisor,
+    // HU-07) stops working right away instead of after the cache's 5 minutes.
+    const session = await auth.api.getSession({
+      headers,
+      query: { disableCookieCache: true },
+    });
 
     if (!session || !session.session || !session.user) {
       throw new UnauthorizedException(

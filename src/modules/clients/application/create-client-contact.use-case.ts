@@ -1,10 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import { ClientContact } from '../domain/client-contact.entity.js';
-import { ClientContactRepository } from '../domain/client-contact.repository.js';
-import { ClientRepository } from '../domain/client.repository.js';
+import { ClientContactDao } from '../domain/client-contact.dao.js';
+import { ClientDao } from '../domain/client.dao.js';
 import { ClientNotFoundError } from '../domain/client-not-found.error.js';
+import { ActivityLogService } from '../../../shared/activity-log/domain/activity-log.service.js';
 
 export interface CreateClientContactInput {
+  actorId?: number;
   clientId: number;
   name: string;
   position: string;
@@ -17,17 +19,18 @@ export interface CreateClientContactInput {
 @Injectable()
 export class CreateClientContactUseCase {
   constructor(
-    private readonly clientRepository: ClientRepository,
-    private readonly contactRepository: ClientContactRepository,
+    private readonly clientDao: ClientDao,
+    private readonly contactDao: ClientContactDao,
+    private readonly activityLog: ActivityLogService,
   ) {}
 
   async execute(input: CreateClientContactInput): Promise<ClientContact> {
-    const client = await this.clientRepository.findById(input.clientId);
+    const client = await this.clientDao.findById(input.clientId);
     if (!client) {
       throw new ClientNotFoundError(input.clientId);
     }
 
-    const existingContacts = await this.contactRepository.findByClientId(
+    const existingContacts = await this.contactDao.findByClientId(
       input.clientId,
     );
 
@@ -36,7 +39,7 @@ export class CreateClientContactUseCase {
       input.isPrimary === true || existingContacts.length === 0;
 
     if (shouldBePrimary) {
-      await this.contactRepository.unsetPrimaryByClientId(input.clientId);
+      await this.contactDao.unsetPrimaryByClientId(input.clientId);
     }
 
     const now = new Date();
@@ -53,6 +56,19 @@ export class CreateClientContactUseCase {
       updatedAt: now,
     });
 
-    return this.contactRepository.save(contact);
+    const saved = await this.contactDao.save(contact);
+
+    if (input.actorId !== undefined) {
+      await this.activityLog.record({
+        action: 'client.contact_created',
+        entityType: 'client_contact',
+        entityId: saved.id!,
+        clientId: saved.clientId,
+        actorId: input.actorId,
+        description: `Contact ${saved.name} created`,
+      });
+    }
+
+    return saved;
   }
 }

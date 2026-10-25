@@ -76,3 +76,53 @@ describe('RegisterUseCase', () => {
     ).rejects.toThrow(RegistrationFailedError);
   });
 });
+
+describe('RegisterUseCase error details', () => {
+  const input = { name: 'Ana', email: 'a@b.co', password: 'x', headers: {} };
+  const run = (signUpEmail: ReturnType<typeof vi.fn>) =>
+    new RegisterUseCase({
+      api: { signUpEmail },
+    } as unknown as AuthService).execute(input);
+  const failedResponse = (json: ReturnType<typeof vi.fn>) =>
+    ({
+      ok: false,
+      headers: { getSetCookie: () => [] },
+      json,
+    }) as unknown as Response;
+
+  it('still fails when the error body is not JSON', async () => {
+    const signUpEmail = vi
+      .fn()
+      .mockResolvedValue(
+        failedResponse(vi.fn().mockRejectedValue(new SyntaxError('bad json'))),
+      );
+
+    await expect(run(signUpEmail)).rejects.toThrow(RegistrationFailedError);
+  });
+
+  it('uses the status text when the body has no message', async () => {
+    const signUpEmail = vi
+      .fn()
+      .mockResolvedValue(
+        failedResponse(
+          vi.fn().mockResolvedValue({ statusText: 'UNAUTHORIZED' }),
+        ),
+      );
+
+    await expect(run(signUpEmail)).rejects.toThrow('UNAUTHORIZED');
+  });
+
+  it('uses the Better Auth error body message when the call throws', async () => {
+    const signUpEmail = vi
+      .fn()
+      .mockRejectedValue({ body: { message: 'Blocked by hook' } });
+
+    await expect(run(signUpEmail)).rejects.toThrow('Blocked by hook');
+  });
+
+  it('wraps a thrown value that is not an Error', async () => {
+    const signUpEmail = vi.fn().mockRejectedValue('boom');
+
+    await expect(run(signUpEmail)).rejects.toThrow(RegistrationFailedError);
+  });
+});

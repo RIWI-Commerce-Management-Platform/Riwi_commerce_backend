@@ -23,6 +23,7 @@ export class OrderMapper {
       orderNumber: orm.orderNumber,
       quoteId: orm.quoteId,
       clientId: orm.clientId,
+      advisorId: orm.advisorId ?? null,
       status: orm.status as OrderStatus,
       subtotal: Number(orm.subtotal),
       total: Number(orm.total),
@@ -40,6 +41,7 @@ export class OrderMapper {
     orm.orderNumber = domain.orderNumber;
     orm.quoteId = domain.quoteId;
     orm.clientId = domain.clientId;
+    orm.advisorId = domain.advisorId;
     orm.status = domain.status;
     orm.subtotal = domain.subtotal;
     orm.total = domain.total;

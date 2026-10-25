@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { GetQuoteByIdUseCase } from './get-quote-by-id.use-case.js';
-import { QuoteRepository } from '../domain/quote.repository.js';
+import { QuoteDao } from '../domain/quote.dao.js';
 import { FileStorageService } from '../../../shared/file-storage/domain/file-storage.service.js';
 import { Quote } from '../domain/quote.entity.js';
 import { QuoteStatus } from '../domain/quote-status.enum.js';
@@ -8,7 +8,7 @@ import { QuoteNotFoundError } from '../domain/errors/quote-not-found.error.js';
 
 describe('GetQuoteByIdUseCase', () => {
   let useCase: GetQuoteByIdUseCase;
-  let quoteRepository: Partial<QuoteRepository>;
+  let quoteDao: Partial<QuoteDao>;
   let fileStorageService: Partial<FileStorageService>;
 
   const mockQuote = new Quote({
@@ -25,7 +25,7 @@ describe('GetQuoteByIdUseCase', () => {
   });
 
   beforeEach(() => {
-    quoteRepository = {
+    quoteDao = {
       findById: vi.fn().mockResolvedValue(mockQuote),
     };
     fileStorageService = {
@@ -34,7 +34,7 @@ describe('GetQuoteByIdUseCase', () => {
         .mockResolvedValue('https://s3.amazonaws.com/quotes/soporte.pdf'),
     };
     useCase = new GetQuoteByIdUseCase(
-      quoteRepository as QuoteRepository,
+      quoteDao as QuoteDao,
       fileStorageService as FileStorageService,
     );
   });
@@ -42,7 +42,7 @@ describe('GetQuoteByIdUseCase', () => {
   it('returns quote and generates presigned url when documentKey is present', async () => {
     const result = await useCase.execute(1);
 
-    expect(quoteRepository.findById).toHaveBeenCalledWith(1);
+    expect(quoteDao.findById).toHaveBeenCalledWith(1, {});
     expect(fileStorageService.getPresignedUrl).toHaveBeenCalledWith(
       'quotes/soporte.pdf',
     );
@@ -64,7 +64,7 @@ describe('GetQuoteByIdUseCase', () => {
       createdAt: new Date(),
       updatedAt: new Date(),
     });
-    vi.mocked(quoteRepository.findById!).mockResolvedValue(quoteWithoutDoc);
+    vi.mocked(quoteDao.findById!).mockResolvedValue(quoteWithoutDoc);
 
     const result = await useCase.execute(2);
 
@@ -74,7 +74,7 @@ describe('GetQuoteByIdUseCase', () => {
   });
 
   it('throws QuoteNotFoundError if quote does not exist', async () => {
-    vi.mocked(quoteRepository.findById!).mockResolvedValue(null);
+    vi.mocked(quoteDao.findById!).mockResolvedValue(null);
 
     await expect(useCase.execute(999)).rejects.toThrow(QuoteNotFoundError);
   });

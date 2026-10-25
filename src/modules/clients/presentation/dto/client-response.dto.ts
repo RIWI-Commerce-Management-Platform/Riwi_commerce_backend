@@ -85,4 +85,3 @@ export class ClientResponseDto {
     this.updatedAt = client.updatedAt;
   }
 }
-

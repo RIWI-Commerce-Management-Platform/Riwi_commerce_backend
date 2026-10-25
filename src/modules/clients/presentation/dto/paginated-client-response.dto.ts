@@ -9,4 +9,3 @@ export class PaginatedClientResponseDto extends PaginatedResponseDto<ClientRespo
   })
   declare data: ClientResponseDto[];
 }
-

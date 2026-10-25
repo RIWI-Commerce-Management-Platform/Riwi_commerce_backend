@@ -1,8 +1,9 @@
 import { describe, expect, it, vi } from 'vitest';
 import { Client } from '../domain/client.entity.js';
-import { ClientRepository } from '../domain/client.repository.js';
+import { ClientDao } from '../domain/client.dao.js';
 import { ClientFilterCriteria } from '../domain/client-filter.criteria.js';
 import { FindClientsUseCase } from './find-clients.use-case.js';
+import { UserRole } from '../../auth/domain/user-role.enum.js';
 import { PaginatedResult } from '../../../shared/pagination/paginated-result.interface.js';
 
 describe('FindClientsUseCase', () => {
@@ -11,14 +12,14 @@ describe('FindClientsUseCase', () => {
   const findByNit = vi.fn();
   const findPaginated = vi.fn();
 
-  const mockRepository: ClientRepository = {
+  const mockDao: ClientDao = {
     save,
     findById,
     findByNit,
     findPaginated,
   };
 
-  it('should call clientRepository.findPaginated and return result', async () => {
+  it('should call clientDao.findPaginated and return result', async () => {
     const dummyClient = new Client({
       id: 1,
       nit: '900123456-1',
@@ -56,7 +57,7 @@ describe('FindClientsUseCase', () => {
 
     findPaginated.mockResolvedValueOnce(expectedResult);
 
-    const useCase = new FindClientsUseCase(mockRepository);
+    const useCase = new FindClientsUseCase(mockDao);
     const criteria: ClientFilterCriteria = {
       search: 'Andes',
       zoneId: 10,
@@ -68,5 +69,29 @@ describe('FindClientsUseCase', () => {
 
     expect(findPaginated).toHaveBeenCalledWith(criteria);
     expect(result).toEqual(expectedResult);
+  });
+});
+
+describe('FindClientsUseCase role scope', () => {
+  it('limits a regional director to their zone', async () => {
+    const findPaginated = vi.fn().mockResolvedValue({ data: [], meta: {} });
+    const useCase = new FindClientsUseCase({
+      findPaginated,
+    } as unknown as ClientDao);
+
+    await useCase.execute(
+      { page: 1, limit: 10, zoneId: 99 },
+      {
+        id: 2,
+        role: UserRole.DIRECTOR_REGIONAL,
+        zoneId: 4,
+      },
+    );
+
+    expect(findPaginated).toHaveBeenCalledWith({
+      page: 1,
+      limit: 10,
+      zoneId: 4,
+    });
   });
 });

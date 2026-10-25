@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { CatalogRepository } from '../domain/catalog.repository.js';
+import { CatalogDao } from '../domain/catalog.dao.js';
 import {
   ClientType,
   Potential,
@@ -18,7 +18,7 @@ export interface CreateCatalogItemInput {
 
 @Injectable()
 export class CreateCatalogItemUseCase {
-  constructor(private readonly catalogRepository: CatalogRepository) {}
+  constructor(private readonly catalogDao: CatalogDao) {}
 
   async execute(input: CreateCatalogItemInput): Promise<unknown> {
     const now = new Date();
@@ -31,7 +31,7 @@ export class CreateCatalogItemUseCase {
           createdAt: now,
           updatedAt: now,
         });
-        return this.catalogRepository.saveClientType(item);
+        return this.catalogDao.saveClientType(item);
       }
       case 'potentials': {
         const item = new Potential({
@@ -41,7 +41,7 @@ export class CreateCatalogItemUseCase {
           createdAt: now,
           updatedAt: now,
         });
-        return this.catalogRepository.savePotential(item);
+        return this.catalogDao.savePotential(item);
       }
       case 'client-statuses': {
         const item = new ClientStatus({
@@ -50,7 +50,7 @@ export class CreateCatalogItemUseCase {
           createdAt: now,
           updatedAt: now,
         });
-        return this.catalogRepository.saveClientStatus(item);
+        return this.catalogDao.saveClientStatus(item);
       }
       case 'portfolios': {
         const item = new Portfolio({
@@ -60,7 +60,7 @@ export class CreateCatalogItemUseCase {
           createdAt: now,
           updatedAt: now,
         });
-        return this.catalogRepository.savePortfolio(item);
+        return this.catalogDao.savePortfolio(item);
       }
       case 'visit-results': {
         const item = new VisitResult({
@@ -69,7 +69,7 @@ export class CreateCatalogItemUseCase {
           createdAt: now,
           updatedAt: now,
         });
-        return this.catalogRepository.saveVisitResult(item);
+        return this.catalogDao.saveVisitResult(item);
       }
       default:
         throw new InvalidCatalogTypeError(input.type);

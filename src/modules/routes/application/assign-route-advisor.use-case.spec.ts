@@ -1,7 +1,9 @@
 import { describe, expect, it, vi } from 'vitest';
 import { AssignRouteAdvisorUseCase } from './assign-route-advisor.use-case.js';
-import { RouteRepository } from '../domain/route.repository.js';
+import { RouteDao } from '../domain/route.dao.js';
 import { VisitSchedulerPort } from './ports/visit-scheduler.port.js';
+import { RouteAdvisorReaderPort } from './ports/route-advisor-reader.port.js';
+import { InvalidRouteAdvisorError } from '../domain/errors/invalid-route-advisor.error.js';
 import { Route } from '../domain/route.entity.js';
 import { RouteStatus } from '../domain/route-status.enum.js';
 import { DayOfWeek } from '../domain/day-of-week.enum.js';
@@ -25,7 +27,7 @@ describe('AssignRouteAdvisorUseCase', () => {
     return route;
   };
 
-  const createMockRepo = (route = createRouteWithStops()): RouteRepository => ({
+  const createMockDao = (route = createRouteWithStops()): RouteDao => ({
     findById: vi.fn().mockResolvedValue(route),
     findByNameAndZone: vi.fn(),
     findPaginated: vi.fn(),
@@ -37,18 +39,26 @@ describe('AssignRouteAdvisorUseCase', () => {
     scheduleVisitsForRoute: vi.fn().mockResolvedValue(4),
   });
 
+  const createMockAdvisorReader = (active = true): RouteAdvisorReaderPort => ({
+    isActiveAdvisor: vi.fn().mockResolvedValue(active),
+  });
+
   it('should assign advisor, update status to ASSIGNED, and schedule visits', async () => {
     const route = createRouteWithStops();
-    const repo = createMockRepo(route);
+    const dao = createMockDao(route);
     const visitScheduler = createMockVisitScheduler();
 
-    const useCase = new AssignRouteAdvisorUseCase(repo, visitScheduler);
+    const useCase = new AssignRouteAdvisorUseCase(
+      dao,
+      visitScheduler,
+      createMockAdvisorReader(),
+    );
 
     const result = await useCase.execute(1, 10);
 
     expect(result.advisorId).toBe(10);
     expect(result.status).toBe(RouteStatus.ASSIGNED);
-    expect(repo.save).toHaveBeenCalled();
+    expect(dao.save).toHaveBeenCalled();
     expect(visitScheduler.scheduleVisitsForRoute).toHaveBeenCalledWith(
       expect.objectContaining({
         routeId: 1,
@@ -62,11 +72,12 @@ describe('AssignRouteAdvisorUseCase', () => {
   });
 
   it('should throw RouteNotFoundError if route does not exist', async () => {
-    const repo = createMockRepo();
-    vi.mocked(repo.findById).mockResolvedValueOnce(null);
+    const dao = createMockDao();
+    vi.mocked(dao.findById).mockResolvedValueOnce(null);
     const useCase = new AssignRouteAdvisorUseCase(
-      repo,
+      dao,
       createMockVisitScheduler(),
+      createMockAdvisorReader(),
     );
 
     await expect(useCase.execute(999, 10)).rejects.toThrow(RouteNotFoundError);
@@ -75,27 +86,29 @@ describe('AssignRouteAdvisorUseCase', () => {
   it('should throw RouteHasNoStopsError if route has zero stops', async () => {
     const emptyRoute = new Route({
       id: 1,
-      name: 'Ruta Vacía',
+      name: 'Empty route',
       zoneId: 1,
       dayOfWeek: DayOfWeek.MONDAY,
       frequency: RouteFrequency.WEEKLY,
       startDate: new Date(),
     });
 
-    const repo = createMockRepo(emptyRoute);
+    const dao = createMockDao(emptyRoute);
     const useCase = new AssignRouteAdvisorUseCase(
-      repo,
+      dao,
       createMockVisitScheduler(),
+      createMockAdvisorReader(),
     );
 
     await expect(useCase.execute(1, 10)).rejects.toThrow(RouteHasNoStopsError);
   });
 
   it('should throw UnauthorizedZoneError if director manages different zone', async () => {
-    const repo = createMockRepo();
+    const dao = createMockDao();
     const useCase = new AssignRouteAdvisorUseCase(
-      repo,
+      dao,
       createMockVisitScheduler(),
+      createMockAdvisorReader(),
     );
 
     const actor = {
@@ -107,5 +120,21 @@ describe('AssignRouteAdvisorUseCase', () => {
     await expect(useCase.execute(1, 10, actor)).rejects.toThrow(
       UnauthorizedZoneError,
     );
+  });
+
+  it('should throw InvalidRouteAdvisorError if the advisor is not active', async () => {
+    const dao = createMockDao();
+    const visitScheduler = createMockVisitScheduler();
+    const useCase = new AssignRouteAdvisorUseCase(
+      dao,
+      visitScheduler,
+      createMockAdvisorReader(false),
+    );
+
+    await expect(useCase.execute(1, 10)).rejects.toThrow(
+      InvalidRouteAdvisorError,
+    );
+    expect(dao.save).not.toHaveBeenCalled();
+    expect(visitScheduler.scheduleVisitsForRoute).not.toHaveBeenCalled();
   });
 });

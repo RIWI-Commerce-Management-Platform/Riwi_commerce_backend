@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { ReorderRouteStopsUseCase } from './reorder-route-stops.use-case.js';
-import { RouteRepository } from '../domain/route.repository.js';
+import { RouteDao } from '../domain/route.dao.js';
 import { RouteClientReaderPort } from './ports/route-client-reader.port.js';
 import { RouteDistanceCalculatorPort } from './ports/route-distance-calculator.port.js';
 import { Route } from '../domain/route.entity.js';
@@ -26,7 +26,7 @@ describe('ReorderRouteStopsUseCase', () => {
     return route;
   };
 
-  const createMockRepo = (route = createRouteWithStops()): RouteRepository => ({
+  const createMockDao = (route = createRouteWithStops()): RouteDao => ({
     findById: vi.fn().mockResolvedValue(route),
     findByNameAndZone: vi.fn(),
     findPaginated: vi.fn(),
@@ -48,9 +48,9 @@ describe('ReorderRouteStopsUseCase', () => {
 
   it('should reorder stops according to new sequence', async () => {
     const route = createRouteWithStops();
-    const repo = createMockRepo(route);
+    const dao = createMockDao(route);
     const useCase = new ReorderRouteStopsUseCase(
-      repo,
+      dao,
       createMockClientReader(),
       createMockDistanceCalculator(),
     );
@@ -63,14 +63,14 @@ describe('ReorderRouteStopsUseCase', () => {
     expect(result.stops[1].visitOrder).toBe(2);
     expect(result.stops[2].clientId).toBe(102);
     expect(result.stops[2].visitOrder).toBe(3);
-    expect(repo.save).toHaveBeenCalled();
+    expect(dao.save).toHaveBeenCalled();
   });
 
   it('should throw RouteNotFoundError if route not found', async () => {
-    const repo = createMockRepo();
-    vi.mocked(repo.findById).mockResolvedValueOnce(null);
+    const dao = createMockDao();
+    vi.mocked(dao.findById).mockResolvedValueOnce(null);
     const useCase = new ReorderRouteStopsUseCase(
-      repo,
+      dao,
       createMockClientReader(),
       createMockDistanceCalculator(),
     );
@@ -81,9 +81,9 @@ describe('ReorderRouteStopsUseCase', () => {
   });
 
   it('should throw UnauthorizedZoneError if director manages different zone', async () => {
-    const repo = createMockRepo();
+    const dao = createMockDao();
     const useCase = new ReorderRouteStopsUseCase(
-      repo,
+      dao,
       createMockClientReader(),
       createMockDistanceCalculator(),
     );
@@ -111,7 +111,7 @@ describe('ReorderRouteStopsUseCase', () => {
     route.addStop(101, '09:00:00', 45);
     const calculator = createMockDistanceCalculator();
     const useCase = new ReorderRouteStopsUseCase(
-      createMockRepo(route),
+      createMockDao(route),
       createMockClientReader(),
       calculator,
     );
@@ -132,7 +132,7 @@ describe('ReorderRouteStopsUseCase', () => {
     ] as never);
     const calculator = createMockDistanceCalculator();
     const useCase = new ReorderRouteStopsUseCase(
-      createMockRepo(),
+      createMockDao(),
       clientReader,
       calculator,
     );

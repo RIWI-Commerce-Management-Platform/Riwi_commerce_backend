@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { CreateCatalogItemUseCase } from './create-catalog-item.use-case.js';
-import { CatalogRepository } from '../domain/catalog.repository.js';
+import { CatalogDao } from '../domain/catalog.dao.js';
 import { InvalidCatalogTypeError } from '../domain/catalog-errors.js';
 import {
   ClientStatus,
@@ -12,20 +12,20 @@ import {
 
 describe('CreateCatalogItemUseCase', () => {
   const setup = () => {
-    const repository = {
+    const dao = {
       saveClientType: vi.fn((item) => Promise.resolve(item)),
       savePotential: vi.fn((item) => Promise.resolve(item)),
       saveClientStatus: vi.fn((item) => Promise.resolve(item)),
       savePortfolio: vi.fn((item) => Promise.resolve(item)),
       saveVisitResult: vi.fn((item) => Promise.resolve(item)),
-    } as unknown as CatalogRepository;
+    } as unknown as CatalogDao;
 
-    const useCase = new CreateCatalogItemUseCase(repository);
-    return { useCase, repository };
+    const useCase = new CreateCatalogItemUseCase(dao);
+    return { useCase, dao };
   };
 
   it('should create a client type successfully', async () => {
-    const { useCase, repository } = setup();
+    const { useCase, dao } = setup();
 
     const result = (await useCase.execute({
       type: 'client-types',
@@ -34,11 +34,11 @@ describe('CreateCatalogItemUseCase', () => {
 
     expect(result.name).toBe('Supermercado');
     expect(result.id).toBeUndefined();
-    expect(repository.saveClientType).toHaveBeenCalled();
+    expect(dao.saveClientType).toHaveBeenCalled();
   });
 
   it('should create a potential successfully with default order and explicit order', async () => {
-    const { useCase, repository } = setup();
+    const { useCase } = setup();
 
     const res1 = (await useCase.execute({
       type: 'potentials',
@@ -56,7 +56,7 @@ describe('CreateCatalogItemUseCase', () => {
   });
 
   it('should create a client status successfully', async () => {
-    const { useCase, repository } = setup();
+    const { useCase, dao } = setup();
 
     const result = (await useCase.execute({
       type: 'client-statuses',
@@ -64,11 +64,11 @@ describe('CreateCatalogItemUseCase', () => {
     })) as ClientStatus;
 
     expect(result.name).toBe('Activo');
-    expect(repository.saveClientStatus).toHaveBeenCalled();
+    expect(dao.saveClientStatus).toHaveBeenCalled();
   });
 
   it('should create a portfolio successfully with description and without', async () => {
-    const { useCase, repository } = setup();
+    const { useCase } = setup();
 
     const res1 = (await useCase.execute({
       type: 'portfolios',
@@ -86,7 +86,7 @@ describe('CreateCatalogItemUseCase', () => {
   });
 
   it('should create a visit result successfully', async () => {
-    const { useCase, repository } = setup();
+    const { useCase, dao } = setup();
 
     const result = (await useCase.execute({
       type: 'visit-results',
@@ -94,7 +94,7 @@ describe('CreateCatalogItemUseCase', () => {
     })) as VisitResult;
 
     expect(result.name).toBe('Venta');
-    expect(repository.saveVisitResult).toHaveBeenCalled();
+    expect(dao.saveVisitResult).toHaveBeenCalled();
   });
 
   it('should throw InvalidCatalogTypeError for unknown catalog type', async () => {

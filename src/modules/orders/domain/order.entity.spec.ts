@@ -39,7 +39,9 @@ describe('Order entity (Domain)', () => {
   describe('QuoteAlreadyConvertedError', () => {
     it('formats error without orderNumber', () => {
       const error = new QuoteAlreadyConvertedError(10);
-      expect(error.message).toBe('Quote with ID 10 has already been converted to an order.');
+      expect(error.message).toBe(
+        'Quote with ID 10 has already been converted to an order.',
+      );
     });
   });
 

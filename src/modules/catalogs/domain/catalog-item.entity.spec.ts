@@ -58,21 +58,21 @@ describe('Catalog Domain Entities', () => {
     const item = new Portfolio({
       id: 3,
       name: 'Abarrotes',
-      description: 'Línea de granos',
+      description: 'Grains line',
       isActive: true,
       createdAt: new Date(),
       updatedAt: new Date(),
     });
 
     expect(item.name).toBe('Abarrotes');
-    expect(item.description).toBe('Línea de granos');
+    expect(item.description).toBe('Grains line');
 
-    item.update('Abarrotes y Granos', 'Nueva descripción');
+    item.update('Abarrotes y Granos', 'New description');
     expect(item.name).toBe('Abarrotes y Granos');
-    expect(item.description).toBe('Nueva descripción');
+    expect(item.description).toBe('New description');
 
-    item.update(undefined, 'Otra descripción');
-    expect(item.description).toBe('Otra descripción');
+    item.update(undefined, 'Another description');
+    expect(item.description).toBe('Another description');
 
     item.update('Solo Granos', undefined);
     expect(item.name).toBe('Solo Granos');

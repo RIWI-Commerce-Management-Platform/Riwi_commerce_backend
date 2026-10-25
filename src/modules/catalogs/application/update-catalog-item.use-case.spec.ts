@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { UpdateCatalogItemUseCase } from './update-catalog-item.use-case.js';
-import { CatalogRepository } from '../domain/catalog.repository.js';
+import { CatalogDao } from '../domain/catalog.dao.js';
 import {
   CatalogItemNotFoundError,
   InvalidCatalogTypeError,
@@ -15,7 +15,7 @@ import {
 
 describe('UpdateCatalogItemUseCase', () => {
   const setup = () => {
-    const repository = {
+    const dao = {
       findClientTypeById: vi.fn(),
       saveClientType: vi.fn((item) => Promise.resolve(item)),
       findPotentialById: vi.fn(),
@@ -26,14 +26,14 @@ describe('UpdateCatalogItemUseCase', () => {
       savePortfolio: vi.fn((item) => Promise.resolve(item)),
       findVisitResultById: vi.fn(),
       saveVisitResult: vi.fn((item) => Promise.resolve(item)),
-    } as unknown as CatalogRepository;
+    } as unknown as CatalogDao;
 
-    const useCase = new UpdateCatalogItemUseCase(repository);
-    return { useCase, repository };
+    const useCase = new UpdateCatalogItemUseCase(dao);
+    return { useCase, dao };
   };
 
   it('should update and deactivate client type', async () => {
-    const { useCase, repository } = setup();
+    const { useCase, dao } = setup();
     const item = new ClientType({
       id: 1,
       name: 'Original',
@@ -41,7 +41,7 @@ describe('UpdateCatalogItemUseCase', () => {
       createdAt: new Date(),
       updatedAt: new Date(),
     });
-    vi.mocked(repository.findClientTypeById).mockResolvedValue(item);
+    vi.mocked(dao.findClientTypeById).mockResolvedValue(item);
 
     const result = (await useCase.execute({
       type: 'client-types',
@@ -52,11 +52,11 @@ describe('UpdateCatalogItemUseCase', () => {
 
     expect(result.name).toBe('Updated Name');
     expect(result.isActive).toBe(false);
-    expect(repository.saveClientType).toHaveBeenCalled();
+    expect(dao.saveClientType).toHaveBeenCalled();
   });
 
   it('should update and deactivate potential', async () => {
-    const { useCase, repository } = setup();
+    const { useCase, dao } = setup();
     const item = new Potential({
       id: 2,
       name: 'Original',
@@ -65,7 +65,7 @@ describe('UpdateCatalogItemUseCase', () => {
       createdAt: new Date(),
       updatedAt: new Date(),
     });
-    vi.mocked(repository.findPotentialById).mockResolvedValue(item);
+    vi.mocked(dao.findPotentialById).mockResolvedValue(item);
 
     const result = (await useCase.execute({
       type: 'potentials',
@@ -81,7 +81,7 @@ describe('UpdateCatalogItemUseCase', () => {
   });
 
   it('should update and deactivate client status', async () => {
-    const { useCase, repository } = setup();
+    const { useCase, dao } = setup();
     const item = new ClientStatus({
       id: 3,
       name: 'Activo',
@@ -89,7 +89,7 @@ describe('UpdateCatalogItemUseCase', () => {
       createdAt: new Date(),
       updatedAt: new Date(),
     });
-    vi.mocked(repository.findClientStatusById).mockResolvedValue(item);
+    vi.mocked(dao.findClientStatusById).mockResolvedValue(item);
 
     const result = (await useCase.execute({
       type: 'client-statuses',
@@ -103,7 +103,7 @@ describe('UpdateCatalogItemUseCase', () => {
   });
 
   it('should update and deactivate portfolio', async () => {
-    const { useCase, repository } = setup();
+    const { useCase, dao } = setup();
     const item = new Portfolio({
       id: 4,
       name: 'Bebidas',
@@ -112,7 +112,7 @@ describe('UpdateCatalogItemUseCase', () => {
       createdAt: new Date(),
       updatedAt: new Date(),
     });
-    vi.mocked(repository.findPortfolioById).mockResolvedValue(item);
+    vi.mocked(dao.findPortfolioById).mockResolvedValue(item);
 
     const result = (await useCase.execute({
       type: 'portfolios',
@@ -128,7 +128,7 @@ describe('UpdateCatalogItemUseCase', () => {
   });
 
   it('should update and deactivate visit result', async () => {
-    const { useCase, repository } = setup();
+    const { useCase, dao } = setup();
     const item = new VisitResult({
       id: 5,
       name: 'Pendiente',
@@ -136,7 +136,7 @@ describe('UpdateCatalogItemUseCase', () => {
       createdAt: new Date(),
       updatedAt: new Date(),
     });
-    vi.mocked(repository.findVisitResultById).mockResolvedValue(item);
+    vi.mocked(dao.findVisitResultById).mockResolvedValue(item);
 
     const result = (await useCase.execute({
       type: 'visit-results',
@@ -150,12 +150,12 @@ describe('UpdateCatalogItemUseCase', () => {
   });
 
   it('should throw CatalogItemNotFoundError if item does not exist for any type', async () => {
-    const { useCase, repository } = setup();
-    vi.mocked(repository.findClientTypeById).mockResolvedValue(null);
-    vi.mocked(repository.findPotentialById).mockResolvedValue(null);
-    vi.mocked(repository.findClientStatusById).mockResolvedValue(null);
-    vi.mocked(repository.findPortfolioById).mockResolvedValue(null);
-    vi.mocked(repository.findVisitResultById).mockResolvedValue(null);
+    const { useCase, dao } = setup();
+    vi.mocked(dao.findClientTypeById).mockResolvedValue(null);
+    vi.mocked(dao.findPotentialById).mockResolvedValue(null);
+    vi.mocked(dao.findClientStatusById).mockResolvedValue(null);
+    vi.mocked(dao.findPortfolioById).mockResolvedValue(null);
+    vi.mocked(dao.findVisitResultById).mockResolvedValue(null);
 
     await expect(
       useCase.execute({ type: 'client-types', id: 999 }),
@@ -188,4 +188,51 @@ describe('UpdateCatalogItemUseCase', () => {
       }),
     ).rejects.toThrow(InvalidCatalogTypeError);
   });
+});
+
+describe('UpdateCatalogItemUseCase without changes', () => {
+  const base = {
+    id: 1,
+    name: 'Original',
+    isActive: true,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  };
+
+  it.each([
+    ['client-types', 'findClientTypeById', () => new ClientType(base)],
+    [
+      'potentials',
+      'findPotentialById',
+      () => new Potential({ ...base, order: 1 }),
+    ],
+    ['client-statuses', 'findClientStatusById', () => new ClientStatus(base)],
+    [
+      'portfolios',
+      'findPortfolioById',
+      () => new Portfolio({ ...base, description: 'Desc' }),
+    ],
+    ['visit-results', 'findVisitResultById', () => new VisitResult(base)],
+  ] as const)(
+    'keeps the %s item active and its name when nothing is sent',
+    async (type, finder, build) => {
+      const dao = {
+        [finder]: vi.fn().mockResolvedValue(build()),
+        saveClientType: vi.fn((item) => Promise.resolve(item)),
+        savePotential: vi.fn((item) => Promise.resolve(item)),
+        saveClientStatus: vi.fn((item) => Promise.resolve(item)),
+        savePortfolio: vi.fn((item) => Promise.resolve(item)),
+        saveVisitResult: vi.fn((item) => Promise.resolve(item)),
+      } as unknown as CatalogDao;
+
+      const result = (await new UpdateCatalogItemUseCase(dao).execute({
+        type,
+        id: 1,
+        isActive: true,
+      })) as { name: string; isActive: boolean };
+
+      expect(result.name).toBe('Original');
+      expect(result.isActive).toBe(true);
+    },
+  );
 });

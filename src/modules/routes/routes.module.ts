@@ -4,10 +4,11 @@ import { RouteOrmEntity } from './infrastructure/route.orm-entity.js';
 import { RouteStopOrmEntity } from './infrastructure/route-stop.orm-entity.js';
 import { VisitOrmEntity } from '../visit/infrastructure/visit.orm-entity.js';
 import { UserOrmEntity } from '../auth/infrastructure/user.orm-entity.js';
+import { AdvisorOrmEntity } from '../advisors/infrastructure/advisor.orm-entity.js';
 import { ClientsModule } from '../clients/clients.module.js';
 
-import { RouteRepository } from './domain/route.repository.js';
-import { TypeOrmRouteRepository } from './infrastructure/typeorm-route.repository.js';
+import { RouteDao } from './domain/route.dao.js';
+import { TypeOrmRouteDao } from './infrastructure/typeorm-route.dao.js';
 
 import { RouteClientReaderPort } from './application/ports/route-client-reader.port.js';
 import { TypeOrmRouteClientReaderAdapter } from './infrastructure/typeorm-route-client-reader.adapter.js';
@@ -17,6 +18,9 @@ import { HaversineRouteDistanceCalculatorAdapter } from './infrastructure/havers
 
 import { VisitSchedulerPort } from './application/ports/visit-scheduler.port.js';
 import { TypeOrmVisitSchedulerAdapter } from './infrastructure/typeorm-visit-scheduler.adapter.js';
+
+import { RouteAdvisorReaderPort } from './application/ports/route-advisor-reader.port.js';
+import { TypeOrmRouteAdvisorReaderAdapter } from './infrastructure/typeorm-route-advisor-reader.adapter.js';
 
 import { CreateRouteDraftUseCase } from './application/create-route-draft.use-case.js';
 import { UpdateRouteDraftUseCase } from './application/update-route-draft.use-case.js';
@@ -34,11 +38,8 @@ import { SessionGuard } from '../auth/guards/session.guard.js';
 import { RolesGuard } from '../auth/guards/roles.guard.js';
 
 /**
- * Módulo de Rutas Comerciales (Épica E3 - Alejandro).
- * 
- * En este módulo configuro la inyección de dependencias de NestJS enlazando cada puerto abstracto
- * con su implementación correspondiente en infraestructura y registrando los casos de uso
- * y el controlador HTTP.
+ * Commercial routes module (epic E3). Binds each port to its infrastructure
+ * implementation and registers the use cases and the controller.
  */
 @Module({
   imports: [
@@ -47,12 +48,13 @@ import { RolesGuard } from '../auth/guards/roles.guard.js';
       RouteStopOrmEntity,
       VisitOrmEntity,
       UserOrmEntity,
+      AdvisorOrmEntity,
     ]),
     ClientsModule,
   ],
   controllers: [RoutesController],
   providers: [
-    // Casos de uso de negocio
+    // Use cases
     CreateRouteDraftUseCase,
     UpdateRouteDraftUseCase,
     AddRouteStopUseCase,
@@ -64,10 +66,10 @@ import { RolesGuard } from '../auth/guards/roles.guard.js';
     GetRouteByIdUseCase,
     ToggleRouteStatusUseCase,
 
-    // Enlace de puertos a adaptadores de infraestructura
+    // Ports bound to infrastructure adapters
     {
-      provide: RouteRepository,
-      useClass: TypeOrmRouteRepository,
+      provide: RouteDao,
+      useClass: TypeOrmRouteDao,
     },
     {
       provide: RouteClientReaderPort,
@@ -81,15 +83,15 @@ import { RolesGuard } from '../auth/guards/roles.guard.js';
       provide: VisitSchedulerPort,
       useClass: TypeOrmVisitSchedulerAdapter,
     },
+    {
+      provide: RouteAdvisorReaderPort,
+      useClass: TypeOrmRouteAdvisorReaderAdapter,
+    },
 
-    // Guards de seguridad y autenticación
+    // Auth guards
     SessionGuard,
     RolesGuard,
   ],
-  exports: [
-    RouteRepository,
-    FindRoutesUseCase,
-    GetRouteByIdUseCase,
-  ],
+  exports: [RouteDao, FindRoutesUseCase, GetRouteByIdUseCase],
 })
 export class RoutesModule {}

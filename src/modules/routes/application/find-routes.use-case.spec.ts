@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { FindRoutesUseCase } from './find-routes.use-case.js';
-import { RouteRepository } from '../domain/route.repository.js';
+import { RouteDao } from '../domain/route.dao.js';
 import { Route } from '../domain/route.entity.js';
 import { DayOfWeek } from '../domain/day-of-week.enum.js';
 import { RouteFrequency } from '../domain/route-frequency.enum.js';
@@ -19,7 +19,7 @@ describe('FindRoutesUseCase', () => {
   ];
 
   it('should list routes with pagination', async () => {
-    const repo: RouteRepository = {
+    const dao: RouteDao = {
       findById: vi.fn(),
       findByNameAndZone: vi.fn(),
       findPaginated: vi.fn().mockResolvedValue({
@@ -37,7 +37,7 @@ describe('FindRoutesUseCase', () => {
       delete: vi.fn(),
     };
 
-    const useCase = new FindRoutesUseCase(repo);
+    const useCase = new FindRoutesUseCase(dao);
     const result = await useCase.execute({ page: 1, limit: 10 });
 
     expect(result.data).toHaveLength(1);
@@ -45,7 +45,7 @@ describe('FindRoutesUseCase', () => {
   });
 
   it('should enforce zone filter for regional directors', async () => {
-    const repo: RouteRepository = {
+    const dao: RouteDao = {
       findById: vi.fn(),
       findByNameAndZone: vi.fn(),
       findPaginated: vi.fn().mockResolvedValue({ data: [], meta: {} as any }),
@@ -53,7 +53,7 @@ describe('FindRoutesUseCase', () => {
       delete: vi.fn(),
     };
 
-    const useCase = new FindRoutesUseCase(repo);
+    const useCase = new FindRoutesUseCase(dao);
     const actor = {
       id: 1,
       role: UserRole.DIRECTOR_REGIONAL,
@@ -62,8 +62,26 @@ describe('FindRoutesUseCase', () => {
 
     await useCase.execute({ zoneId: 1 }, actor);
 
-    expect(repo.findPaginated).toHaveBeenCalledWith(
+    expect(dao.findPaginated).toHaveBeenCalledWith(
       expect.objectContaining({ zoneId: 3 }),
+    );
+  });
+
+  it('limits an advisor to their own routes (HU-06)', async () => {
+    const dao: RouteDao = {
+      findById: vi.fn(),
+      findByNameAndZone: vi.fn(),
+      findPaginated: vi.fn().mockResolvedValue({ data: [], meta: {} as any }),
+      save: vi.fn(),
+      delete: vi.fn(),
+    };
+
+    const useCase = new FindRoutesUseCase(dao);
+
+    await useCase.execute({ advisorId: 99 }, { id: 7, role: UserRole.ASESOR });
+
+    expect(dao.findPaginated).toHaveBeenCalledWith(
+      expect.objectContaining({ advisorId: 7 }),
     );
   });
 });

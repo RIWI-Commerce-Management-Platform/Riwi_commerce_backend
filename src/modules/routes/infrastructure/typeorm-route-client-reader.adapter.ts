@@ -3,24 +3,20 @@ import {
   RouteClientReaderPort,
   RouteClientDetails,
 } from '../application/ports/route-client-reader.port.js';
-import { ClientRepository } from '../../clients/domain/client.repository.js';
+import { ClientDao } from '../../clients/domain/client.dao.js';
 
 /**
- * Adaptador de infraestructura que implementa `RouteClientReaderPort`.
- * 
- * En este adaptador consumo el repositorio de clientes de Yesid (Épica E2)
- * para extraer las coordenadas geográficas, zona y datos comerciales necesarios
- * para planificar las rutas y renderizarlas en el mapa interactivo.
+ * RouteClientReaderPort implementation. Reads clients through the clients
+ * module DAO (epic E2) to get the coordinates, zone and commercial
+ * data needed to plan routes and draw them on the map.
  */
 @Injectable()
 export class TypeOrmRouteClientReaderAdapter implements RouteClientReaderPort {
-  constructor(private readonly clientRepository: ClientRepository) {}
+  constructor(private readonly clientDao: ClientDao) {}
 
-  /**
-   * Con este método obtengo un cliente individual con sus coordenadas.
-   */
+  /** One client with its coordinates. */
   async findById(id: number): Promise<RouteClientDetails | null> {
-    const client = await this.clientRepository.findById(id);
+    const client = await this.clientDao.findById(id);
     if (!client) {
       return null;
     }
@@ -37,9 +33,7 @@ export class TypeOrmRouteClientReaderAdapter implements RouteClientReaderPort {
     };
   }
 
-  /**
-   * Con este método obtengo múltiples clientes en paralelo para alimentar el mapa y los cálculos de ruta.
-   */
+  /** Several clients at once, for the map and the route metrics. */
   async findByIds(ids: number[]): Promise<RouteClientDetails[]> {
     if (ids.length === 0) {
       return [];
@@ -47,7 +41,7 @@ export class TypeOrmRouteClientReaderAdapter implements RouteClientReaderPort {
 
     const uniqueIds = Array.from(new Set(ids));
     const results = await Promise.all(
-      uniqueIds.map((id) => this.clientRepository.findById(id)),
+      uniqueIds.map((id) => this.clientDao.findById(id)),
     );
 
     const details: RouteClientDetails[] = [];

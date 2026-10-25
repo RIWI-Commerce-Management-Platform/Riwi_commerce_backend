@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { TypeOrmRouteClientReaderAdapter } from './typeorm-route-client-reader.adapter.js';
-import { ClientRepository } from '../../clients/domain/client.repository.js';
+import { ClientDao } from '../../clients/domain/client.dao.js';
 import { Client } from '../../clients/domain/client.entity.js';
 
 describe('TypeOrmRouteClientReaderAdapter', () => {
@@ -21,13 +21,13 @@ describe('TypeOrmRouteClientReaderAdapter', () => {
     clientStatusId: 1,
     visitFrequencyDays: 7,
     latitude: 10.99,
-    longitude: -74.80,
+    longitude: -74.8,
     isActive: true,
     createdAt: new Date(),
     updatedAt: new Date(),
   });
 
-  const createMockClientRepo = (): ClientRepository => ({
+  const createMockClientDao = (): ClientDao => ({
     findById: vi.fn().mockImplementation((id: number) => {
       if (id === 1) return Promise.resolve(mockClient);
       return Promise.resolve(null);
@@ -38,8 +38,8 @@ describe('TypeOrmRouteClientReaderAdapter', () => {
   });
 
   it('should find a client by id and map to RouteClientDetails', async () => {
-    const repo = createMockClientRepo();
-    const adapter = new TypeOrmRouteClientReaderAdapter(repo);
+    const dao = createMockClientDao();
+    const adapter = new TypeOrmRouteClientReaderAdapter(dao);
 
     const result = await adapter.findById(1);
 
@@ -51,19 +51,30 @@ describe('TypeOrmRouteClientReaderAdapter', () => {
   });
 
   it('should return null when client is not found', async () => {
-    const repo = createMockClientRepo();
-    const adapter = new TypeOrmRouteClientReaderAdapter(repo);
+    const dao = createMockClientDao();
+    const adapter = new TypeOrmRouteClientReaderAdapter(dao);
 
     const result = await adapter.findById(999);
     expect(result).toBeNull();
   });
 
   it('should find multiple clients by ids', async () => {
-    const repo = createMockClientRepo();
-    const adapter = new TypeOrmRouteClientReaderAdapter(repo);
+    const dao = createMockClientDao();
+    const adapter = new TypeOrmRouteClientReaderAdapter(dao);
 
     const results = await adapter.findByIds([1, 999]);
     expect(results).toHaveLength(1);
     expect(results[0].id).toBe(1);
+  });
+
+  it('returns an empty list without querying when no ids are given', async () => {
+    const dao = createMockClientDao();
+
+    const results = await new TypeOrmRouteClientReaderAdapter(dao).findByIds(
+      [],
+    );
+
+    expect(results).toEqual([]);
+    expect(dao.findById).not.toHaveBeenCalled();
   });
 });

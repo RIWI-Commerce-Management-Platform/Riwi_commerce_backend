@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { ToggleRouteStatusUseCase } from './toggle-route-status.use-case.js';
-import { RouteRepository } from '../domain/route.repository.js';
+import { RouteDao } from '../domain/route.dao.js';
 import { Route } from '../domain/route.entity.js';
 import { RouteStatus } from '../domain/route-status.enum.js';
 import { DayOfWeek } from '../domain/day-of-week.enum.js';
@@ -22,7 +22,7 @@ describe('ToggleRouteStatusUseCase', () => {
 
   it('should deactivate an active route', async () => {
     const route = createRoute();
-    const repo: RouteRepository = {
+    const dao: RouteDao = {
       findById: vi.fn().mockResolvedValue(route),
       findByNameAndZone: vi.fn(),
       findPaginated: vi.fn(),
@@ -30,7 +30,7 @@ describe('ToggleRouteStatusUseCase', () => {
       delete: vi.fn(),
     };
 
-    const useCase = new ToggleRouteStatusUseCase(repo);
+    const useCase = new ToggleRouteStatusUseCase(dao);
     const result = await useCase.execute(1);
 
     expect(result.isActive).toBe(false);
@@ -41,7 +41,7 @@ describe('ToggleRouteStatusUseCase', () => {
     const route = createRoute();
     route.deactivate();
 
-    const repo: RouteRepository = {
+    const dao: RouteDao = {
       findById: vi.fn().mockResolvedValue(route),
       findByNameAndZone: vi.fn(),
       findPaginated: vi.fn(),
@@ -49,7 +49,7 @@ describe('ToggleRouteStatusUseCase', () => {
       delete: vi.fn(),
     };
 
-    const useCase = new ToggleRouteStatusUseCase(repo);
+    const useCase = new ToggleRouteStatusUseCase(dao);
     const result = await useCase.execute(1);
 
     expect(result.isActive).toBe(true);
@@ -57,7 +57,7 @@ describe('ToggleRouteStatusUseCase', () => {
   });
 
   it('should throw RouteNotFoundError if route does not exist', async () => {
-    const repo: RouteRepository = {
+    const dao: RouteDao = {
       findById: vi.fn().mockResolvedValue(null),
       findByNameAndZone: vi.fn(),
       findPaginated: vi.fn(),
@@ -65,13 +65,13 @@ describe('ToggleRouteStatusUseCase', () => {
       delete: vi.fn(),
     };
 
-    const useCase = new ToggleRouteStatusUseCase(repo);
+    const useCase = new ToggleRouteStatusUseCase(dao);
     await expect(useCase.execute(999)).rejects.toThrow(RouteNotFoundError);
   });
 
   it('should throw UnauthorizedZoneError if regional director manages different zone', async () => {
     const route = createRoute();
-    const repo: RouteRepository = {
+    const dao: RouteDao = {
       findById: vi.fn().mockResolvedValue(route),
       findByNameAndZone: vi.fn(),
       findPaginated: vi.fn(),
@@ -79,7 +79,7 @@ describe('ToggleRouteStatusUseCase', () => {
       delete: vi.fn(),
     };
 
-    const useCase = new ToggleRouteStatusUseCase(repo);
+    const useCase = new ToggleRouteStatusUseCase(dao);
     const actor = {
       id: 1,
       role: UserRole.DIRECTOR_REGIONAL,

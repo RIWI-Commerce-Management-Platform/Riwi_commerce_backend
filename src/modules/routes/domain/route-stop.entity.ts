@@ -1,5 +1,5 @@
 /**
- * Propiedades necesarias para instanciar una parada de cliente dentro de mi ruta comercial.
+ * Properties needed to build a client stop of a route.
  */
 export interface RouteStopProps {
   id?: number;
@@ -12,10 +12,9 @@ export interface RouteStopProps {
 }
 
 /**
- * Entidad de dominio que representa una parada específica dentro de la ruta comercial (RUTA_CLIENTE).
- * 
- * En mi modelo, cada parada asocia a un cliente con un orden de visita secuencial (1, 2, 3...),
- * una hora sugerida de llegada y un tiempo estimado de atención comercial.
+ * A stop of a commercial route (RUTA_CLIENTE): a client with its sequential
+ * visit order (1, 2, 3...), a suggested arrival time and an estimated
+ * duration of the visit.
  */
 export class RouteStop {
   readonly id?: number;
@@ -40,7 +39,7 @@ export class RouteStop {
   }
 
   /**
-   * Con este método actualizo la posición secuencial de esta parada en mi recorrido.
+   * Changes the position of this stop in the route.
    */
   changeOrder(newOrder: number): void {
     if (newOrder < 1) {
@@ -50,14 +49,14 @@ export class RouteStop {
   }
 
   /**
-   * Con este método establezco o modifico la hora sugerida de visita (ej: '09:30:00').
+   * Sets the suggested visit time (e.g. '09:30:00').
    */
   updateSuggestedTime(time: string | null): void {
     this.suggestedTime = time;
   }
 
   /**
-   * Con este método ajusto la estimación de tiempo (en minutos) que el asesor dedicará a este cliente.
+   * Sets how many minutes the advisor is expected to spend with this client.
    */
   updateEstimatedDuration(minutes: number): void {
     if (minutes <= 0) {

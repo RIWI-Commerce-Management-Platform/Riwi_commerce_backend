@@ -1,9 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { SelectQueryBuilder } from 'typeorm';
-import {
-  applyCommercialFilters,
-  paginateQuery,
-} from './typeorm-paginator.js';
+import { applyCommercialFilters, paginateQuery } from './typeorm-paginator.js';
 
 describe('TypeOrmPaginator (Shared)', () => {
   describe('applyCommercialFilters', () => {
@@ -19,9 +16,12 @@ describe('TypeOrmPaginator (Shared)', () => {
         endDate: '2026-10-31',
       });
 
-      expect(qbMock.andWhere).toHaveBeenCalledWith('order.clientId = :clientId', {
-        clientId: 42,
-      });
+      expect(qbMock.andWhere).toHaveBeenCalledWith(
+        'order.clientId = :clientId',
+        {
+          clientId: 42,
+        },
+      );
       expect(qbMock.andWhere).toHaveBeenCalledWith('order.status = :status', {
         status: 'APPROVED',
       });

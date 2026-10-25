@@ -1,8 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import { Quote } from '../domain/quote.entity.js';
-import { QuoteRepository } from '../domain/quote.repository.js';
+import { QuoteDao } from '../domain/quote.dao.js';
 import { QuoteNotFoundError } from '../domain/errors/quote-not-found.error.js';
 import { FileStorageService } from '../../../shared/file-storage/domain/file-storage.service.js';
+import {
+  CurrentActor,
+  scopeForActor,
+} from '../../../shared/auth/domain/current-actor.provider.js';
 
 export interface GetQuoteByIdResult {
   quote: Quote;
@@ -12,12 +16,12 @@ export interface GetQuoteByIdResult {
 @Injectable()
 export class GetQuoteByIdUseCase {
   constructor(
-    private readonly quoteRepository: QuoteRepository,
+    private readonly quoteDao: QuoteDao,
     private readonly fileStorageService: FileStorageService,
   ) {}
 
-  async execute(id: number): Promise<GetQuoteByIdResult> {
-    const quote = await this.quoteRepository.findById(id);
+  async execute(id: number, actor?: CurrentActor): Promise<GetQuoteByIdResult> {
+    const quote = await this.quoteDao.findById(id, scopeForActor(actor));
     if (!quote) {
       throw new QuoteNotFoundError(id);
     }

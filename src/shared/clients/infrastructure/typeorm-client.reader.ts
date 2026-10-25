@@ -1,27 +1,27 @@
 import { Injectable } from '@nestjs/common';
 
 import { ClientReader, ClientSnapshot } from '../domain/client-reader.js';
-import { ClientRepository } from '../../../modules/clients/domain/client.repository.js';
-import { ClientContactRepository } from '../../../modules/clients/domain/client-contact.repository.js';
-import { CatalogRepository } from '../../../modules/catalogs/domain/catalog.repository.js';
+import { ClientDao } from '../../../modules/clients/domain/client.dao.js';
+import { ClientContactDao } from '../../../modules/clients/domain/client-contact.dao.js';
+import { CatalogDao } from '../../../modules/catalogs/domain/catalog.dao.js';
 
 @Injectable()
 export class TypeOrmClientReader implements ClientReader {
   constructor(
-    private readonly clientRepository: ClientRepository,
-    private readonly clientContactRepository: ClientContactRepository,
-    private readonly catalogRepository: CatalogRepository,
+    private readonly clientDao: ClientDao,
+    private readonly clientContactDao: ClientContactDao,
+    private readonly catalogDao: CatalogDao,
   ) {}
 
   async findById(id: number): Promise<ClientSnapshot | null> {
-    const client = await this.clientRepository.findById(id);
+    const client = await this.clientDao.findById(id);
     if (!client) {
       return null;
     }
 
     const [contacts, potential] = await Promise.all([
-      this.clientContactRepository.findByClientId(id),
-      this.catalogRepository.findPotentialById(client.potentialId),
+      this.clientContactDao.findByClientId(id),
+      this.catalogDao.findPotentialById(client.potentialId),
     ]);
     const primaryContact =
       contacts.find((contact) => contact.isPrimary) ?? contacts[0] ?? null;

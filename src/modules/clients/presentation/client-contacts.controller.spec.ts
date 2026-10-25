@@ -139,17 +139,17 @@ describe('ClientContactsController', () => {
       new ClientNotFoundError(10),
     );
 
-    await expect(
-      controller.update(10, 1, { name: 'X' }),
-    ).rejects.toThrow(NotFoundException);
+    await expect(controller.update(10, 1, { name: 'X' })).rejects.toThrow(
+      NotFoundException,
+    );
 
     vi.mocked(updateUseCase.execute).mockRejectedValueOnce(
       new ClientContactNotFoundError(1),
     );
 
-    await expect(
-      controller.update(10, 1, { name: 'X' }),
-    ).rejects.toThrow(NotFoundException);
+    await expect(controller.update(10, 1, { name: 'X' })).rejects.toThrow(
+      NotFoundException,
+    );
   });
 
   it('should set primary contact successfully', async () => {
@@ -188,13 +188,18 @@ describe('ClientContactsController', () => {
       new ClientContactNotFoundError(999),
     );
 
-    await expect(controller.delete(10, 999)).rejects.toThrow(
-      NotFoundException,
-    );
+    await expect(controller.delete(10, 999)).rejects.toThrow(NotFoundException);
   });
 
   it('should rethrow unexpected errors', async () => {
-    const { controller, createUseCase, listUseCase, updateUseCase, setPrimaryUseCase, deleteUseCase } = setup();
+    const {
+      controller,
+      createUseCase,
+      listUseCase,
+      updateUseCase,
+      setPrimaryUseCase,
+      deleteUseCase,
+    } = setup();
     const err = new Error('Database crash');
 
     vi.mocked(createUseCase.execute).mockRejectedValueOnce(err);

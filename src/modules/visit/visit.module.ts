@@ -8,6 +8,40 @@ import { ClientsModule } from '../../shared/clients/clients.module.js';
 
 import { ActivityLogModule } from '../../shared/activity-log/activity-log.module.js';
 
+import { FileStorageModule } from '../../shared/file-storage/file-storage.module.js';
+
+import { FollowUpDao } from './domain/dao/follow-up.dao.js';
+
+import { VisitAttachmentDao } from './domain/dao/visit-attachment.dao.js';
+
+import { FollowUpOrmEntity } from './infrastructure/follow-up.orm-entity.js';
+
+import { VisitAttachmentOrmEntity } from './infrastructure/visit-attachment.orm-entity.js';
+
+import { TypeOrmFollowUpDao } from './infrastructure/dao/typeorm-follow-up.dao.js';
+
+import { TypeOrmVisitAttachmentDao } from './infrastructure/dao/typeorm-visit-attachment.dao.js';
+
+import { RescheduleVisitUseCase } from './application/use-cases/reschedule-visit.use-case.js';
+
+import { MarkVisitNotVisitedUseCase } from './application/use-cases/mark-visit-not-visited.use-case.js';
+
+import { RegisterCommercialOutcomeUseCase } from './application/use-cases/register-commercial-outcome.use-case.js';
+
+import { CreateFollowUpUseCase } from './application/use-cases/create-follow-up.use-case.js';
+
+import { GetFollowUpAgendaUseCase } from './application/use-cases/get-follow-up-agenda.use-case.js';
+
+import { CompleteFollowUpUseCase } from './application/use-cases/complete-follow-up.use-case.js';
+
+import { UploadVisitAttachmentUseCase } from './application/use-cases/upload-visit-attachment.use-case.js';
+
+import { ListVisitAttachmentsUseCase } from './application/use-cases/list-visit-attachments.use-case.js';
+
+import { DeleteVisitAttachmentUseCase } from './application/use-cases/delete-visit-attachment.use-case.js';
+
+import { FollowUpsController } from './presentation/controllers/follow-ups.controller.js';
+
 import { VisitDao } from './domain/dao/visit.dao.js';
 
 import { VisitResultCatalogDao } from './domain/dao/visit-result-catalog.dao.js';
@@ -32,21 +66,21 @@ import { RegisterVisitResultUseCase } from './application/use-cases/register-vis
 
 import { VisitsController } from './presentation/controllers/visit.controller.js';
 
-// TEMPORARY: hardcoded test users while Better Auth is not integrated
-// (owner: Efraín, E1). Remove this controller once the real auth module exists.
-
 @Module({
   imports: [
     TypeOrmModule.forFeature([
       VisitOrmEntity,
       VisitResultOptionOrmEntity,
       VisitResultLinkOrmEntity,
+      FollowUpOrmEntity,
+      VisitAttachmentOrmEntity,
     ]),
     AuthModule,
     ClientsModule,
     ActivityLogModule,
+    FileStorageModule,
   ],
-  controllers: [VisitsController],
+  controllers: [VisitsController, FollowUpsController],
   providers: [
     {
       provide: VisitDao,
@@ -60,6 +94,23 @@ import { VisitsController } from './presentation/controllers/visit.controller.js
     GetVisitByIdUseCase,
     StartVisitUseCase,
     RegisterVisitResultUseCase,
+    {
+      provide: FollowUpDao,
+      useClass: TypeOrmFollowUpDao,
+    },
+    {
+      provide: VisitAttachmentDao,
+      useClass: TypeOrmVisitAttachmentDao,
+    },
+    RescheduleVisitUseCase,
+    MarkVisitNotVisitedUseCase,
+    RegisterCommercialOutcomeUseCase,
+    CreateFollowUpUseCase,
+    GetFollowUpAgendaUseCase,
+    CompleteFollowUpUseCase,
+    UploadVisitAttachmentUseCase,
+    ListVisitAttachmentsUseCase,
+    DeleteVisitAttachmentUseCase,
   ],
   exports: [VisitDao, VisitResultCatalogDao],
 })

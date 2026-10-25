@@ -20,7 +20,9 @@ type MockRepository = {
   manager: { transaction: ReturnType<typeof vi.fn> };
 };
 
-function buildVisitEntity(overrides: Partial<VisitOrmEntity> = {}): VisitOrmEntity {
+function buildVisitEntity(
+  overrides: Partial<VisitOrmEntity> = {},
+): VisitOrmEntity {
   const entity = new VisitOrmEntity();
   entity.id = 1;
   entity.clientId = 10;
@@ -31,7 +33,7 @@ function buildVisitEntity(overrides: Partial<VisitOrmEntity> = {}): VisitOrmEnti
   entity.startTime = '09:00:00';
   entity.endTime = '10:30:00';
   entity.status = VisitStatus.VISITED;
-  entity.objective = 'Presentar catalogo';
+  entity.objective = 'Present the catalog';
   entity.observations = 'obs';
   Object.assign(entity, overrides);
   return entity;
@@ -173,7 +175,9 @@ describe('TypeOrmVisitDao', () => {
       { id: 1, name: 'Visita realizada', observation: undefined },
       { id: 2, name: 'Pedido capturado', observation: 'Con seguimiento' },
     ]);
-    expect(mockLinkRepository.find).toHaveBeenCalledWith({ where: { visitId: 1 } });
+    expect(mockLinkRepository.find).toHaveBeenCalledWith({
+      where: { visitId: 1 },
+    });
     expect(mockOptionRepository.find).toHaveBeenCalledTimes(1);
   });
 
@@ -192,22 +196,22 @@ describe('TypeOrmVisitDao', () => {
       id: 1,
       clientId: 10,
       advisorId: 20,
-      scheduledDate: new Date('2026-10-20'),
-      scheduledTime: '09:00',
+      scheduledAt: new Date('2026-10-20T09:00:00'),
+      routeId: null,
       status: VisitStatus.VISITED,
       actualDate: new Date('2026-10-20'),
       startTime: '09:00',
       endTime: '10:00',
-      objective: 'Presentar catalogo',
+      objective: 'Present the catalog',
       observations: 'obs',
-      results: [
-        { id: 1, name: 'Visita realizada', observation: 'Nota' },
-      ],
+      results: [{ id: 1, name: 'Visita realizada', observation: 'Nota' }],
     });
 
     mockRepository.save.mockResolvedValue(buildVisitEntity());
     mockLinkRepository.find.mockResolvedValue([buildLink(1, 'Nota')]);
-    mockOptionRepository.find.mockResolvedValue([buildOption(1, 'Visita realizada')]);
+    mockOptionRepository.find.mockResolvedValue([
+      buildOption(1, 'Visita realizada'),
+    ]);
 
     const saved = await dao.save(visitDomain);
     expect(saved.id).toBe(1);
@@ -220,18 +224,73 @@ describe('TypeOrmVisitDao', () => {
       id: 2,
       clientId: 10,
       advisorId: 20,
-      scheduledDate: new Date('2026-10-20'),
-      scheduledTime: '09:00',
+      scheduledAt: new Date('2026-10-20T09:00:00'),
+      routeId: null,
+      actualDate: null,
+      startTime: null,
+      endTime: null,
       status: VisitStatus.PENDING,
       objective: 'Presentar',
       results: [],
     });
 
-    mockRepository.save.mockResolvedValue(buildVisitEntity({ id: 2, status: VisitStatus.PENDING }));
+    mockRepository.save.mockResolvedValue(
+      buildVisitEntity({ id: 2, status: VisitStatus.PENDING }),
+    );
     mockLinkRepository.find.mockResolvedValue([]);
 
     const saved = await dao.save(visitDomain);
     expect(saved.id).toBe(2);
     expect(mockLinkRepository.delete).not.toHaveBeenCalled();
+  });
+
+  it('maps the agenda rows to domain visits', async () => {
+    mockRepository.find.mockResolvedValue([buildVisitEntity({ id: 7 })]);
+
+    const visits = await dao.findAgenda({
+      advisorId: 20,
+      startDate: new Date(2026, 9, 20),
+      endDate: new Date(2026, 9, 21),
+    });
+
+    expect(visits).toHaveLength(1);
+    expect(visits[0]).toBeInstanceOf(Visit);
+    expect(visits[0].id).toBe(7);
+  });
+
+  it('uses an empty name when a linked result option no longer exists', async () => {
+    mockRepository.findOne.mockResolvedValue(buildVisitEntity());
+    mockLinkRepository.find.mockResolvedValue([buildLink(9)]);
+    mockOptionRepository.find.mockResolvedValue([]);
+
+    const result = await dao.findByIdAndAdvisor(1, 20);
+
+    expect(result?.results).toEqual([
+      { id: 9, name: '', observation: undefined },
+    ]);
+  });
+
+  it('stores a null observation for results saved without one', async () => {
+    mockRepository.save.mockResolvedValue(buildVisitEntity());
+    mockLinkRepository.find.mockResolvedValue([]);
+
+    await dao.save(
+      new Visit({
+        id: 1,
+        clientId: 10,
+        advisorId: 20,
+        routeId: null,
+        scheduledAt: new Date('2026-10-20T09:00:00'),
+        actualDate: new Date('2026-10-20'),
+        startTime: '09:00',
+        endTime: '10:00',
+        status: VisitStatus.VISITED,
+        objective: null,
+        results: [{ id: 1, name: 'Visita realizada' }],
+      }),
+    );
+
+    const [links] = mockLinkRepository.save.mock.calls[0];
+    expect(links[0].observation).toBeNull();
   });
 });

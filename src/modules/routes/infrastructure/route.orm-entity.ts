@@ -12,11 +12,9 @@ import { RouteStopOrmEntity } from './route-stop.orm-entity.js';
 import type { ZoneOrmEntity } from '../../zones/infrastructure/zone.orm-entity.js';
 
 /**
- * Entidad de persistencia TypeORM para la tabla `routes` (RUTA).
- * 
- * En este modelo mapeo las rutas comerciales creadas por el Director Regional,
- * incluyendo datos generales de programación semanal, zona territorial, asesor
- * asignado y métricas de recorrido.
+ * TypeORM entity for the `routes` table (RUTA): the commercial routes
+ * created by regional directors, with their weekly schedule, zone, assigned
+ * advisor and route metrics.
  */
 @Entity('routes')
 export class RouteOrmEntity {
@@ -69,7 +67,11 @@ export class RouteOrmEntity {
   })
   totalDistanceKm!: number | null;
 
-  @Column({ name: 'estimated_duration_minutes', type: 'integer', nullable: true })
+  @Column({
+    name: 'estimated_duration_minutes',
+    type: 'integer',
+    nullable: true,
+  })
   estimatedDurationMinutes!: number | null;
 
   @Column({ name: 'is_active', type: 'boolean', default: true })

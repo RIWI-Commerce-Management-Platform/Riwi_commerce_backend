@@ -67,9 +67,9 @@ describe('Auth Module (e2e)', () => {
       const setCookieHeaders = response.headers['set-cookie'];
       expect(setCookieHeaders).toBeDefined();
 
-      const sessionCookie = (setCookieHeaders as string[]).find((c: string) =>
-        c.includes('better-auth.session_token='),
-      );
+      const sessionCookie = [setCookieHeaders]
+        .flat()
+        .find((c: string) => c.includes('better-auth.session_token='));
       expect(sessionCookie).toBeDefined();
       expect(sessionCookie).toMatch(/Max-Age=/i);
     });
@@ -89,9 +89,9 @@ describe('Auth Module (e2e)', () => {
       const setCookieHeaders = response.headers['set-cookie'];
       expect(setCookieHeaders).toBeDefined();
 
-      const sessionCookie = (setCookieHeaders as string[]).find((c: string) =>
-        c.includes('better-auth.session_token='),
-      );
+      const sessionCookie = [setCookieHeaders]
+        .flat()
+        .find((c: string) => c.includes('better-auth.session_token='));
       expect(sessionCookie).toBeDefined();
       expect(sessionCookie).not.toMatch(/Max-Age=/i);
     });
@@ -125,7 +125,8 @@ describe('Auth Module (e2e)', () => {
         .expect(200);
 
       const setCookieHeaders = loginRes.headers['set-cookie'];
-      const sessionTokenCookie = (setCookieHeaders as string[])
+      const sessionTokenCookie = [setCookieHeaders]
+        .flat()
         .find((c: string) => c.includes('better-auth.session_token='))
         ?.split(';')[0];
 
@@ -160,7 +161,8 @@ describe('Auth Module (e2e)', () => {
         .expect(200);
 
       const setCookieHeaders = loginRes.headers['set-cookie'];
-      const sessionTokenCookie = (setCookieHeaders as string[])
+      const sessionTokenCookie = [setCookieHeaders]
+        .flat()
         .find((c: string) => c.includes('better-auth.session_token='))
         ?.split(';')[0];
 

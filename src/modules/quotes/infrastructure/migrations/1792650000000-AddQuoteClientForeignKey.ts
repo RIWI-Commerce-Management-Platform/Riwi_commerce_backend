@@ -5,9 +5,7 @@ import { MigrationInterface, QueryRunner, TableForeignKey } from 'typeorm';
  * existing row already has a client_id that exists in clients(id) — this
  * will fail if orphaned rows are present.
  */
-export class AddQuoteClientForeignKey1792650000000
-  implements MigrationInterface
-{
+export class AddQuoteClientForeignKey1792650000000 implements MigrationInterface {
   name = 'AddQuoteClientForeignKey1792650000000';
 
   public async up(queryRunner: QueryRunner): Promise<void> {

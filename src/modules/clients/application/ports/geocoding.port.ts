@@ -10,4 +10,3 @@ export abstract class GeocodingPort {
     department?: string,
   ): Promise<GeocodingResult | null>;
 }
-

@@ -16,13 +16,7 @@ export class VisitSummaryResponseDto {
   scheduledAt: Date;
 
   @ApiProperty({
-    enum: [
-      'PENDING',
-      'IN_PROGRESS',
-      'VISITED',
-      'RESCHEDULE',
-      'NOT_VISITED',
-    ],
+    enum: ['PENDING', 'IN_PROGRESS', 'VISITED', 'RESCHEDULE', 'NOT_VISITED'],
   })
   status: string;
 

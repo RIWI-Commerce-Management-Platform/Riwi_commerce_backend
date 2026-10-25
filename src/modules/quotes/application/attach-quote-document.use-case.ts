@@ -1,8 +1,12 @@
 import { Injectable } from '@nestjs/common';
-import { QuoteRepository } from '../domain/quote.repository.js';
+import { QuoteDao } from '../domain/quote.dao.js';
 import { FileStorageService } from '../../../shared/file-storage/domain/file-storage.service.js';
 import { QuoteNotFoundError } from '../domain/errors/quote-not-found.error.js';
 import { Quote } from '../domain/quote.entity.js';
+import {
+  CurrentActor,
+  scopeForActor,
+} from '../../../shared/auth/domain/current-actor.provider.js';
 
 export interface AttachQuoteDocumentResult {
   quote: Quote;
@@ -19,15 +23,16 @@ export interface UploadFileInput {
 @Injectable()
 export class AttachQuoteDocumentUseCase {
   constructor(
-    private readonly quoteRepository: QuoteRepository,
+    private readonly quoteDao: QuoteDao,
     private readonly fileStorageService: FileStorageService,
   ) {}
 
   async execute(
     quoteId: number,
     file: UploadFileInput,
+    actor?: CurrentActor,
   ): Promise<AttachQuoteDocumentResult> {
-    const quote = await this.quoteRepository.findById(quoteId);
+    const quote = await this.quoteDao.findById(quoteId, scopeForActor(actor));
     if (!quote) {
       throw new QuoteNotFoundError(quoteId);
     }
@@ -40,7 +45,7 @@ export class AttachQuoteDocumentUseCase {
     });
 
     quote.attachDocument(uploadResult.key);
-    const updatedQuote = await this.quoteRepository.save(quote);
+    const updatedQuote = await this.quoteDao.save(quote);
 
     const documentUrl = await this.fileStorageService.getPresignedUrl(
       uploadResult.key,

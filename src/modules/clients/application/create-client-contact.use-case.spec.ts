@@ -3,8 +3,8 @@ import { CreateClientContactUseCase } from './create-client-contact.use-case.js'
 import { ClientContact } from '../domain/client-contact.entity.js';
 import { Client } from '../domain/client.entity.js';
 import { ClientNotFoundError } from '../domain/client-not-found.error.js';
-import { ClientRepository } from '../domain/client.repository.js';
-import { ClientContactRepository } from '../domain/client-contact.repository.js';
+import { ClientDao } from '../domain/client.dao.js';
+import { ClientContactDao } from '../domain/client-contact.dao.js';
 
 describe('CreateClientContactUseCase', () => {
   const createMockClient = (): Client =>
@@ -30,31 +30,33 @@ describe('CreateClientContactUseCase', () => {
     });
 
   const setup = () => {
-    const clientRepository = {
+    const clientDao = {
       findById: vi.fn(),
       save: vi.fn(),
       findByNit: vi.fn(),
       findPaginated: vi.fn(),
-    } as unknown as ClientRepository;
+    } as unknown as ClientDao;
 
-    const contactRepository = {
+    const contactDao = {
       save: vi.fn((c: ClientContact) => Promise.resolve(c)),
       findById: vi.fn(),
       findByClientId: vi.fn(),
       unsetPrimaryByClientId: vi.fn(),
-    } as unknown as ClientContactRepository;
+    } as unknown as ClientContactDao;
 
+    const activityLog = { record: vi.fn() };
     const useCase = new CreateClientContactUseCase(
-      clientRepository,
-      contactRepository,
+      clientDao,
+      contactDao,
+      activityLog as any,
     );
 
-    return { useCase, clientRepository, contactRepository };
+    return { useCase, clientDao, contactDao, activityLog };
   };
 
   it('should throw ClientNotFoundError if client does not exist', async () => {
-    const { useCase, clientRepository } = setup();
-    vi.mocked(clientRepository.findById).mockResolvedValue(null);
+    const { useCase, clientDao } = setup();
+    vi.mocked(clientDao.findById).mockResolvedValue(null);
 
     await expect(
       useCase.execute({
@@ -69,9 +71,9 @@ describe('CreateClientContactUseCase', () => {
   });
 
   it('should automatically set the first contact as primary', async () => {
-    const { useCase, clientRepository, contactRepository } = setup();
-    vi.mocked(clientRepository.findById).mockResolvedValue(createMockClient());
-    vi.mocked(contactRepository.findByClientId).mockResolvedValue([]);
+    const { useCase, clientDao, contactDao } = setup();
+    vi.mocked(clientDao.findById).mockResolvedValue(createMockClient());
+    vi.mocked(contactDao.findByClientId).mockResolvedValue([]);
 
     const result = await useCase.execute({
       clientId: 1,
@@ -84,14 +86,14 @@ describe('CreateClientContactUseCase', () => {
     });
 
     expect(result.isPrimary).toBe(true);
-    expect(contactRepository.unsetPrimaryByClientId).toHaveBeenCalledWith(1);
-    expect(contactRepository.save).toHaveBeenCalled();
+    expect(contactDao.unsetPrimaryByClientId).toHaveBeenCalledWith(1);
+    expect(contactDao.save).toHaveBeenCalled();
   });
 
   it('should unmark previous primary when creating a new primary contact', async () => {
-    const { useCase, clientRepository, contactRepository } = setup();
-    vi.mocked(clientRepository.findById).mockResolvedValue(createMockClient());
-    vi.mocked(contactRepository.findByClientId).mockResolvedValue([
+    const { useCase, clientDao, contactDao } = setup();
+    vi.mocked(clientDao.findById).mockResolvedValue(createMockClient());
+    vi.mocked(contactDao.findByClientId).mockResolvedValue([
       new ClientContact({
         id: 1,
         clientId: 1,
@@ -118,13 +120,13 @@ describe('CreateClientContactUseCase', () => {
     });
 
     expect(result.isPrimary).toBe(true);
-    expect(contactRepository.unsetPrimaryByClientId).toHaveBeenCalledWith(1);
+    expect(contactDao.unsetPrimaryByClientId).toHaveBeenCalledWith(1);
   });
 
   it('should create secondary contact without unsetting primary', async () => {
-    const { useCase, clientRepository, contactRepository } = setup();
-    vi.mocked(clientRepository.findById).mockResolvedValue(createMockClient());
-    vi.mocked(contactRepository.findByClientId).mockResolvedValue([
+    const { useCase, clientDao, contactDao } = setup();
+    vi.mocked(clientDao.findById).mockResolvedValue(createMockClient());
+    vi.mocked(contactDao.findByClientId).mockResolvedValue([
       new ClientContact({
         id: 1,
         clientId: 1,
@@ -151,6 +153,27 @@ describe('CreateClientContactUseCase', () => {
     });
 
     expect(result.isPrimary).toBe(false);
-    expect(contactRepository.unsetPrimaryByClientId).not.toHaveBeenCalled();
+    expect(contactDao.unsetPrimaryByClientId).not.toHaveBeenCalled();
+  });
+
+  it('records the new contact in the activity log when an actor is given', async () => {
+    const { useCase, clientDao, contactDao, activityLog } = setup();
+    vi.mocked(clientDao.findById).mockResolvedValue(createMockClient());
+    vi.mocked(contactDao.findByClientId).mockResolvedValue([]);
+
+    await useCase.execute({
+      clientId: 1,
+      name: 'Maria Gomez',
+      position: 'Compras',
+      phone: '123',
+      mobile: '456',
+      email: 'maria@test.com',
+      isPrimary: true,
+      actorId: 3,
+    });
+
+    expect(activityLog.record).toHaveBeenCalledWith(
+      expect.objectContaining({ action: 'client.contact_created', actorId: 3 }),
+    );
   });
 });

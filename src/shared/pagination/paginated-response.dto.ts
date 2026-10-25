@@ -55,7 +55,10 @@ export class PaginatedResponseDto<T> {
   @ApiProperty({ isArray: true, description: 'List of records' })
   data: T[];
 
-  @ApiProperty({ type: () => PaginationMetaDto, description: 'Pagination metadata' })
+  @ApiProperty({
+    type: () => PaginationMetaDto,
+    description: 'Pagination metadata',
+  })
   meta: PaginationMetaDto;
 
   constructor(data: T[], meta: PaginationMeta) {
@@ -70,4 +73,3 @@ export class PaginatedResponseDto<T> {
     return new PaginatedResponseDto(result.data.map(mapper), result.meta);
   }
 }
-

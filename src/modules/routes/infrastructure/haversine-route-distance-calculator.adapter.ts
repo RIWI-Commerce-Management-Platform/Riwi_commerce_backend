@@ -6,22 +6,20 @@ import {
 } from '../application/ports/route-distance-calculator.port.js';
 
 /**
- * Adaptador de infraestructura que implementa `RouteDistanceCalculatorPort` (HU-22).
- * 
- * En este adaptador calculo la distancia geodésica acumulada entre paradas consecutivas
- * utilizando la fórmula de Haversine, complementada con un factor de corrección de trazado
- * vial urbano (1.3x) y una velocidad promedio estimada de 25 km/h para ciudades colombianas,
- * sumando además los tiempos de atención pactados en cada cliente.
+ * RouteDistanceCalculatorPort implementation (HU-22).
+ *
+ * Adds up the Haversine distance between consecutive stops, multiplies it by
+ * an urban detour factor (1.3x) to approximate the real street network, and
+ * estimates driving time at 25 km/h (Colombian city average) plus the
+ * attention time planned for each client.
  */
 @Injectable()
 export class HaversineRouteDistanceCalculatorAdapter implements RouteDistanceCalculatorPort {
   private readonly EARTH_RADIUS_KM = 6371;
-  private readonly URBAN_DETOUR_FACTOR = 1.3; // Factor de curvatura de vías urbanas
+  private readonly URBAN_DETOUR_FACTOR = 1.3; // Urban street detour factor
   private readonly AVERAGE_URBAN_SPEED_KMH = 25; // Velocidad promedio de desplazamiento
 
-  /**
-   * Con este método calculo los kilómetros totales y minutos estimados de todo el recorrido.
-   */
+  /** Total kilometers and estimated minutes of the whole route. */
   async calculateMetrics(
     waypoints: RouteWaypoint[],
     totalStopDurationMinutes = 0,
@@ -46,11 +44,14 @@ export class HaversineRouteDistanceCalculatorAdapter implements RouteDistanceCal
       );
     }
 
-    // Aplico el factor de corrección para aproximar la red de calles reales
+    // Approximate the real street network
     const realisticDistanceKm = rawDistanceKm * this.URBAN_DETOUR_FACTOR;
-    const drivingTimeMinutes = (realisticDistanceKm / this.AVERAGE_URBAN_SPEED_KMH) * 60;
+    const drivingTimeMinutes =
+      (realisticDistanceKm / this.AVERAGE_URBAN_SPEED_KMH) * 60;
 
-    const totalMinutes = Math.round(drivingTimeMinutes + totalStopDurationMinutes);
+    const totalMinutes = Math.round(
+      drivingTimeMinutes + totalStopDurationMinutes,
+    );
     const roundedDistanceKm = Math.round(realisticDistanceKm * 100) / 100;
 
     return {
@@ -59,9 +60,7 @@ export class HaversineRouteDistanceCalculatorAdapter implements RouteDistanceCal
     };
   }
 
-  /**
-   * Fórmula matemática de Haversine para obtener la distancia geodésica sobre la superficie terrestre.
-   */
+  /** Haversine great-circle distance on the Earth's surface, in km. */
   private _haversineDistance(
     lat1: number,
     lon1: number,

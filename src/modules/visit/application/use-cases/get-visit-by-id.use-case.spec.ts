@@ -21,7 +21,7 @@ function buildVisit() {
     startTime: null,
     endTime: null,
     status: VisitStatus.PENDING,
-    objective: 'Presentar catalogo',
+    objective: 'Present the catalog',
   });
 }
 
@@ -45,9 +45,9 @@ describe('GetVisitByIdUseCase', () => {
   });
 
   it('returns the visit when the advisor owns it', async () => {
-    (mockVisitDao.findByIdAndAdvisor as ReturnType<typeof vi.fn>).mockResolvedValue(
-      buildVisit(),
-    );
+    (
+      mockVisitDao.findByIdAndAdvisor as ReturnType<typeof vi.fn>
+    ).mockResolvedValue(buildVisit());
 
     const result = await useCase.execute(1, 20);
 
@@ -56,26 +56,26 @@ describe('GetVisitByIdUseCase', () => {
   });
 
   it('throws NotFound when the visit does not exist', async () => {
-    (mockVisitDao.findByIdAndAdvisor as ReturnType<typeof vi.fn>).mockResolvedValue(
-      null,
-    );
+    (
+      mockVisitDao.findByIdAndAdvisor as ReturnType<typeof vi.fn>
+    ).mockResolvedValue(null);
 
     await expect(useCase.execute(999, 20)).rejects.toThrow(NotFoundException);
   });
 
   it('throws NotFound when the visit belongs to another advisor', async () => {
-    (mockVisitDao.findByIdAndAdvisor as ReturnType<typeof vi.fn>).mockResolvedValue(
-      null,
-    );
+    (
+      mockVisitDao.findByIdAndAdvisor as ReturnType<typeof vi.fn>
+    ).mockResolvedValue(null);
 
     await expect(useCase.execute(1, 999)).rejects.toThrow(NotFoundException);
     expect(mockVisitDao.findByIdAndAdvisor).toHaveBeenCalledWith(1, 999);
   });
 
   it('enriches the visit with client details when the client contract returns data', async () => {
-    (mockVisitDao.findByIdAndAdvisor as ReturnType<typeof vi.fn>).mockResolvedValue(
-      buildVisit(),
-    );
+    (
+      mockVisitDao.findByIdAndAdvisor as ReturnType<typeof vi.fn>
+    ).mockResolvedValue(buildVisit());
     (mockClientReader.findById as ReturnType<typeof vi.fn>).mockResolvedValue({
       id: 10,
       name: 'Distribuciones Andina',
@@ -91,10 +91,12 @@ describe('GetVisitByIdUseCase', () => {
   });
 
   it('keeps client fields empty when the client contract is not available yet', async () => {
-    (mockVisitDao.findByIdAndAdvisor as ReturnType<typeof vi.fn>).mockResolvedValue(
-      buildVisit(),
+    (
+      mockVisitDao.findByIdAndAdvisor as ReturnType<typeof vi.fn>
+    ).mockResolvedValue(buildVisit());
+    (mockClientReader.findById as ReturnType<typeof vi.fn>).mockResolvedValue(
+      null,
     );
-    (mockClientReader.findById as ReturnType<typeof vi.fn>).mockResolvedValue(null);
 
     const result = await useCase.execute(1, 20);
 

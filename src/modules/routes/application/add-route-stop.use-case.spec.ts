@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { AddRouteStopUseCase } from './add-route-stop.use-case.js';
-import { RouteRepository } from '../domain/route.repository.js';
+import { RouteDao } from '../domain/route.dao.js';
 import {
   RouteClientReaderPort,
   RouteClientDetails,
@@ -38,7 +38,7 @@ describe('AddRouteStopUseCase', () => {
     isActive: true,
   };
 
-  const createMockRepo = (route = createRoute()): RouteRepository => ({
+  const createMockDao = (route = createRoute()): RouteDao => ({
     findById: vi.fn().mockResolvedValue(route),
     findByNameAndZone: vi.fn(),
     findPaginated: vi.fn(),
@@ -62,11 +62,11 @@ describe('AddRouteStopUseCase', () => {
 
   it('should add a stop to the route and calculate metrics', async () => {
     const route = createRoute();
-    const repo = createMockRepo(route);
+    const dao = createMockDao(route);
     const clientReader = createMockClientReader();
     const distanceCalc = createMockDistanceCalculator();
 
-    const useCase = new AddRouteStopUseCase(repo, clientReader, distanceCalc);
+    const useCase = new AddRouteStopUseCase(dao, clientReader, distanceCalc);
 
     const result = await useCase.execute(1, {
       clientId: 101,
@@ -78,14 +78,14 @@ describe('AddRouteStopUseCase', () => {
     expect(result.stops[0].clientId).toBe(101);
     expect(result.stops[0].visitOrder).toBe(1);
     expect(result.estimatedDurationMinutes).toBe(40);
-    expect(repo.save).toHaveBeenCalled();
+    expect(dao.save).toHaveBeenCalled();
   });
 
   it('should throw RouteNotFoundError if route does not exist', async () => {
-    const repo = createMockRepo();
-    vi.mocked(repo.findById).mockResolvedValueOnce(null);
+    const dao = createMockDao();
+    vi.mocked(dao.findById).mockResolvedValueOnce(null);
     const useCase = new AddRouteStopUseCase(
-      repo,
+      dao,
       createMockClientReader(),
       createMockDistanceCalculator(),
     );
@@ -96,9 +96,9 @@ describe('AddRouteStopUseCase', () => {
   });
 
   it('should throw UnauthorizedZoneError if regional director manages different zone', async () => {
-    const repo = createMockRepo();
+    const dao = createMockDao();
     const useCase = new AddRouteStopUseCase(
-      repo,
+      dao,
       createMockClientReader(),
       createMockDistanceCalculator(),
     );
@@ -115,12 +115,12 @@ describe('AddRouteStopUseCase', () => {
   });
 
   it('should throw error if client does not exist', async () => {
-    const repo = createMockRepo();
+    const dao = createMockDao();
     const clientReader = createMockClientReader();
     vi.mocked(clientReader.findById).mockResolvedValueOnce(null);
 
     const useCase = new AddRouteStopUseCase(
-      repo,
+      dao,
       clientReader,
       createMockDistanceCalculator(),
     );
@@ -131,14 +131,14 @@ describe('AddRouteStopUseCase', () => {
   });
 
   it('should throw error if client belongs to a different zone', async () => {
-    const repo = createMockRepo();
+    const dao = createMockDao();
     const clientReader = createMockClientReader({
       ...mockClient,
       zoneId: 3, // different zone!
     });
 
     const useCase = new AddRouteStopUseCase(
-      repo,
+      dao,
       clientReader,
       createMockDistanceCalculator(),
     );
@@ -159,14 +159,14 @@ describe('AddRouteStopUseCase', () => {
       longitude: -74.81,
     };
 
-    const repo = createMockRepo(route);
+    const dao = createMockDao(route);
     const clientReader: RouteClientReaderPort = {
       findById: vi.fn().mockResolvedValue(secondClient),
       findByIds: vi.fn().mockResolvedValue([mockClient, secondClient]),
     };
     const distanceCalc = createMockDistanceCalculator();
 
-    const useCase = new AddRouteStopUseCase(repo, clientReader, distanceCalc);
+    const useCase = new AddRouteStopUseCase(dao, clientReader, distanceCalc);
 
     const result = await useCase.execute(1, { clientId: 102 });
 

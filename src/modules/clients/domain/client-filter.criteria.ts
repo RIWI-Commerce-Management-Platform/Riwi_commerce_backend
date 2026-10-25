@@ -8,4 +8,3 @@ export interface ClientFilterCriteria {
   page: number;
   limit: number;
 }
-

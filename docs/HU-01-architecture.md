@@ -38,11 +38,11 @@ src/
 
 `src/modules/zones/` is a working vertical slice demonstrating the pattern the rest of the team replicates for their own modules:
 
-- **Domain** — `Zone` entity, `ZoneRepository` abstract class (the port), `ZoneNameAlreadyExistsError`.
+- **Domain** — `Zone` entity, `ZoneDao` abstract class (the port), `ZoneNameAlreadyExistsError`.
 - **Application** — `CreateZoneUseCase` (enforces unique names), `ListZonesUseCase`.
-- **Infrastructure** — `ZoneOrmEntity` (TypeORM entity mapped to table `zones`), `ZoneMapper` (domain ↔ ORM), `TypeOrmZoneRepository` (implements `ZoneRepository`), and the first migration (`1792430815281-CreateZonesTable.ts`).
+- **Infrastructure** — `ZoneOrmEntity` (TypeORM entity mapped to table `zones`), `ZoneMapper` (domain ↔ ORM), `TypeOrmZoneDao` (implements `ZoneDao`), and the first migration (`1792430815281-CreateZonesTable.ts`).
 - **Presentation** — `ZonesController` (`GET /zones`, `POST /zones`), `CreateZoneDto` / `ZoneResponseDto` with Swagger annotations.
-- **Wiring** — `zones.module.ts` binds the abstract `ZoneRepository` to `TypeOrmZoneRepository` via DI and is imported into `AppModule`.
+- **Wiring** — `zones.module.ts` binds the abstract `ZoneDao` to `TypeOrmZoneDao` via DI and is imported into `AppModule`.
 
 ### 3. TypeORM: runtime connection + CLI migrations
 

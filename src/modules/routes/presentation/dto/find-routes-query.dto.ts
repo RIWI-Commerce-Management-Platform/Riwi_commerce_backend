@@ -20,11 +20,11 @@ function parseBooleanQuery(value: unknown): unknown {
 }
 
 /**
- * Parámetros de consulta para filtrar el listado paginado de rutas comerciales (HU-21).
+ * Query filters for the paginated route list (HU-21).
  */
 export class FindRoutesQueryDto extends PaginationQueryDto {
   @ApiPropertyOptional({
-    description: 'Filtrar por zona geográfica',
+    description: 'Filter by zone',
     example: 1,
   })
   @IsOptional()
@@ -34,7 +34,8 @@ export class FindRoutesQueryDto extends PaginationQueryDto {
   zoneId?: number;
 
   @ApiPropertyOptional({
-    description: 'Filtrar por asesor comercial asignado',
+    description:
+      'Filter by assigned advisor (ignored for advisors, who only see their own routes)',
     example: 5,
   })
   @IsOptional()
@@ -44,7 +45,7 @@ export class FindRoutesQueryDto extends PaginationQueryDto {
   advisorId?: number;
 
   @ApiPropertyOptional({
-    description: 'Filtrar por estado operativo de la ruta',
+    description: 'Filter by route status',
     enum: RouteStatus,
     example: RouteStatus.ASSIGNED,
   })
@@ -53,7 +54,7 @@ export class FindRoutesQueryDto extends PaginationQueryDto {
   status?: RouteStatus;
 
   @ApiPropertyOptional({
-    description: 'Filtrar por día de la semana',
+    description: 'Filter by day of the week',
     enum: DayOfWeek,
     example: DayOfWeek.MONDAY,
   })
@@ -62,7 +63,7 @@ export class FindRoutesQueryDto extends PaginationQueryDto {
   dayOfWeek?: DayOfWeek;
 
   @ApiPropertyOptional({
-    description: 'Filtrar por frecuencia de repetición',
+    description: 'Filter by frequency',
     enum: RouteFrequency,
     example: RouteFrequency.WEEKLY,
   })
@@ -71,7 +72,7 @@ export class FindRoutesQueryDto extends PaginationQueryDto {
   frequency?: RouteFrequency;
 
   @ApiPropertyOptional({
-    description: 'Filtrar por estado activo o inactivo',
+    description: 'Filter by active or inactive',
     example: true,
   })
   @IsOptional()
@@ -81,8 +82,8 @@ export class FindRoutesQueryDto extends PaginationQueryDto {
   isActive?: boolean;
 
   @ApiPropertyOptional({
-    description: 'Búsqueda por texto en el nombre de la ruta',
-    example: 'Norte',
+    description: 'Text search on the route name',
+    example: 'North',
   })
   @IsOptional()
   @IsString()

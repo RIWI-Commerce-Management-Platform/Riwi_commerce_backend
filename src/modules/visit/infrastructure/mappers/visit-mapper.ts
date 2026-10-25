@@ -25,6 +25,8 @@ export class VisitMapper {
       objective: entity.objective,
       observations: entity.observations,
       results,
+      quoteGenerated: entity.quoteGenerated ?? false,
+      orderGenerated: entity.orderGenerated ?? false,
     });
   }
 
@@ -44,6 +46,8 @@ export class VisitMapper {
     entity.status = props.status;
     entity.objective = props.objective;
     entity.observations = props.observations ?? null;
+    entity.quoteGenerated = props.quoteGenerated ?? false;
+    entity.orderGenerated = props.orderGenerated ?? false;
 
     return entity;
   }

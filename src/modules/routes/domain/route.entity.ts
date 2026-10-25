@@ -8,7 +8,7 @@ import { ClientNotInRouteError } from './errors/client-not-in-route.error.js';
 import { InvalidStopOrderError } from './errors/invalid-stop-order.error.js';
 
 /**
- * Propiedades necesarias para construir una ruta comercial completa en mi dominio.
+ * Properties needed to build a commercial route.
  */
 export interface RouteProps {
   id?: number;
@@ -32,7 +32,7 @@ export interface RouteProps {
 }
 
 /**
- * Parámetros que permito actualizar sobre los datos generales de mi ruta (Paso 1 del Wizard).
+ * General route data that can be updated (wizard step 1).
  */
 export interface UpdateRouteGeneralInfoProps {
   name?: string;
@@ -47,11 +47,9 @@ export interface UpdateRouteGeneralInfoProps {
 }
 
 /**
- * Entidad raíz de agregado (Aggregate Root) que representa una Ruta Comercial (RUTA).
- * 
- * En mi rol como Alejandro (E3), diseño esta clase pura para encapsular todas las reglas
- * de negocio de planeación territorial: creación en borrador, gestión de paradas ordenadas,
- * cálculo de distancia/tiempo y asignación final a un asesor comercial.
+ * Aggregate root for a commercial route (RUTA, epic E3). It holds the route
+ * planning rules: draft creation, ordered stops, distance/time metrics and
+ * the final assignment to an advisor.
  */
 export class Route {
   readonly id?: number;
@@ -95,26 +93,26 @@ export class Route {
     this.status = props.status ?? RouteStatus.DRAFT;
     this.totalDistanceKm = props.totalDistanceKm ?? null;
     this.estimatedDurationMinutes = props.estimatedDurationMinutes ?? null;
-    this._stops = props.stops ? [...props.stops].sort((a, b) => a.visitOrder - b.visitOrder) : [];
+    this._stops = props.stops
+      ? [...props.stops].sort((a, b) => a.visitOrder - b.visitOrder)
+      : [];
     this.isActive = props.isActive ?? true;
     this.createdAt = props.createdAt ?? new Date();
     this.updatedAt = props.updatedAt ?? new Date();
   }
 
   /**
-   * Obtengo la lista de paradas ordenadas secuencialmente por visitOrder.
+   * The stops sorted by visitOrder.
    */
   get stops(): RouteStop[] {
     return [...this._stops];
   }
 
   /**
-   * Con este método asigno mi ruta a un asesor comercial (Paso 3 del Wizard - HU-20).
-   * 
-   * Regla de negocio:
-   * 1. La ruta debe estar activa.
-   * 2. La ruta debe tener al menos una parada de cliente configurada.
-   * 3. Al asignarse, su estado pasa formalmente a 'ASSIGNED'.
+   * Assigns the route to an advisor (wizard step 3, HU-20).
+   *
+   * The route must be active and have at least one stop; it then moves to
+   * ASSIGNED.
    */
   assignAdvisor(advisorId: number): void {
     if (!this.isActive) {
@@ -133,10 +131,8 @@ export class Route {
   }
 
   /**
-   * Con este método agrego un cliente como nueva parada al final del recorrido (HU-18).
-   * 
-   * Regla de negocio:
-   * Evito duplicar el cliente en la misma ruta y asigno el siguiente número de orden correlativo.
+   * Adds a client as a new stop at the end of the route (HU-18). A client
+   * can't appear twice in the same route.
    */
   addStop(
     clientId: number,
@@ -162,11 +158,8 @@ export class Route {
   }
 
   /**
-   * Con este método remuevo un cliente de las paradas de la ruta (HU-18).
-   * 
-   * Regla de negocio:
-   * Al eliminar la parada, reindexo de inmediato las paradas restantes para que
-   * el orden de visita (1, 2, 3...) se conserve estrictamente consecutivo.
+   * Removes a client's stop (HU-18) and renumbers the remaining stops so the
+   * visit order stays consecutive (1, 2, 3...).
    */
   removeStop(clientId: number): void {
     const stopIndex = this._stops.findIndex((s) => s.clientId === clientId);
@@ -180,9 +173,8 @@ export class Route {
   }
 
   /**
-   * Con este método reordeno todas las paradas de la ruta mediante una secuencia de IDs de clientes (HU-18 y HU-19).
-   * 
-   * Este método es la base técnica para el drag-and-drop del frontend y la actualización del mapa interactivo.
+   * Reorders every stop from a sequence of client ids (HU-18, HU-19). Backs
+   * the frontend drag-and-drop and the map refresh.
    */
   reorderStops(orderedClientIds: number[]): void {
     if (orderedClientIds.length !== this._stops.length) {
@@ -216,9 +208,12 @@ export class Route {
   }
 
   /**
-   * Con este método actualizo los cálculos de distancia total y tiempo estimado (HU-22).
+   * Updates the total distance and estimated time (HU-22).
    */
-  updateMetrics(totalDistanceKm: number, estimatedDurationMinutes: number): void {
+  updateMetrics(
+    totalDistanceKm: number,
+    estimatedDurationMinutes: number,
+  ): void {
     if (totalDistanceKm < 0) {
       throw new Error('totalDistanceKm cannot be negative');
     }
@@ -231,7 +226,7 @@ export class Route {
   }
 
   /**
-   * Con este método actualizo los datos generales de la ruta (HU-17).
+   * Updates the general route data (HU-17).
    */
   updateGeneralInfo(props: UpdateRouteGeneralInfoProps): void {
     if (props.name !== undefined) {
@@ -242,7 +237,8 @@ export class Route {
     }
     if (props.description !== undefined) this.description = props.description;
     if (props.zoneId !== undefined) {
-      if (props.zoneId <= 0) throw new Error('Zone ID must be a positive integer');
+      if (props.zoneId <= 0)
+        throw new Error('Zone ID must be a positive integer');
       this.zoneId = props.zoneId;
     }
     if (props.dayOfWeek !== undefined) this.dayOfWeek = props.dayOfWeek;
@@ -256,7 +252,7 @@ export class Route {
   }
 
   /**
-   * Con este método desactivo lógicamente la ruta (soft delete).
+   * Soft-deactivates the route.
    */
   deactivate(): void {
     this.isActive = false;
@@ -265,7 +261,7 @@ export class Route {
   }
 
   /**
-   * Con este método reactivo una ruta previamente desactivada.
+   * Reactivates a deactivated route.
    */
   activate(): void {
     this.isActive = true;
@@ -274,7 +270,7 @@ export class Route {
   }
 
   /**
-   * Método auxiliar interno para garantizar que los índices de visitOrder sean siempre 1..N consecutivos.
+   * Keeps visitOrder consecutive (1..N).
    */
   private _reindexStops(): void {
     this._stops.forEach((stop, index) => {

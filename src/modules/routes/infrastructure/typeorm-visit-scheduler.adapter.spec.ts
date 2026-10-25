@@ -151,4 +151,55 @@ describe('TypeOrmVisitSchedulerAdapter', () => {
       expect(saved[0].scheduledAt.getUTCMinutes()).toBe(30);
     },
   );
+
+  it('saves nothing when the date range has no matching day', async () => {
+    const repo = createMockVisitRepo();
+
+    const count = await new TypeOrmVisitSchedulerAdapter(
+      repo,
+    ).scheduleVisitsForRoute({
+      routeId: 1,
+      advisorId: 5,
+      dayOfWeek: DayOfWeek.MONDAY,
+      frequency: RouteFrequency.WEEKLY,
+      startDate: new Date('2026-10-27'), // Tuesday
+      endDate: new Date('2026-10-30'), // Friday, no Monday in between
+      stops: [
+        {
+          clientId: 101,
+          visitOrder: 1,
+          suggestedTime: null,
+          estimatedDurationMinutes: 30,
+        },
+      ],
+    });
+
+    expect(count).toBe(0);
+    expect(repo.save).not.toHaveBeenCalled();
+  });
+
+  it('falls back to 9:00 for an unreadable suggested time', async () => {
+    const repo = createMockVisitRepo();
+
+    await new TypeOrmVisitSchedulerAdapter(repo).scheduleVisitsForRoute({
+      routeId: 1,
+      advisorId: 5,
+      dayOfWeek: DayOfWeek.MONDAY,
+      frequency: RouteFrequency.WEEKLY,
+      startDate: new Date('2026-10-26'),
+      endDate: new Date('2026-10-26'),
+      stops: [
+        {
+          clientId: 101,
+          visitOrder: 1,
+          suggestedTime: 'later',
+          estimatedDurationMinutes: 30,
+        },
+      ],
+    });
+
+    const [visit] = vi.mocked(repo.save).mock.calls[0][0] as VisitOrmEntity[];
+    expect(visit.scheduledAt.getUTCHours()).toBe(9);
+    expect(visit.scheduledAt.getUTCMinutes()).toBe(0);
+  });
 });

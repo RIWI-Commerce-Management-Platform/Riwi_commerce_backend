@@ -1,5 +1,6 @@
 /**
- * Error de dominio lanzado cuando intento crear o renombrar una ruta con un nombre que ya existe en la misma zona.
+ * Thrown when creating or renaming a route with a name already used in the
+ * same zone.
  */
 export class RouteNameAlreadyExistsError extends Error {
   constructor(name: string, zoneId: number) {

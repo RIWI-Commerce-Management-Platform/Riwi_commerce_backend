@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { Quote } from '../domain/quote.entity.js';
 import { QuoteItem } from '../domain/quote-item.entity.js';
 import { QuoteStatus } from '../domain/quote-status.enum.js';
-import { QuoteRepository } from '../domain/quote.repository.js';
+import { QuoteDao } from '../domain/quote.dao.js';
 import { EmptyQuoteItemsError } from '../domain/errors/empty-quote-items.error.js';
 import { InvalidQuoteItemValuesError } from '../domain/errors/invalid-quote-item-values.error.js';
 import { ClientNotFoundError } from '../domain/errors/client-not-found.error.js';
@@ -12,7 +12,7 @@ import { ClientReader } from '../../../shared/clients/domain/client-reader.js';
 @Injectable()
 export class CreateQuoteUseCase {
   constructor(
-    private readonly quoteRepository: QuoteRepository,
+    private readonly quoteDao: QuoteDao,
     private readonly clientReader: ClientReader,
   ) {}
 
@@ -24,7 +24,7 @@ export class CreateQuoteUseCase {
       throw new ClientNotFoundError(command.clientId);
     }
 
-    const nextQuoteNumber = await this.quoteRepository.generateNextQuoteNumber();
+    const nextQuoteNumber = await this.quoteDao.generateNextQuoteNumber();
 
     const items = command.items.map((itemCommand) => {
       const itemSubtotal = this.roundToTwoDecimals(
@@ -48,6 +48,8 @@ export class CreateQuoteUseCase {
     const quote = new Quote({
       quoteNumber: nextQuoteNumber,
       clientId: command.clientId,
+      advisorId: command.advisorId ?? null,
+      visitId: command.visitId ?? null,
       status: QuoteStatus.DRAFT,
       subtotal: quoteSubtotal,
       total: quoteTotal,
@@ -58,7 +60,7 @@ export class CreateQuoteUseCase {
       updatedAt: now,
     });
 
-    return this.quoteRepository.save(quote);
+    return this.quoteDao.save(quote);
   }
 
   private validateCommand(command: CreateQuoteCommand): void {

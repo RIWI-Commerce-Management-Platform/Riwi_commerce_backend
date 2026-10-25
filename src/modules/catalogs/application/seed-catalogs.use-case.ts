@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { CatalogRepository, CatalogSeedData } from '../domain/catalog.repository.js';
+import { CatalogDao, CatalogSeedData } from '../domain/catalog.dao.js';
 
 export const INITIAL_CATALOG_SEED: CatalogSeedData = {
   zones: [
@@ -52,7 +52,7 @@ export const INITIAL_CATALOG_SEED: CatalogSeedData = {
 
 @Injectable()
 export class SeedCatalogsUseCase {
-  constructor(private readonly catalogRepository: CatalogRepository) {}
+  constructor(private readonly catalogDao: CatalogDao) {}
 
   async execute(customData?: Partial<CatalogSeedData>): Promise<{
     seeded: boolean;
@@ -69,6 +69,6 @@ export class SeedCatalogsUseCase {
         customData?.visitResults ?? INITIAL_CATALOG_SEED.visitResults,
     };
 
-    return this.catalogRepository.seed(dataToSeed);
+    return this.catalogDao.seed(dataToSeed);
   }
 }

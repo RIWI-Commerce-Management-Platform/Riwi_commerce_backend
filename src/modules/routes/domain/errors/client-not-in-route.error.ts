@@ -1,6 +1,5 @@
 /**
- * Error de dominio lanzado cuando intento remover una parada de un cliente que no
- * pertenece a esta ruta.
+ * Thrown when removing the stop of a client that isn't in the route.
  */
 export class ClientNotInRouteError extends Error {
   constructor(clientId: number, routeId?: number) {

@@ -1,9 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import { ClientContact } from '../domain/client-contact.entity.js';
-import { ClientContactRepository } from '../domain/client-contact.repository.js';
+import { ClientContactDao } from '../domain/client-contact.dao.js';
 import { ClientContactNotFoundError } from '../domain/client-contact-not-found.error.js';
+import { ActivityLogService } from '../../../shared/activity-log/domain/activity-log.service.js';
 
 export interface UpdateClientContactInput {
+  actorId?: number;
   clientId: number;
   contactId: number;
   name?: string;
@@ -17,17 +19,18 @@ export interface UpdateClientContactInput {
 @Injectable()
 export class UpdateClientContactUseCase {
   constructor(
-    private readonly contactRepository: ClientContactRepository,
+    private readonly contactDao: ClientContactDao,
+    private readonly activityLog: ActivityLogService,
   ) {}
 
   async execute(input: UpdateClientContactInput): Promise<ClientContact> {
-    const contact = await this.contactRepository.findById(input.contactId);
+    const contact = await this.contactDao.findById(input.contactId);
     if (!contact || contact.clientId !== input.clientId) {
       throw new ClientContactNotFoundError(input.contactId);
     }
 
     if (input.isPrimary === true && !contact.isPrimary) {
-      await this.contactRepository.unsetPrimaryByClientId(
+      await this.contactDao.unsetPrimaryByClientId(
         input.clientId,
         input.contactId,
       );
@@ -42,6 +45,19 @@ export class UpdateClientContactUseCase {
       isPrimary: input.isPrimary,
     });
 
-    return this.contactRepository.save(contact);
+    const saved = await this.contactDao.save(contact);
+
+    if (input.actorId !== undefined) {
+      await this.activityLog.record({
+        action: 'client.contact_updated',
+        entityType: 'client_contact',
+        entityId: saved.id!,
+        clientId: saved.clientId,
+        actorId: input.actorId,
+        description: `Contact ${saved.name} updated`,
+      });
+    }
+
+    return saved;
   }
 }

@@ -1,140 +1,142 @@
 # HU-35 — Weekly KPI Dashboard
 
-**Owner:** Valery  
-**Epic:** E6 — Dashboard and Visit Map  
-**Priority:** High  
-**Status:** In progress (partial backend implementation)  
-**Implementation branch:** `feat/HU-35-dashboard-kpis`  
+**Owner:** Valery · **Epic:** E6 — Dashboard and Visit Map · **Priority:** High
+**Branches:** backend `feat/HU-35-complete-dashboard`, frontend `feat/HU-35-dashboard`
 
+## 1. Goal
 
-> **User story:** As a director, I want to see the week's KPIs so that I can make decisions.
+> As a director, I want to see the week's KPIs so that I can make decisions.
 
-## 1. Acceptance Criteria
+A director opens one page and sees six numbers for a week, for one territory or for all of them, read live from PostgreSQL.
 
-HU-35 requires **six KPI cards**: scheduled visits, completed visits, effectiveness (%), quoted amount, closed orders, and revenue. The results must be **filterable by territory and week**.
+## 2. Acceptance criteria
 
-| Criterion | Status | Evidence / outstanding work |
-|---|---|---|
-| Show scheduled visits | Pending integration | `scheduledVisits` defined; real query and UI are missing |
-| Show completed visits | Pending integration | `completedVisits` defined; real query and UI are missing |
-| Show effectiveness (%) | Pending definition and integration | `effectiveness` defined; calculation formula not yet agreed |
-| Show quoted amount | Pending integration | `quotedAmount` defined; real query is missing |
-| Show closed orders | Pending definition and integration | `closedOrders` defined; qualifying order status not yet agreed |
-| Show revenue | Pending definition and integration | `revenue` defined; data source and reporting date rules not yet agreed |
-| Filter by territory | Partial | Optional `territoryId` defined; zone mapping and authorization remain to be confirmed |
-| Filter by week | Partial | `weekStart` defined; Monday, timezone, and weekly interval validation are missing |
-| Display a connected dashboard UI | Pending | Team frontend has not yet been integrated |
+| Criterion | Status |
+|---|---|
+| Scheduled visits card | Done and verified |
+| Completed visits card | Done and verified |
+| Effectiveness (%) card | Done and verified — **formula provisional** |
+| Quoted amount card | Done and verified — **status rule provisional** |
+| Closed orders card | Done and verified — **definition provisional** |
+| Revenue ("facturación") card | **Blocked**: no invoicing data source. Returns `null`, the card says "No disponible" |
+| Filter by territory | Done and verified |
+| Filter by week | Done and verified |
+| Frontend connected to the real API | Done and verified |
 
-**Note:** Defining KPI fields does not mean that the metrics are being calculated or displayed yet.
+## 3. Architecture
 
-## 2. Current Branch Implementation
+Same pattern as the read-only `indicators` module (HU-39/HU-40): abstract DAO, TypeORM DAO with parameterized SQL, use case, controller with `RolesGuard`, query DTO with class-validator.
 
 ```text
 src/modules/dashboard/
 ├── domain/
-│   ├── dashboard-kpis.ts
-│   └── dao/
-│       └── dashboard.dao.ts
-├── application/
-│   └── use-cases/
-│       ├── get-dashboard-kpis.use-case.ts
-│       └── get-dashboard-kpis.use-case.spec.ts
-└── presentation/
-    ├── dashboard.controller.ts
-    ├── dashboard.controller.spec.ts
-    └── dto/
-        └── dashboard-filters.dto.ts
+│   ├── dao/dashboard.dao.ts          # contract: getWeeklyMetrics(filters)
+│   └── dashboard-kpis.ts             # types + BUSINESS_TIMEZONE
+├── application/use-cases/
+│   └── get-dashboard-kpis.use-case.ts  # territory by role, effectiveness, revenue = null
+├── infrastructure/dao/
+│   └── typeorm-dashboard.dao.ts      # the SQL query
+├── presentation/
+│   ├── dto/dashboard-filters.dto.ts  # query validation
+│   ├── dto/dashboard-kpis-response.dto.ts  # Swagger response contract (like indicators)
+│   └── dashboard.controller.ts       # GET /dashboard/kpis
+└── dashboard.module.ts               # registered in AppModule
 ```
 
-### Domain
+No tables or migrations were added. It reads `visits`, `quotes`, `orders`, `clients`, and reuses `effectiveness()` from `indicators` and `scopeForActor()` from `shared/auth`.
 
-`DashboardKpis` defines the output structure:
+**Frontend** (`Riwi_commerce_frontend`, same structure as `features/auth`):
 
-- `scheduledVisits: number`
-- `completedVisits: number`
-- `effectiveness: number`
-- `quotedAmount: number`
-- `closedOrders: number`
-- `revenue: number`
+```text
+src/features/dashboard/
+├── pages/DashboardPage.jsx           # page: filters, loading, error, six cards
+├── components/KpiCard/               # one card
+├── components/DashboardFilters/      # week and territory selectors
+├── hooks/useDashboardKpis.js         # filters state + calls the service
+├── services/dashboardService.js      # fetch to the API with the session cookie
+└── utils/dashboardFormat.js          # Monday of a week, COP and % formats
+```
 
-`DashboardFilters` defines `weekStart: string` and `territoryId?: string`. `DashboardDao` declares the abstract contract `getKpis(filters): Promise<DashboardKpis>`. This module follows the agreed **DAO** naming convention without renaming or changing other modules' conventions.
+`App.jsx` shows the dashboard at `/#/dashboard` and the login everywhere else (no router yet). `vite.config.js` proxies `/api` to the backend in development, so the session cookie works.
 
-### Application
-
-`GetDashboardKpisUseCase` receives the DAO through its constructor and delegates the query to `dashboardDao.getKpis(filters)`. **Business metric calculations and filter validation have not been implemented.**
-
-### Presentation
-
-`DashboardController` declares `GET /dashboard/kpis` and delegates to the use case. `DashboardFiltersDto` documents the query parameters using Swagger decorators.
-
-**Current limitation:** Although the controller declares a route, **the HTTP endpoint is not yet operational**. `DashboardModule` must be registered, dependencies must be wired, and a concrete DAO implementation is still required.
-
-## 3. Proposed HTTP Contract (Not Yet Integrated)
+## 4. Endpoint
 
 ```http
-GET /dashboard/kpis?weekStart=2026-10-19&territoryId=1
+GET /dashboard/kpis?weekStart=2026-10-22&territoryId=1
 ```
 
-`territoryId` is optional. `weekStart` is expected to use `YYYY-MM-DD` and represent the Monday of the requested week. **This requirement is not yet enforced in code.**
+| Parameter | Rules |
+|---|---|
+| `weekStart` (optional) | `YYYY-MM-DD`, a real date. **Any day** of the week is accepted; the week starts on its Monday (same convention as HU-39 `weekly-goal`). Default: the current week. |
+| `territoryId` (optional) | Positive integer (zone id). Omitted = every territory. |
 
-**Illustrative response — not retrieved from the database:**
+Real response (demo seed, admin):
 
 ```json
 {
-  "scheduledVisits": 24,
-  "completedVisits": 19,
-  "effectiveness": 79.17,
-  "quotedAmount": 215450000,
-  "closedOrders": 8,
-  "revenue": 128760000
+  "weekStart": "2026-10-19",
+  "weekEnd": "2026-10-25",
+  "territoryId": 1,
+  "scheduledVisits": 6,
+  "completedVisits": 2,
+  "effectiveness": 33.3,
+  "quotedAmount": "418000.00",
+  "closedOrders": 1,
+  "revenue": null
 }
 ```
 
-The meanings of `effectiveness`, `closedOrders`, and `revenue` require functional confirmation before real queries are implemented. The example does not establish an effectiveness formula or represent actual project figures.
-
-## 4. Tests and Verification
-
-**Verified locally:**
-
-- `npm run build` — NestJS build completed successfully after adding the use case and controller.
-- `npm run test -- src/modules/dashboard/application/use-cases/get-dashboard-kpis.use-case.spec.ts` — **1 test passed**, validating DAO delegation and the mocked result.
-
-**Test code published on GitHub:**
-
-- `get-dashboard-kpis.use-case.spec.ts` — use case test with a mocked DAO.
-- `dashboard.controller.spec.ts` — controller test with a mocked use case.
-
-**Not confirmed by the available evidence:** Local or CI execution of the controller test; connection to PostgreSQL/RDS; a running HTTP endpoint; rendered Swagger documentation; role-based authorization; E2E tests; or working frontend KPI cards. The presence of `.spec.ts` files does not establish that every test was run.
-
-## 5. Integration Dependencies
-
-| Owner | HU-35 dependency |
+| Status | When |
 |---|---|
-| Luis | Synchronize the integration branch; confirm filter contract, timezone, shared module architecture, and PR review |
-| Efrain | Authentication, roles, and territory/advisor access restrictions |
-| Yesid | Client entity and client-to-territory (zone) relationship |
-| Camilo | Scheduled/completed visits and final visit statuses |
-| Carlos | Quotes, orders, amounts, and final order statuses |
-| Frontend team | Frontend scaffold, KPI cards, and shared week/territory filters |
-| Valentina | Align HU-35 metrics with reporting/indicators in HU-38 and HU-40 |
+| 200 | KPIs of the week |
+| 400 | Invalid `weekStart` (format or impossible date such as `2026-02-30`) or `territoryId` |
+| 401 | No session |
+| 403 | The user is an advisor (`ASESOR`) |
 
-### Technical Risks Identified Across Branches
+## 5. Query and calculations
 
-- In `feature/HU-11`, the client primary key is numeric, as is the visit `clientId`. However, the quote `clientId` in `feature-HU-30` is a UUID. **Module owners need to align these contracts** before aggregate queries are implemented.
-- Camilo's visit module defines `PENDING`, `IN_PROGRESS`, `VISITED`, `RESCHEDULE`, and `NOT_VISITED`. These are the exact values to use once his module is integrated.
-- The quote/order relationship to advisors and territories, and revenue attribution rules, still require confirmation.
+One SQL query in `typeorm-dashboard.dao.ts`:
 
-## 6. Next Steps
+1. `date_trunc('week', day)` turns the requested day (or today in Bogotá) into its **Monday**.
+2. The week is `[Monday 00:00, next Monday 00:00)` **in America/Bogota** (`AT TIME ZONE`), so the result does not depend on the server or Docker timezone.
+3. Each KPI is a separate subquery joined only to `clients` (many-to-one), so no row is counted twice.
 
-1. Agree on the business definitions of effectiveness, closed orders, and revenue.
-2. Validate `weekStart` and filters, including role-based data access.
-3. Add `DashboardModule` and configure dependency injection once a real DAO implementation is available.
-4. Implement a read-only `TypeOrmDashboardDao` using integrated entities.
-5. Add calculation tests and HTTP integration tests.
-6. Build six KPI cards and filters in the frontend repository and consume the real endpoint.
-7. Verify results using demonstration data and run E2E tests.
-8. Request a Pull Request review; do not merge changes without team approval.
+| KPI | Calculation |
+|---|---|
+| Scheduled visits | `COUNT` of `visits` with `scheduled_at` in the week (any status) |
+| Completed visits | Same, with `status = 'VISITED'` |
+| Effectiveness | `completed / scheduled × 100`, one decimal (`indicators/effectiveness.ts`); `null` if nothing was scheduled. **Provisional** |
+| Quoted amount | `SUM(quotes.total)` of quotes created in the week, every status (same as HU-40). Returned as exact decimal text. **Provisional** |
+| Closed orders | Orders created in the week whose status is not `CANCELLED` (same as HU-40 `ordersCount`). **Provisional**: the project has no explicit "closed" status |
+| Revenue | Not calculated: `null` |
 
-## 7. Scope and Notes
+## 6. Filters and security
 
-HU-35 covers **both backend and frontend**; the current work provides only the backend foundation. No new database tables or changes to teammates' modules have been introduced. HU-36 (visit map), HU-37 (tracking table), and HU-41 (Jenkins pipeline) must be documented separately and must not be marked complete based on HU-35 progress.
+- **Territory** = the client's zone (`clients.zone_id`), like `GET /indicators/by-zone`. A zone that does not exist simply returns zeros.
+- **Roles:** `RolesGuard` + `@Roles(ADMIN, DIRECTOR_REGIONAL)`. An admin sees any territory. A regional director **always gets their own zone** (`scopeForActor`, same as HU-40), even if they ask for another one; the frontend shows a notice. An advisor gets 403; no session gets 401.
+- Every value goes to SQL as a parameter (`$1`, `$2`, `$3`).
+
+## 7. Tests
+
+Run against an isolated local PostgreSQL 17 with all `develop` migrations and the HU-42 demo seed.
+
+| Check | Result |
+|---|---|
+| Backend `npm run build` | OK |
+| Backend `npm run lint` | Exit 0; 153 warnings, all pre-existing, none from the dashboard |
+| Backend `npm run test` | 113 files / 640 tests passed (dashboard: 16 tests in 4 files) |
+| Backend `npm run test:e2e` | 3 files / 25 tests passed (15 are the dashboard) |
+| Frontend `npm test` / `npm run build` | 12 tests passed / OK |
+
+- **Unit:** use case (six KPIs, effectiveness, empty week, admin and director scope), controller (delegation, roles), DTO (valid and invalid dates and ids), DAO (row mapping, SQL parameters).
+- **Integration (`test/dashboard.e2e-spec.ts`):** real HTTP + Better Auth login + PostgreSQL. It inserts known data in two new zones and removes it after. Checks exact KPIs (zone A: 4 / 2 / 50 % / `3000.36` / 2), week boundaries (Monday 00:00 in, next Monday 00:00 out, Sunday 23:59 in Bogotá = Monday in UTC out), any day → its Monday, cancelled orders excluded, quote items not duplicating amounts, 401/403, director scope, empty week, invalid filters. Every result is also compared with an independent SQL query.
+- **Frontend:** service (URL, cookie, error messages) and page (six cards with backend data, filters, loading, error, empty effectiveness, director notice).
+- **Manual, real browser:** headless Chrome against the running backend: cards equal the API for every territory and for zone 1; previous week shows zeros; one column at 390 px; director sees only zone 1; advisor sees the permission message; `/` still shows the login.
+
+## 8. Pending
+
+1. **Revenue (blocked):** there is no invoice/billing entity in the ER model or the code. The business must define the source (invoicing module, ERP, or an explicit rule such as "delivered orders").
+2. **Business approval** of the provisional rules: effectiveness formula, which quote statuses count, and what a "closed order" is (status and date).
+3. **Login redirect (HU-08):** the login does not navigate to the dashboard yet; open `/#/dashboard`.
+4. **Production:** needs the `/api` reverse proxy (or `VITE_API_URL` + `FRONTEND_URL` for CORS).
+5. Indexes on `visits.scheduled_at`, `quotes.created_at`, `orders.created_at` if the tables grow (owned by other modules).

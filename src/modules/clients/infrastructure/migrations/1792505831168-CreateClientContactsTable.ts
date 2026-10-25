@@ -5,9 +5,7 @@ import {
   TableForeignKey,
 } from 'typeorm';
 
-export class CreateClientContactsTable1792505831168
-  implements MigrationInterface
-{
+export class CreateClientContactsTable1792505831168 implements MigrationInterface {
   name = 'CreateClientContactsTable1792505831168';
 
   public async up(queryRunner: QueryRunner): Promise<void> {

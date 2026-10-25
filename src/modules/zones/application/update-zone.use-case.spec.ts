@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { UpdateZoneUseCase } from './update-zone.use-case.js';
-import { ZoneRepository } from '../domain/zone.repository.js';
+import { ZoneDao } from '../domain/zone.dao.js';
 import { Zone } from '../domain/zone.entity.js';
 import { ZoneNotFoundError } from '../domain/zone-not-found.error.js';
 import { ZoneNameAlreadyExistsError } from '../domain/zone-name-already-exists.error.js';
@@ -17,17 +17,17 @@ describe('UpdateZoneUseCase', () => {
     });
 
   const setup = (zone: Zone | null, byName: Zone | null = null) => {
-    const repository = {
+    const dao = {
       findAll: vi.fn(),
       findById: vi.fn().mockResolvedValue(zone),
       findByName: vi.fn().mockResolvedValue(byName),
       save: vi.fn().mockImplementation((z: Zone) => Promise.resolve(z)),
-    } as unknown as ZoneRepository;
-    return { useCase: new UpdateZoneUseCase(repository), repository };
+    } as unknown as ZoneDao;
+    return { useCase: new UpdateZoneUseCase(dao), dao };
   };
 
   it('renames and deactivates a zone', async () => {
-    const { useCase, repository } = setup(buildZone());
+    const { useCase, dao } = setup(buildZone());
 
     const result = await useCase.execute({
       id: 1,
@@ -37,16 +37,16 @@ describe('UpdateZoneUseCase', () => {
 
     expect(result.name).toBe('Soledad Centro');
     expect(result.isActive).toBe(false);
-    expect(repository.save).toHaveBeenCalledWith(result);
+    expect(dao.save).toHaveBeenCalledWith(result);
   });
 
   it('throws ZoneNotFoundError when the zone does not exist', async () => {
-    const { useCase, repository } = setup(null);
+    const { useCase, dao } = setup(null);
 
     await expect(useCase.execute({ id: 99, name: 'X' })).rejects.toBeInstanceOf(
       ZoneNotFoundError,
     );
-    expect(repository.save).not.toHaveBeenCalled();
+    expect(dao.save).not.toHaveBeenCalled();
   });
 
   it('throws ZoneNameAlreadyExistsError when the new name is taken', async () => {
@@ -61,11 +61,11 @@ describe('UpdateZoneUseCase', () => {
   });
 
   it('skips the name check when the name is unchanged or omitted', async () => {
-    const { useCase, repository } = setup(buildZone());
+    const { useCase, dao } = setup(buildZone());
 
     await useCase.execute({ id: 1, name: 'Soledad' });
     await useCase.execute({ id: 1, isActive: false });
 
-    expect(repository.findByName).not.toHaveBeenCalled();
+    expect(dao.findByName).not.toHaveBeenCalled();
   });
 });

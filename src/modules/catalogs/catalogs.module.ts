@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { CatalogRepository } from './domain/catalog.repository.js';
+import { CatalogDao } from './domain/catalog.dao.js';
 import { ListCatalogsUseCase } from './application/list-catalogs.use-case.js';
 import { ListCatalogByTypeUseCase } from './application/list-catalog-by-type.use-case.js';
 import { CreateCatalogItemUseCase } from './application/create-catalog-item.use-case.js';
@@ -13,7 +13,7 @@ import { PortfolioOrmEntity } from './infrastructure/portfolio.orm-entity.js';
 import { VisitResultOrmEntity } from './infrastructure/visit-result.orm-entity.js';
 import { ZoneOrmEntity } from '../zones/infrastructure/zone.orm-entity.js';
 import { UserOrmEntity } from '../auth/infrastructure/user.orm-entity.js';
-import { TypeOrmCatalogRepository } from './infrastructure/typeorm-catalog.repository.js';
+import { TypeOrmCatalogDao } from './infrastructure/typeorm-catalog.dao.js';
 import { CatalogsSeedService } from './infrastructure/catalogs-seed.service.js';
 import { CatalogsController } from './presentation/catalogs.controller.js';
 
@@ -39,10 +39,10 @@ import { CatalogsController } from './presentation/catalogs.controller.js';
     SeedCatalogsUseCase,
     CatalogsSeedService,
     {
-      provide: CatalogRepository,
-      useClass: TypeOrmCatalogRepository,
+      provide: CatalogDao,
+      useClass: TypeOrmCatalogDao,
     },
   ],
-  exports: [CatalogRepository, SeedCatalogsUseCase],
+  exports: [CatalogDao, SeedCatalogsUseCase],
 })
 export class CatalogsModule {}

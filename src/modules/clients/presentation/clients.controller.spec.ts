@@ -63,12 +63,19 @@ describe('ClientsController', () => {
     execute: getClientByIdExecute,
   } as unknown as GetClientByIdUseCase;
 
+  const listHistoryExecute = vi.fn();
+  const listHistoryUseCase = { execute: listHistoryExecute };
+  const adminActor = { id: 1, role: 'ADMIN', zoneId: null };
+  const currentActor = { extract: vi.fn().mockResolvedValue(adminActor) };
+
   const controller = new ClientsController(
     mockCreateUseCase,
     mockUpdateUseCase,
     mockToggleStatusUseCase,
     mockFindClientsUseCase,
     mockGetClientByIdUseCase,
+    listHistoryUseCase as any,
+    currentActor as any,
   );
 
   describe('findClients', () => {
@@ -92,23 +99,84 @@ describe('ClientsController', () => {
       query.page = '1';
       query.limit = '10';
 
-      const response = await controller.findClients(query);
+      const response = await controller.findClients(query, {} as any);
 
       expect(response.data).toHaveLength(1);
       expect(response.data[0].id).toBe(1);
       expect(response.data[0].latitude).toBe(6.2442);
       expect(response.data[0].longitude).toBe(-75.5812);
       expect(response.meta.total).toBe(1);
-      expect(findClientsExecute).toHaveBeenCalledWith({
-        search: 'Andes',
-        zoneId: undefined,
-        clientTypeId: undefined,
-        potentialId: undefined,
-        municipality: undefined,
-        isActive: undefined,
+      expect(findClientsExecute).toHaveBeenCalledWith(
+        {
+          search: 'Andes',
+          zoneId: undefined,
+          clientTypeId: undefined,
+          potentialId: undefined,
+          municipality: undefined,
+          isActive: undefined,
+          page: 1,
+          limit: 10,
+        },
+        adminActor,
+      );
+    });
+  });
+
+  describe('getHistory', () => {
+    it('returns the paginated activity log of the client', async () => {
+      listHistoryExecute.mockResolvedValueOnce({
+        data: [
+          {
+            id: 5,
+            clientId: 1,
+            userId: 3,
+            userName: 'Ana',
+            action: 'client.updated',
+            entityType: 'client',
+            entityId: '1',
+            description: 'Client data updated',
+            metadata: null,
+            createdAt: new Date(),
+          },
+        ],
+        meta: {
+          total: 1,
+          page: 1,
+          limit: 10,
+          totalPages: 1,
+          hasNextPage: false,
+          hasPreviousPage: false,
+        },
+      });
+
+      const response = await controller.getHistory(
+        1,
+        new FindClientsQueryDto(),
+      );
+
+      expect(listHistoryExecute).toHaveBeenCalledWith({
+        clientId: 1,
         page: 1,
         limit: 10,
       });
+      expect(response.data[0].userName).toBe('Ana');
+    });
+
+    it('maps a missing client to 404', async () => {
+      listHistoryExecute.mockRejectedValueOnce(new ClientNotFoundError(99));
+
+      await expect(
+        controller.getHistory(99, new FindClientsQueryDto()),
+      ).rejects.toThrow(NotFoundException);
+    });
+
+    it('rethrows unexpected errors', async () => {
+      const failure = new Error('database down');
+      listHistoryExecute.mockRejectedValueOnce(failure);
+
+      await expect(
+        controller.getHistory(1, new FindClientsQueryDto()),
+      ).rejects.toBe(failure);
     });
   });
 
@@ -124,9 +192,7 @@ describe('ClientsController', () => {
     });
 
     it('should translate ClientNotFoundError to NotFoundException', async () => {
-      getClientByIdExecute.mockRejectedValueOnce(
-        new ClientNotFoundError(999),
-      );
+      getClientByIdExecute.mockRejectedValueOnce(new ClientNotFoundError(999));
 
       await expect(controller.getClientById(999)).rejects.toThrow(
         NotFoundException,
@@ -184,9 +250,7 @@ describe('ClientsController', () => {
     });
 
     it('should translate ClientNotFoundError to NotFoundException', async () => {
-      updateExecute.mockRejectedValueOnce(
-        new ClientNotFoundError(999),
-      );
+      updateExecute.mockRejectedValueOnce(new ClientNotFoundError(999));
 
       await expect(controller.update(999, dto)).rejects.toThrow(
         NotFoundException,
@@ -198,7 +262,9 @@ describe('ClientsController', () => {
         new ClientNitAlreadyExistsError('900999999-9'),
       );
 
-      await expect(controller.update(1, dto)).rejects.toThrow(ConflictException);
+      await expect(controller.update(1, dto)).rejects.toThrow(
+        ConflictException,
+      );
     });
   });
 
@@ -214,9 +280,7 @@ describe('ClientsController', () => {
     });
 
     it('should translate ClientNotFoundError to NotFoundException', async () => {
-      toggleStatusExecute.mockRejectedValueOnce(
-        new ClientNotFoundError(999),
-      );
+      toggleStatusExecute.mockRejectedValueOnce(new ClientNotFoundError(999));
 
       await expect(
         controller.toggleStatus(999, { isActive: false }),

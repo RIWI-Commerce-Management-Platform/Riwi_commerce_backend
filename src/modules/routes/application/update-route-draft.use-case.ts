@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { DayOfWeek } from '../domain/day-of-week.enum.js';
 import { RouteFrequency } from '../domain/route-frequency.enum.js';
 import { Route } from '../domain/route.entity.js';
-import { RouteRepository } from '../domain/route.repository.js';
+import { RouteDao } from '../domain/route.dao.js';
 import { RouteNotFoundError } from '../domain/errors/route-not-found.error.js';
 import { RouteNameAlreadyExistsError } from '../domain/errors/route-name-already-exists.error.js';
 import { UnauthorizedZoneError } from '../domain/errors/unauthorized-zone.error.js';
@@ -10,7 +10,7 @@ import { AuthActor } from './dto/auth-actor.dto.js';
 import { UserRole } from '../../auth/domain/user-role.enum.js';
 
 /**
- * Parámetros permitidos para actualizar los datos generales de una ruta existente.
+ * General data of an existing route that can be updated.
  */
 export interface UpdateRouteDraftCommand {
   name?: string;
@@ -25,29 +25,25 @@ export interface UpdateRouteDraftCommand {
 }
 
 /**
- * Caso de uso: Actualizar datos generales de una ruta comercial (HU-17 y HU-21).
- * 
- * En este caso de uso:
- * 1. Busco la ruta y verifico que exista.
- * 2. Valido que el Director Regional tenga permisos sobre la zona territorial.
- * 3. Si se cambia el nombre, valido que no colisione con otra ruta en la misma zona.
- * 4. Aplico los cambios a la entidad y persisto.
+ * Updates the general data of a route (HU-17, HU-21). A regional director
+ * can't touch or move routes outside their zone, and a new name must be
+ * unique within the target zone.
  */
 @Injectable()
 export class UpdateRouteDraftUseCase {
-  constructor(private readonly routeRepository: RouteRepository) {}
+  constructor(private readonly routeDao: RouteDao) {}
 
   async execute(
     routeId: number,
     command: UpdateRouteDraftCommand,
     actor?: AuthActor,
   ): Promise<Route> {
-    const route = await this.routeRepository.findById(routeId);
+    const route = await this.routeDao.findById(routeId);
     if (!route) {
       throw new RouteNotFoundError(routeId);
     }
 
-    // 1. Verifico la seguridad de zona
+    // A regional director can only manage routes in their zone
     if (actor && actor.role === UserRole.DIRECTOR_REGIONAL) {
       if (actor.zoneId && actor.zoneId !== route.zoneId) {
         throw new UnauthorizedZoneError(actor.zoneId, route.zoneId);
@@ -57,10 +53,13 @@ export class UpdateRouteDraftUseCase {
       }
     }
 
-    // 2. Si cambia el nombre o la zona, valido unicidad
+    // A new name or zone must keep the name unique within the zone
     const targetZoneId = command.zoneId ?? route.zoneId;
-    if (command.name && (command.name !== route.name || targetZoneId !== route.zoneId)) {
-      const existing = await this.routeRepository.findByNameAndZone(
+    if (
+      command.name &&
+      (command.name !== route.name || targetZoneId !== route.zoneId)
+    ) {
+      const existing = await this.routeDao.findByNameAndZone(
         command.name,
         targetZoneId,
       );
@@ -69,10 +68,8 @@ export class UpdateRouteDraftUseCase {
       }
     }
 
-    // 3. Actualizo la entidad con mis reglas de dominio
     route.updateGeneralInfo(command);
 
-    // 4. Guardo los cambios
-    return await this.routeRepository.save(route);
+    return await this.routeDao.save(route);
   }
 }

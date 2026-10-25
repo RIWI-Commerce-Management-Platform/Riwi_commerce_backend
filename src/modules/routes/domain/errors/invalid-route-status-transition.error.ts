@@ -1,7 +1,7 @@
 import { RouteStatus } from '../route-status.enum.js';
 
 /**
- * Error de dominio lanzado cuando se intenta realizar una transición de estado ilegal en la ruta.
+ * Thrown on an illegal route status transition.
  */
 export class InvalidRouteStatusTransitionError extends Error {
   constructor(from: RouteStatus, to: RouteStatus) {

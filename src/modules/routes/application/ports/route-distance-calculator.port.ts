@@ -1,5 +1,5 @@
 /**
- * Coordenada geográfica para el cálculo de distancias y tiempos.
+ * A coordinate used to compute distances and times.
  */
 export interface RouteWaypoint {
   latitude: number;
@@ -7,7 +7,7 @@ export interface RouteWaypoint {
 }
 
 /**
- * Resultado del cálculo métrico de un recorrido comercial.
+ * Computed metrics of a route.
  */
 export interface RouteMetricsResult {
   totalDistanceKm: number;
@@ -15,16 +15,12 @@ export interface RouteMetricsResult {
 }
 
 /**
- * Puerto abstracto para el cálculo de distancia y tiempo estimado de viaje (HU-22).
- * 
- * En mi arquitectura, este puerto me permite desacoplar la lógica de cálculo
- * (ya sea fórmula matemática geodésica de Haversine o consumo de la API de OSRM)
- * de mis casos de uso.
+ * Port that estimates travel distance and time (HU-22), so use cases don't
+ * depend on how it's computed (Haversine formula or the OSRM API).
  */
 export abstract class RouteDistanceCalculatorPort {
   /**
-   * Con este método calculo los kilómetros totales y minutos estimados
-   * a partir de una secuencia ordenada de puntos geográficos.
+   * Total kilometers and estimated minutes for an ordered list of points.
    */
   abstract calculateMetrics(
     waypoints: RouteWaypoint[],

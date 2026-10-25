@@ -1,23 +1,23 @@
 import { Injectable } from '@nestjs/common';
-import { CatalogRepository } from '../domain/catalog.repository.js';
+import { CatalogDao } from '../domain/catalog.dao.js';
 import { InvalidCatalogTypeError } from '../domain/catalog-errors.js';
 
 @Injectable()
 export class ListCatalogByTypeUseCase {
-  constructor(private readonly catalogRepository: CatalogRepository) {}
+  constructor(private readonly catalogDao: CatalogDao) {}
 
   async execute(type: string): Promise<unknown[]> {
     switch (type) {
       case 'client-types':
-        return this.catalogRepository.findClientTypes();
+        return this.catalogDao.findClientTypes();
       case 'potentials':
-        return this.catalogRepository.findPotentials();
+        return this.catalogDao.findPotentials();
       case 'client-statuses':
-        return this.catalogRepository.findClientStatuses();
+        return this.catalogDao.findClientStatuses();
       case 'portfolios':
-        return this.catalogRepository.findPortfolios();
+        return this.catalogDao.findPortfolios();
       case 'visit-results':
-        return this.catalogRepository.findVisitResults();
+        return this.catalogDao.findVisitResults();
       default:
         throw new InvalidCatalogTypeError(type);
     }

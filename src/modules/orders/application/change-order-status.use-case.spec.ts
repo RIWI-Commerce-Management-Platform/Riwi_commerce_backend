@@ -1,6 +1,7 @@
+import { UserRole } from '../../auth/domain/user-role.enum.js';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ChangeOrderStatusUseCase } from './change-order-status.use-case.js';
-import { OrderRepository } from '../domain/order.repository.js';
+import { OrderDao } from '../domain/order.dao.js';
 import { ActivityLogService } from '../../../shared/activity-log/domain/activity-log.service.js';
 import { Order } from '../domain/order.entity.js';
 import { OrderStatus } from '../domain/order-status.enum.js';
@@ -9,7 +10,7 @@ import { InvalidOrderStatusTransitionError } from '../domain/errors/invalid-orde
 
 describe('ChangeOrderStatusUseCase (Application)', () => {
   let useCase: ChangeOrderStatusUseCase;
-  let orderRepository: Partial<OrderRepository>;
+  let orderDao: Partial<OrderDao>;
   let activityLogService: Partial<ActivityLogService>;
 
   const createFreshOrder = (status: OrderStatus = OrderStatus.CREATED) =>
@@ -25,7 +26,7 @@ describe('ChangeOrderStatusUseCase (Application)', () => {
     });
 
   beforeEach(() => {
-    orderRepository = {
+    orderDao = {
       findById: vi.fn().mockImplementation(async () => createFreshOrder()),
       save: vi.fn().mockImplementation(async (order: Order) => order),
     };
@@ -35,7 +36,7 @@ describe('ChangeOrderStatusUseCase (Application)', () => {
     };
 
     useCase = new ChangeOrderStatusUseCase(
-      orderRepository as OrderRepository,
+      orderDao as OrderDao,
       activityLogService as ActivityLogService,
     );
   });
@@ -48,7 +49,7 @@ describe('ChangeOrderStatusUseCase (Application)', () => {
     });
 
     expect(result.status).toBe(OrderStatus.DISPATCHED);
-    expect(orderRepository.save).toHaveBeenCalled();
+    expect(orderDao.save).toHaveBeenCalled();
     expect(activityLogService.record).toHaveBeenCalledWith(
       expect.objectContaining({
         action: 'order.status_changed',
@@ -63,8 +64,19 @@ describe('ChangeOrderStatusUseCase (Application)', () => {
     );
   });
 
+  it('looks the order up within the actor scope (HU-06)', async () => {
+    await useCase.execute({
+      orderId: 1,
+      newStatus: OrderStatus.DISPATCHED,
+      actorId: 2,
+      actor: { id: 2, role: UserRole.DIRECTOR_REGIONAL, zoneId: 4 },
+    });
+
+    expect(orderDao.findById).toHaveBeenCalledWith(1, { zoneId: 4 });
+  });
+
   it('throws OrderNotFoundError when order does not exist', async () => {
-    vi.mocked(orderRepository.findById!).mockResolvedValue(null);
+    vi.mocked(orderDao.findById!).mockResolvedValue(null);
 
     await expect(
       useCase.execute({

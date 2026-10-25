@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { Client } from '../domain/client.entity.js';
-import { ClientRepository } from '../domain/client.repository.js';
+import { ClientDao } from '../domain/client.dao.js';
 import { ClientNotFoundError } from '../domain/client-not-found.error.js';
 import { ToggleClientStatusUseCase } from './toggle-client-status.use-case.js';
 
@@ -10,7 +10,7 @@ describe('ToggleClientStatusUseCase', () => {
   const findByNit = vi.fn();
   const findPaginated = vi.fn();
 
-  const mockRepository: ClientRepository = {
+  const mockDao: ClientDao = {
     save,
     findById,
     findByNit,
@@ -42,7 +42,9 @@ describe('ToggleClientStatusUseCase', () => {
   it('should throw ClientNotFoundError if client does not exist', async () => {
     findById.mockResolvedValueOnce(null);
 
-    const useCase = new ToggleClientStatusUseCase(mockRepository);
+    const useCase = new ToggleClientStatusUseCase(mockDao, {
+      record: vi.fn(),
+    } as any);
 
     await expect(useCase.execute({ id: 999 })).rejects.toThrow(
       ClientNotFoundError,
@@ -53,7 +55,9 @@ describe('ToggleClientStatusUseCase', () => {
     const client = createActiveClient();
     findById.mockResolvedValueOnce(client);
 
-    const useCase = new ToggleClientStatusUseCase(mockRepository);
+    const useCase = new ToggleClientStatusUseCase(mockDao, {
+      record: vi.fn(),
+    } as any);
     const result = await useCase.execute({ id: 1 });
 
     expect(result.isActive).toBe(false);
@@ -65,7 +69,9 @@ describe('ToggleClientStatusUseCase', () => {
     client.deactivate();
     findById.mockResolvedValueOnce(client);
 
-    const useCase = new ToggleClientStatusUseCase(mockRepository);
+    const useCase = new ToggleClientStatusUseCase(mockDao, {
+      record: vi.fn(),
+    } as any);
     const result = await useCase.execute({ id: 1 });
 
     expect(result.isActive).toBe(true);
@@ -77,7 +83,9 @@ describe('ToggleClientStatusUseCase', () => {
     client.deactivate();
     findById.mockResolvedValueOnce(client);
 
-    const useCase = new ToggleClientStatusUseCase(mockRepository);
+    const useCase = new ToggleClientStatusUseCase(mockDao, {
+      record: vi.fn(),
+    } as any);
     const result = await useCase.execute({ id: 1, isActive: true });
 
     expect(result.isActive).toBe(true);
@@ -87,9 +95,33 @@ describe('ToggleClientStatusUseCase', () => {
     const client = createActiveClient();
     findById.mockResolvedValueOnce(client);
 
-    const useCase = new ToggleClientStatusUseCase(mockRepository);
+    const useCase = new ToggleClientStatusUseCase(mockDao, {
+      record: vi.fn(),
+    } as any);
     const result = await useCase.execute({ id: 1, isActive: false });
 
     expect(result.isActive).toBe(false);
   });
+
+  it.each([
+    [true, 'Client activated'],
+    [false, 'Client deactivated'],
+  ])(
+    'records the change in the activity log (isActive: %s)',
+    async (isActive, description) => {
+      findById.mockResolvedValue(createActiveClient());
+      const record = vi.fn().mockResolvedValue(undefined);
+      const useCase = new ToggleClientStatusUseCase(mockDao, { record });
+
+      await useCase.execute({ id: 1, isActive, actorId: 7 });
+
+      expect(record).toHaveBeenCalledWith(
+        expect.objectContaining({
+          action: 'client.status_changed',
+          actorId: 7,
+          description,
+        }),
+      );
+    },
+  );
 });

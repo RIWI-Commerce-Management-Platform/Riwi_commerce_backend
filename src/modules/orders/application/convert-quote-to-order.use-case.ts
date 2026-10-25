@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
-import { OrderRepository } from '../domain/order.repository.js';
-import { QuoteRepository } from '../../quotes/domain/quote.repository.js';
+import { OrderDao } from '../domain/order.dao.js';
+import { QuoteDao } from '../../quotes/domain/quote.dao.js';
 import { ActivityLogService } from '../../../shared/activity-log/domain/activity-log.service.js';
 import { Order } from '../domain/order.entity.js';
 import { OrderItem } from '../domain/order-item.entity.js';
@@ -9,18 +9,22 @@ import { QuoteStatus } from '../../quotes/domain/quote-status.enum.js';
 import { QuoteNotFoundError } from '../../quotes/domain/errors/quote-not-found.error.js';
 import { QuoteNotApprovedForOrderError } from '../domain/errors/quote-not-approved-for-order.error.js';
 import { QuoteAlreadyConvertedError } from '../domain/errors/quote-already-converted.error.js';
+import { scopeForActor } from '../../../shared/auth/domain/current-actor.provider.js';
 import { ConvertQuoteToOrderCommand } from './dto/convert-quote-to-order.command.js';
 
 @Injectable()
 export class ConvertQuoteToOrderUseCase {
   constructor(
-    private readonly orderRepository: OrderRepository,
-    private readonly quoteRepository: QuoteRepository,
+    private readonly orderDao: OrderDao,
+    private readonly quoteDao: QuoteDao,
     private readonly activityLogService: ActivityLogService,
   ) {}
 
   async execute(command: ConvertQuoteToOrderCommand): Promise<Order> {
-    const quote = await this.quoteRepository.findById(command.quoteId);
+    const quote = await this.quoteDao.findById(
+      command.quoteId,
+      scopeForActor(command.actor),
+    );
     if (!quote) {
       throw new QuoteNotFoundError(command.quoteId);
     }
@@ -32,9 +36,7 @@ export class ConvertQuoteToOrderUseCase {
       );
     }
 
-    const existingOrder = await this.orderRepository.findByQuoteId(
-      command.quoteId,
-    );
+    const existingOrder = await this.orderDao.findByQuoteId(command.quoteId);
     if (existingOrder) {
       throw new QuoteAlreadyConvertedError(
         command.quoteId,
@@ -42,7 +44,7 @@ export class ConvertQuoteToOrderUseCase {
       );
     }
 
-    const orderNumber = await this.orderRepository.generateNextOrderNumber();
+    const orderNumber = await this.orderDao.generateNextOrderNumber();
 
     const items = quote.items.map(
       (item) =>
@@ -58,13 +60,14 @@ export class ConvertQuoteToOrderUseCase {
       orderNumber,
       quoteId: quote.id!,
       clientId: quote.clientId,
+      advisorId: quote.advisorId,
       status: OrderStatus.CREATED,
       subtotal: quote.subtotal,
       total: quote.total,
       items,
     });
 
-    const savedOrder = await this.orderRepository.save(newOrder);
+    const savedOrder = await this.orderDao.save(newOrder);
 
     await this.activityLogService.record({
       action: 'order.created',

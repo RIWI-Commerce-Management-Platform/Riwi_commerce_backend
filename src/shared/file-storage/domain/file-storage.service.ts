@@ -7,6 +7,9 @@ import { UploadedFileResult } from './uploaded-file-result.interface.js';
  */
 export abstract class FileStorageService {
   abstract upload(options: UploadFileOptions): Promise<UploadedFileResult>;
-  abstract getPresignedUrl(key: string, expiresInSeconds?: number): Promise<string>;
+  abstract getPresignedUrl(
+    key: string,
+    expiresInSeconds?: number,
+  ): Promise<string>;
   abstract delete(key: string): Promise<void>;
 }

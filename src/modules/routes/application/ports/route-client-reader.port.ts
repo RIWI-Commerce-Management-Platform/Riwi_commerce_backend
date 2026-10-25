@@ -1,5 +1,5 @@
 /**
- * Información geográfica y comercial básica de un cliente requerida para la planeación de rutas.
+ * Basic commercial and location data of a client needed to plan routes.
  */
 export interface RouteClientDetails {
   id: number;
@@ -13,20 +13,17 @@ export interface RouteClientDetails {
 }
 
 /**
- * Puerto de lectura de clientes para el módulo de rutas.
- * 
- * En mi arquitectura limpia, este puerto abstracto me permite consultar
- * los clientes y sus coordenadas geográficas sin acoplarme directamente
- * a las tablas ni a la base de datos de Yesid (Épica E2).
+ * Client read port for the routes module, so it can read clients and their
+ * coordinates without depending on the clients module's tables (epic E2).
  */
 export abstract class RouteClientReaderPort {
   /**
-   * Con este método busco los detalles y coordenadas de un cliente por su ID.
+   * Details and coordinates of one client.
    */
   abstract findById(id: number): Promise<RouteClientDetails | null>;
 
   /**
-   * Con este método busco los detalles y coordenadas de un conjunto de clientes en lote.
+   * Details and coordinates of several clients in one query.
    */
   abstract findByIds(ids: number[]): Promise<RouteClientDetails[]>;
 }

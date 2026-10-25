@@ -76,3 +76,58 @@ describe('LoginUseCase', () => {
     ).rejects.toThrow(InvalidCredentialsError);
   });
 });
+
+describe('LoginUseCase error details', () => {
+  const input = {
+    email: 'a@b.co',
+    password: 'x',
+    rememberMe: false,
+    headers: {},
+  };
+  const run = (signInEmail: ReturnType<typeof vi.fn>) =>
+    new LoginUseCase({
+      api: { signInEmail },
+    } as unknown as AuthService).execute(input);
+  const failedResponse = (json: ReturnType<typeof vi.fn>) =>
+    ({
+      ok: false,
+      headers: { getSetCookie: () => [] },
+      json,
+    }) as unknown as Response;
+
+  it('still fails when the error body is not JSON', async () => {
+    const signInEmail = vi
+      .fn()
+      .mockResolvedValue(
+        failedResponse(vi.fn().mockRejectedValue(new SyntaxError('bad json'))),
+      );
+
+    await expect(run(signInEmail)).rejects.toThrow(InvalidCredentialsError);
+  });
+
+  it('uses the status text when the body has no message', async () => {
+    const signInEmail = vi
+      .fn()
+      .mockResolvedValue(
+        failedResponse(
+          vi.fn().mockResolvedValue({ statusText: 'UNAUTHORIZED' }),
+        ),
+      );
+
+    await expect(run(signInEmail)).rejects.toThrow('UNAUTHORIZED');
+  });
+
+  it('uses the Better Auth error body message when the call throws', async () => {
+    const signInEmail = vi
+      .fn()
+      .mockRejectedValue({ body: { message: 'Blocked by hook' } });
+
+    await expect(run(signInEmail)).rejects.toThrow('Blocked by hook');
+  });
+
+  it('wraps a thrown value that is not an Error', async () => {
+    const signInEmail = vi.fn().mockRejectedValue('boom');
+
+    await expect(run(signInEmail)).rejects.toThrow(InvalidCredentialsError);
+  });
+});

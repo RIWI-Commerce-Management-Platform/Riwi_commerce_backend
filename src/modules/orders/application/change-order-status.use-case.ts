@@ -1,19 +1,23 @@
 import { Injectable } from '@nestjs/common';
-import { OrderRepository } from '../domain/order.repository.js';
+import { OrderDao } from '../domain/order.dao.js';
 import { ActivityLogService } from '../../../shared/activity-log/domain/activity-log.service.js';
 import { Order } from '../domain/order.entity.js';
 import { OrderNotFoundError } from '../domain/errors/order-not-found.error.js';
+import { scopeForActor } from '../../../shared/auth/domain/current-actor.provider.js';
 import { ChangeOrderStatusCommand } from './dto/change-order-status.command.js';
 
 @Injectable()
 export class ChangeOrderStatusUseCase {
   constructor(
-    private readonly orderRepository: OrderRepository,
+    private readonly orderDao: OrderDao,
     private readonly activityLogService: ActivityLogService,
   ) {}
 
   async execute(command: ChangeOrderStatusCommand): Promise<Order> {
-    const order = await this.orderRepository.findById(command.orderId);
+    const order = await this.orderDao.findById(
+      command.orderId,
+      scopeForActor(command.actor),
+    );
     if (!order) {
       throw new OrderNotFoundError(command.orderId);
     }
@@ -21,7 +25,7 @@ export class ChangeOrderStatusUseCase {
     const previousStatus = order.status;
     order.changeStatus(command.newStatus);
 
-    const savedOrder = await this.orderRepository.save(order);
+    const savedOrder = await this.orderDao.save(order);
 
     await this.activityLogService.record({
       action: 'order.status_changed',

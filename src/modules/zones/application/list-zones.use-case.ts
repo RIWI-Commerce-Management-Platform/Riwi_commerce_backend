@@ -1,12 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import { Zone } from '../domain/zone.entity.js';
-import { ZoneRepository } from '../domain/zone.repository.js';
+import { ZoneDao } from '../domain/zone.dao.js';
 
 @Injectable()
 export class ListZonesUseCase {
-  constructor(private readonly zoneRepository: ZoneRepository) {}
+  constructor(private readonly zoneDao: ZoneDao) {}
 
   async execute(): Promise<Zone[]> {
-    return this.zoneRepository.findAll();
+    return this.zoneDao.findAll();
   }
 }

@@ -1,10 +1,8 @@
 /**
- * Estado del ciclo de vida de una ruta comercial.
- * 
- * En mi modelo de negocio, una ruta pasa por los siguientes estados:
- * - DRAFT: Borrador en construcción (Paso 1 y 2 del Wizard de creación).
- * - ASSIGNED: Asignada oficialmente a un asesor comercial y con visitas generadas en su agenda (Paso 3).
- * - INACTIVE: Desactivada lógicamente para pausar su operación sin perder el historial.
+ * Lifecycle of a commercial route:
+ * - DRAFT: being built (steps 1 and 2 of the creation wizard).
+ * - ASSIGNED: assigned to an advisor, with visits scheduled in their agenda (step 3).
+ * - INACTIVE: soft-deactivated; it stops running but keeps its history.
  */
 export enum RouteStatus {
   DRAFT = 'DRAFT',
