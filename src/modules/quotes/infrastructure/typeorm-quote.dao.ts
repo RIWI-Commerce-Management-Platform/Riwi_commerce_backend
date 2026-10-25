@@ -2,10 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Quote } from '../domain/quote.entity.js';
-import {
-  QuoteRepository,
-  ListQuotesFilter,
-} from '../domain/quote.repository.js';
+import { QuoteDao, ListQuotesFilter } from '../domain/quote.dao.js';
 import { QuoteOrmEntity } from './quote.orm-entity.js';
 import { QuoteMapper } from './quote.mapper.js';
 import { PaginatedResult } from '../../../shared/pagination/paginated-result.interface.js';
@@ -16,7 +13,7 @@ import {
 } from '../../../shared/pagination/typeorm-paginator.js';
 
 @Injectable()
-export class TypeOrmQuoteRepository implements QuoteRepository {
+export class TypeOrmQuoteDao implements QuoteDao {
   constructor(
     @InjectRepository(QuoteOrmEntity)
     private readonly ormRepository: Repository<QuoteOrmEntity>,

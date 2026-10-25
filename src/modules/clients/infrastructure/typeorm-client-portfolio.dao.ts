@@ -3,14 +3,14 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ClientPortfolio } from '../domain/client-portfolio.entity.js';
 import {
-  ClientPortfolioRepository,
+  ClientPortfolioDao,
   PortfolioSummary,
-} from '../domain/client-portfolio.repository.js';
+} from '../domain/client-portfolio.dao.js';
 import { ClientPortfolioOrmEntity } from './client-portfolio.orm-entity.js';
 import { PortfolioOrmEntity } from '../../catalogs/infrastructure/portfolio.orm-entity.js';
 
 @Injectable()
-export class TypeOrmClientPortfolioRepository implements ClientPortfolioRepository {
+export class TypeOrmClientPortfolioDao implements ClientPortfolioDao {
   constructor(
     @InjectRepository(ClientPortfolioOrmEntity)
     private readonly repository: Repository<ClientPortfolioOrmEntity>,

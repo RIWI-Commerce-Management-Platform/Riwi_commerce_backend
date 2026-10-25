@@ -3,7 +3,7 @@ import { DayOfWeek } from '../domain/day-of-week.enum.js';
 import { RouteFrequency } from '../domain/route-frequency.enum.js';
 import { RouteStatus } from '../domain/route-status.enum.js';
 import { Route } from '../domain/route.entity.js';
-import { RouteRepository } from '../domain/route.repository.js';
+import { RouteDao } from '../domain/route.dao.js';
 import { RouteNameAlreadyExistsError } from '../domain/errors/route-name-already-exists.error.js';
 import { UnauthorizedZoneError } from '../domain/errors/unauthorized-zone.error.js';
 import { AuthActor } from './dto/auth-actor.dto.js';
@@ -31,7 +31,7 @@ export interface CreateRouteDraftCommand {
  */
 @Injectable()
 export class CreateRouteDraftUseCase {
-  constructor(private readonly routeRepository: RouteRepository) {}
+  constructor(private readonly routeDao: RouteDao) {}
 
   async execute(
     command: CreateRouteDraftCommand,
@@ -44,7 +44,7 @@ export class CreateRouteDraftUseCase {
       }
     }
 
-    const existing = await this.routeRepository.findByNameAndZone(
+    const existing = await this.routeDao.findByNameAndZone(
       command.name,
       command.zoneId,
     );
@@ -65,6 +65,6 @@ export class CreateRouteDraftUseCase {
       status: RouteStatus.DRAFT,
     });
 
-    return await this.routeRepository.save(route);
+    return await this.routeDao.save(route);
   }
 }

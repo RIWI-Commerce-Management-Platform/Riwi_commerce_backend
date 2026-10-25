@@ -2,10 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Order } from '../domain/order.entity.js';
-import {
-  OrderRepository,
-  ListOrdersFilter,
-} from '../domain/order.repository.js';
+import { OrderDao, ListOrdersFilter } from '../domain/order.dao.js';
 import { OrderOrmEntity } from './order.orm-entity.js';
 import { OrderMapper } from './order.mapper.js';
 import { PaginatedResult } from '../../../shared/pagination/paginated-result.interface.js';
@@ -16,7 +13,7 @@ import {
 } from '../../../shared/pagination/typeorm-paginator.js';
 
 @Injectable()
-export class TypeOrmOrderRepository implements OrderRepository {
+export class TypeOrmOrderDao implements OrderDao {
   constructor(
     @InjectRepository(OrderOrmEntity)
     private readonly ormRepository: Repository<OrderOrmEntity>,

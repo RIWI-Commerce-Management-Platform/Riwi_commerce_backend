@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { ClientRepository } from './domain/client.repository.js';
-import { ClientContactRepository } from './domain/client-contact.repository.js';
+import { ClientDao } from './domain/client.dao.js';
+import { ClientContactDao } from './domain/client-contact.dao.js';
 import { GeocodingPort } from './application/ports/geocoding.port.js';
 import { CreateClientUseCase } from './application/create-client.use-case.js';
 import { UpdateClientUseCase } from './application/update-client.use-case.js';
@@ -15,18 +15,18 @@ import { SetPrimaryContactUseCase } from './application/set-primary-contact.use-
 import { DeleteClientContactUseCase } from './application/delete-client-contact.use-case.js';
 import { ClientOrmEntity } from './infrastructure/client.orm-entity.js';
 import { ClientContactOrmEntity } from './infrastructure/client-contact.orm-entity.js';
-import { TypeOrmClientRepository } from './infrastructure/typeorm-client.repository.js';
-import { TypeOrmClientContactRepository } from './infrastructure/typeorm-client-contact.repository.js';
+import { TypeOrmClientDao } from './infrastructure/typeorm-client.dao.js';
+import { TypeOrmClientContactDao } from './infrastructure/typeorm-client-contact.dao.js';
 import { NominatimGeocodingAdapter } from './infrastructure/adapters/nominatim-geocoding.adapter.js';
 import { ClientsController } from './presentation/clients.controller.js';
 import { ClientContactsController } from './presentation/client-contacts.controller.js';
 import { ClientPortfoliosController } from './presentation/client-portfolios.controller.js';
-import { ClientHistoryRepository } from './domain/client-history.repository.js';
-import { ClientPortfolioRepository } from './domain/client-portfolio.repository.js';
+import { ClientHistoryDao } from './domain/client-history.dao.js';
+import { ClientPortfolioDao } from './domain/client-portfolio.dao.js';
 import { ClientHistoryOrmEntity } from './infrastructure/client-history.orm-entity.js';
 import { ClientPortfolioOrmEntity } from './infrastructure/client-portfolio.orm-entity.js';
-import { TypeOrmClientHistoryRepository } from './infrastructure/typeorm-client-history.repository.js';
-import { TypeOrmClientPortfolioRepository } from './infrastructure/typeorm-client-portfolio.repository.js';
+import { TypeOrmClientHistoryDao } from './infrastructure/typeorm-client-history.dao.js';
+import { TypeOrmClientPortfolioDao } from './infrastructure/typeorm-client-portfolio.dao.js';
 import { ListClientHistoryUseCase } from './application/list-client-history.use-case.js';
 import { ListClientPortfoliosUseCase } from './application/list-client-portfolios.use-case.js';
 import { AddClientPortfolioUseCase } from './application/add-client-portfolio.use-case.js';
@@ -70,26 +70,26 @@ import { AuthModule as SharedAuthModule } from '../../shared/auth/auth.module.js
     AddClientPortfolioUseCase,
     RemoveClientPortfolioUseCase,
     {
-      provide: ClientHistoryRepository,
-      useClass: TypeOrmClientHistoryRepository,
+      provide: ClientHistoryDao,
+      useClass: TypeOrmClientHistoryDao,
     },
     {
-      provide: ClientPortfolioRepository,
-      useClass: TypeOrmClientPortfolioRepository,
+      provide: ClientPortfolioDao,
+      useClass: TypeOrmClientPortfolioDao,
     },
     {
-      provide: ClientRepository,
-      useClass: TypeOrmClientRepository,
+      provide: ClientDao,
+      useClass: TypeOrmClientDao,
     },
     {
-      provide: ClientContactRepository,
-      useClass: TypeOrmClientContactRepository,
+      provide: ClientContactDao,
+      useClass: TypeOrmClientContactDao,
     },
     {
       provide: GeocodingPort,
       useClass: NominatimGeocodingAdapter,
     },
   ],
-  exports: [ClientRepository, ClientContactRepository],
+  exports: [ClientDao, ClientContactDao],
 })
 export class ClientsModule {}

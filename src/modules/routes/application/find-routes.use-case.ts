@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { Route } from '../domain/route.entity.js';
 import { RouteFilterCriteria } from '../domain/route-filter.criteria.js';
-import { RouteRepository } from '../domain/route.repository.js';
+import { RouteDao } from '../domain/route.dao.js';
 import { PaginatedResult } from '../../../shared/pagination/paginated-result.interface.js';
 import { AuthActor } from './dto/auth-actor.dto.js';
 import { UserRole } from '../../auth/domain/user-role.enum.js';
@@ -13,7 +13,7 @@ import { UserRole } from '../../auth/domain/user-role.enum.js';
  */
 @Injectable()
 export class FindRoutesUseCase {
-  constructor(private readonly routeRepository: RouteRepository) {}
+  constructor(private readonly routeDao: RouteDao) {}
 
   async execute(
     criteria: RouteFilterCriteria,
@@ -30,6 +30,6 @@ export class FindRoutesUseCase {
       scopedCriteria.advisorId = actor.id;
     }
 
-    return await this.routeRepository.findPaginated(scopedCriteria);
+    return await this.routeDao.findPaginated(scopedCriteria);
   }
 }

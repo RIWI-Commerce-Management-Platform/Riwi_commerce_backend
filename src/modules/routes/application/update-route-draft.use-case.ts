@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { DayOfWeek } from '../domain/day-of-week.enum.js';
 import { RouteFrequency } from '../domain/route-frequency.enum.js';
 import { Route } from '../domain/route.entity.js';
-import { RouteRepository } from '../domain/route.repository.js';
+import { RouteDao } from '../domain/route.dao.js';
 import { RouteNotFoundError } from '../domain/errors/route-not-found.error.js';
 import { RouteNameAlreadyExistsError } from '../domain/errors/route-name-already-exists.error.js';
 import { UnauthorizedZoneError } from '../domain/errors/unauthorized-zone.error.js';
@@ -31,14 +31,14 @@ export interface UpdateRouteDraftCommand {
  */
 @Injectable()
 export class UpdateRouteDraftUseCase {
-  constructor(private readonly routeRepository: RouteRepository) {}
+  constructor(private readonly routeDao: RouteDao) {}
 
   async execute(
     routeId: number,
     command: UpdateRouteDraftCommand,
     actor?: AuthActor,
   ): Promise<Route> {
-    const route = await this.routeRepository.findById(routeId);
+    const route = await this.routeDao.findById(routeId);
     if (!route) {
       throw new RouteNotFoundError(routeId);
     }
@@ -59,7 +59,7 @@ export class UpdateRouteDraftUseCase {
       command.name &&
       (command.name !== route.name || targetZoneId !== route.zoneId)
     ) {
-      const existing = await this.routeRepository.findByNameAndZone(
+      const existing = await this.routeDao.findByNameAndZone(
         command.name,
         targetZoneId,
       );
@@ -70,6 +70,6 @@ export class UpdateRouteDraftUseCase {
 
     route.updateGeneralInfo(command);
 
-    return await this.routeRepository.save(route);
+    return await this.routeDao.save(route);
   }
 }

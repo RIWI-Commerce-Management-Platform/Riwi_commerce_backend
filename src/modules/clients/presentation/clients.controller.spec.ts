@@ -169,6 +169,15 @@ describe('ClientsController', () => {
         controller.getHistory(99, new FindClientsQueryDto()),
       ).rejects.toThrow(NotFoundException);
     });
+
+    it('rethrows unexpected errors', async () => {
+      const failure = new Error('database down');
+      listHistoryExecute.mockRejectedValueOnce(failure);
+
+      await expect(
+        controller.getHistory(1, new FindClientsQueryDto()),
+      ).rejects.toBe(failure);
+    });
   });
 
   describe('getClientById', () => {

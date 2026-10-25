@@ -3,18 +3,18 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, Repository } from 'typeorm';
 import { Route } from '../domain/route.entity.js';
 import { RouteFilterCriteria } from '../domain/route-filter.criteria.js';
-import { RouteRepository } from '../domain/route.repository.js';
+import { RouteDao } from '../domain/route.dao.js';
 import { RouteOrmEntity } from './route.orm-entity.js';
 import { RouteStopOrmEntity } from './route-stop.orm-entity.js';
 import { RouteMapper } from './route.mapper.js';
 import { PaginatedResult } from '../../../shared/pagination/paginated-result.interface.js';
 
 /**
- * TypeORM implementation of RouteRepository. Saves the Route aggregate and
+ * TypeORM implementation of RouteDao. Saves the Route aggregate and
  * all of its stops in one transaction.
  */
 @Injectable()
-export class TypeOrmRouteRepository implements RouteRepository {
+export class TypeOrmRouteDao implements RouteDao {
   constructor(
     @InjectRepository(RouteOrmEntity)
     private readonly routeOrmRepository: Repository<RouteOrmEntity>,

@@ -1,12 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ListOrdersUseCase } from './list-orders.use-case.js';
-import { OrderRepository } from '../domain/order.repository.js';
+import { OrderDao } from '../domain/order.dao.js';
 import { Order } from '../domain/order.entity.js';
 import { OrderStatus } from '../domain/order-status.enum.js';
 
 describe('ListOrdersUseCase (Application - HU-34)', () => {
   let useCase: ListOrdersUseCase;
-  let orderRepository: Partial<OrderRepository>;
+  let orderDao: Partial<OrderDao>;
 
   const mockOrder = new Order({
     id: 1,
@@ -20,7 +20,7 @@ describe('ListOrdersUseCase (Application - HU-34)', () => {
   });
 
   beforeEach(() => {
-    orderRepository = {
+    orderDao = {
       findPaginated: vi.fn().mockResolvedValue({
         data: [mockOrder],
         meta: {
@@ -34,7 +34,7 @@ describe('ListOrdersUseCase (Application - HU-34)', () => {
       }),
     };
 
-    useCase = new ListOrdersUseCase(orderRepository as OrderRepository);
+    useCase = new ListOrdersUseCase(orderDao as OrderDao);
   });
 
   it('lists paginated orders with applied filters', async () => {
@@ -48,6 +48,6 @@ describe('ListOrdersUseCase (Application - HU-34)', () => {
 
     expect(result.data).toHaveLength(1);
     expect(result.data[0].orderNumber).toBe('PED-0001');
-    expect(orderRepository.findPaginated).toHaveBeenCalledWith(filter);
+    expect(orderDao.findPaginated).toHaveBeenCalledWith(filter);
   });
 });

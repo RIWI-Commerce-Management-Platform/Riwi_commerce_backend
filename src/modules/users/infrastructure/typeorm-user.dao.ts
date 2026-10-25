@@ -2,10 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from '../domain/user.entity.js';
-import {
-  UserFilterCriteria,
-  UserRepository,
-} from '../domain/user.repository.js';
+import { UserFilterCriteria, UserDao } from '../domain/user.dao.js';
 import { UserOrmEntity } from '../../auth/infrastructure/user.orm-entity.js';
 import { PaginatedResult } from '../../../shared/pagination/paginated-result.interface.js';
 
@@ -14,7 +11,7 @@ import { PaginatedResult } from '../../../shared/pagination/paginated-result.int
  * password) and in AssignUserRoleUseCase (role and zone).
  */
 @Injectable()
-export class TypeOrmUserRepository implements UserRepository {
+export class TypeOrmUserDao implements UserDao {
   constructor(
     @InjectRepository(UserOrmEntity)
     private readonly userRepository: Repository<UserOrmEntity>,

@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { CatalogItemResponseDto } from './catalog-item-response.dto.js';
-import { AllCatalogs } from '../../domain/catalog.repository.js';
+import { AllCatalogs } from '../../domain/catalog.dao.js';
 
 export class AllCatalogsResponseDto {
   @ApiProperty({ type: [CatalogItemResponseDto] })

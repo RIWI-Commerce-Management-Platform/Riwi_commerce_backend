@@ -6,7 +6,7 @@ export interface PortfolioSummary {
   isActive: boolean;
 }
 
-export abstract class ClientPortfolioRepository {
+export abstract class ClientPortfolioDao {
   abstract findByClientId(clientId: number): Promise<ClientPortfolio[]>;
   abstract findOne(
     clientId: number,

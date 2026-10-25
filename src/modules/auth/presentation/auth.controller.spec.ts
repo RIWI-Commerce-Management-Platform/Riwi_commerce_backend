@@ -297,4 +297,47 @@ describe('AuthController', () => {
       ).rejects.toThrow(BadRequestException);
     });
   });
+
+  describe('error passthrough and cookies', () => {
+    it('rethrows unexpected reset-password errors', async () => {
+      const { controller, resetPasswordUseCase } = setup();
+      const failure = new Error('database down');
+      resetPasswordUseCase.execute.mockRejectedValue(failure);
+
+      await expect(
+        controller.resetPassword({ token: 't', newPassword: 'Password123!' }),
+      ).rejects.toBe(failure);
+    });
+
+    it('rethrows unexpected Microsoft sign-in errors', async () => {
+      const { controller, startMicrosoftLoginUseCase, mockReq, mockRes } =
+        setup();
+      const failure = new Error('database down');
+      startMicrosoftLoginUseCase.execute.mockRejectedValue(failure);
+
+      await expect(
+        controller.microsoftLogin({}, mockReq, mockRes),
+      ).rejects.toBe(failure);
+    });
+
+    it('does not set a cookie header when Better Auth sends none', async () => {
+      const { controller, startMicrosoftLoginUseCase, mockReq, mockRes } =
+        setup();
+      startMicrosoftLoginUseCase.execute.mockResolvedValue({
+        url: 'https://login.microsoftonline.com/x',
+        setCookieHeaders: null,
+      });
+
+      await controller.microsoftLogin(
+        { callbackURL: 'http://app/after' },
+        mockReq,
+        mockRes,
+      );
+
+      expect(mockRes.setHeader).not.toHaveBeenCalled();
+      expect(startMicrosoftLoginUseCase.execute).toHaveBeenCalledWith(
+        expect.objectContaining({ callbackURL: 'http://app/after' }),
+      );
+    });
+  });
 });

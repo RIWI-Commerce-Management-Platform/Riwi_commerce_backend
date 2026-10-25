@@ -1,7 +1,7 @@
 import { UserRole } from '../../auth/domain/user-role.enum.js';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ChangeQuoteStatusUseCase } from './change-quote-status.use-case.js';
-import { QuoteRepository } from '../domain/quote.repository.js';
+import { QuoteDao } from '../domain/quote.dao.js';
 import { ActivityLogService } from '../../../shared/activity-log/domain/activity-log.service.js';
 import { Quote } from '../domain/quote.entity.js';
 import { QuoteStatus } from '../domain/quote-status.enum.js';
@@ -10,7 +10,7 @@ import { InvalidQuoteStatusTransitionError } from '../domain/errors/invalid-quot
 
 describe('ChangeQuoteStatusUseCase', () => {
   let useCase: ChangeQuoteStatusUseCase;
-  let quoteRepository: Partial<QuoteRepository>;
+  let quoteDao: Partial<QuoteDao>;
   let activityLogService: Partial<ActivityLogService>;
 
   const createQuote = (status: QuoteStatus = QuoteStatus.DRAFT) =>
@@ -27,7 +27,7 @@ describe('ChangeQuoteStatusUseCase', () => {
     });
 
   beforeEach(() => {
-    quoteRepository = {
+    quoteDao = {
       findById: vi.fn().mockResolvedValue(createQuote(QuoteStatus.DRAFT)),
       save: vi.fn().mockImplementation((q) => Promise.resolve(q)),
     };
@@ -37,7 +37,7 @@ describe('ChangeQuoteStatusUseCase', () => {
     };
 
     useCase = new ChangeQuoteStatusUseCase(
-      quoteRepository as QuoteRepository,
+      quoteDao as QuoteDao,
       activityLogService as ActivityLogService,
     );
   });
@@ -50,7 +50,7 @@ describe('ChangeQuoteStatusUseCase', () => {
     });
 
     expect(result.status).toBe(QuoteStatus.SENT);
-    expect(quoteRepository.save).toHaveBeenCalled();
+    expect(quoteDao.save).toHaveBeenCalled();
     expect(activityLogService.record).toHaveBeenCalledWith({
       action: 'quote.status_changed',
       entityType: 'quote',
@@ -67,7 +67,7 @@ describe('ChangeQuoteStatusUseCase', () => {
   });
 
   it('successfully transitions from SENT to APPROVED and records activity log', async () => {
-    vi.mocked(quoteRepository.findById!).mockResolvedValue(
+    vi.mocked(quoteDao.findById!).mockResolvedValue(
       createQuote(QuoteStatus.SENT),
     );
 
@@ -97,11 +97,11 @@ describe('ChangeQuoteStatusUseCase', () => {
       actor: { id: 3, role: UserRole.ASESOR, zoneId: null },
     });
 
-    expect(quoteRepository.findById).toHaveBeenCalledWith(1, { advisorId: 3 });
+    expect(quoteDao.findById).toHaveBeenCalledWith(1, { advisorId: 3 });
   });
 
   it('throws QuoteNotFoundError if quote does not exist', async () => {
-    vi.mocked(quoteRepository.findById!).mockResolvedValue(null);
+    vi.mocked(quoteDao.findById!).mockResolvedValue(null);
 
     await expect(
       useCase.execute({
@@ -111,12 +111,12 @@ describe('ChangeQuoteStatusUseCase', () => {
       }),
     ).rejects.toThrow(QuoteNotFoundError);
 
-    expect(quoteRepository.save).not.toHaveBeenCalled();
+    expect(quoteDao.save).not.toHaveBeenCalled();
     expect(activityLogService.record).not.toHaveBeenCalled();
   });
 
   it('throws InvalidQuoteStatusTransitionError when invalid transition is attempted', async () => {
-    vi.mocked(quoteRepository.findById!).mockResolvedValue(
+    vi.mocked(quoteDao.findById!).mockResolvedValue(
       createQuote(QuoteStatus.APPROVED),
     );
 
@@ -128,7 +128,7 @@ describe('ChangeQuoteStatusUseCase', () => {
       }),
     ).rejects.toThrow(InvalidQuoteStatusTransitionError);
 
-    expect(quoteRepository.save).not.toHaveBeenCalled();
+    expect(quoteDao.save).not.toHaveBeenCalled();
     expect(activityLogService.record).not.toHaveBeenCalled();
   });
 });

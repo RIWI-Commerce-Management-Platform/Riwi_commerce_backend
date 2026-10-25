@@ -79,4 +79,28 @@ describe('NominatimGeocodingAdapter', () => {
 
     expect(result).toBeNull();
   });
+
+  it('should return null when fetch rejects with a value that is not an Error', async () => {
+    global.fetch = vi.fn().mockRejectedValueOnce('offline');
+
+    expect(await adapter.geocode('Calle 50', 'Medellín')).toBeNull();
+  });
+
+  it('should abort the request after 5 seconds', async () => {
+    vi.useFakeTimers();
+    global.fetch = vi.fn(
+      (_url: string, init: RequestInit) =>
+        new Promise((_resolve, reject) => {
+          init.signal?.addEventListener('abort', () =>
+            reject(new Error('aborted')),
+          );
+        }),
+    ) as unknown as typeof fetch;
+
+    const pending = adapter.geocode('Calle 50', 'Medellín');
+    await vi.advanceTimersByTimeAsync(5000);
+
+    expect(await pending).toBeNull();
+    vi.useRealTimers();
+  });
 });

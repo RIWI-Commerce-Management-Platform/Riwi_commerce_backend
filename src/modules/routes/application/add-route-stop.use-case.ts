@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { Route } from '../domain/route.entity.js';
-import { RouteRepository } from '../domain/route.repository.js';
+import { RouteDao } from '../domain/route.dao.js';
 import { RouteNotFoundError } from '../domain/errors/route-not-found.error.js';
 import { UnauthorizedZoneError } from '../domain/errors/unauthorized-zone.error.js';
 import { RouteClientReaderPort } from './ports/route-client-reader.port.js';
@@ -28,7 +28,7 @@ export interface AddRouteStopCommand {
 @Injectable()
 export class AddRouteStopUseCase {
   constructor(
-    private readonly routeRepository: RouteRepository,
+    private readonly routeDao: RouteDao,
     private readonly clientReader: RouteClientReaderPort,
     private readonly distanceCalculator: RouteDistanceCalculatorPort,
   ) {}
@@ -38,7 +38,7 @@ export class AddRouteStopUseCase {
     command: AddRouteStopCommand,
     actor?: AuthActor,
   ): Promise<Route> {
-    const route = await this.routeRepository.findById(routeId);
+    const route = await this.routeDao.findById(routeId);
     if (!route) {
       throw new RouteNotFoundError(routeId);
     }
@@ -71,7 +71,7 @@ export class AddRouteStopUseCase {
     // Distance and estimated time (HU-22)
     await this._recalculateRouteMetrics(route);
 
-    return await this.routeRepository.save(route);
+    return await this.routeDao.save(route);
   }
 
   private async _recalculateRouteMetrics(route: Route): Promise<void> {

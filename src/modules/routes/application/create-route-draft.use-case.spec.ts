@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { CreateRouteDraftUseCase } from './create-route-draft.use-case.js';
-import { RouteRepository } from '../domain/route.repository.js';
+import { RouteDao } from '../domain/route.dao.js';
 import { DayOfWeek } from '../domain/day-of-week.enum.js';
 import { RouteFrequency } from '../domain/route-frequency.enum.js';
 import { RouteStatus } from '../domain/route-status.enum.js';
@@ -9,7 +9,7 @@ import { UnauthorizedZoneError } from '../domain/errors/unauthorized-zone.error.
 import { UserRole } from '../../auth/domain/user-role.enum.js';
 
 describe('CreateRouteDraftUseCase', () => {
-  const createMockRepository = (): RouteRepository => ({
+  const createMockDao = (): RouteDao => ({
     findById: vi.fn(),
     findByNameAndZone: vi.fn().mockResolvedValue(null),
     findPaginated: vi.fn(),
@@ -27,8 +27,8 @@ describe('CreateRouteDraftUseCase', () => {
   };
 
   it('should create a route draft successfully in DRAFT status', async () => {
-    const repository = createMockRepository();
-    const useCase = new CreateRouteDraftUseCase(repository);
+    const dao = createMockDao();
+    const useCase = new CreateRouteDraftUseCase(dao);
 
     const result = await useCase.execute(baseCommand);
 
@@ -36,13 +36,13 @@ describe('CreateRouteDraftUseCase', () => {
     expect(result.zoneId).toBe(1);
     expect(result.status).toBe(RouteStatus.DRAFT);
     expect(result.stops).toHaveLength(0);
-    expect(repository.save).toHaveBeenCalled();
+    expect(dao.save).toHaveBeenCalled();
   });
 
   it('should throw RouteNameAlreadyExistsError if route name is duplicated in the same zone', async () => {
-    const repository = createMockRepository();
-    vi.mocked(repository.findByNameAndZone).mockResolvedValueOnce({} as any);
-    const useCase = new CreateRouteDraftUseCase(repository);
+    const dao = createMockDao();
+    vi.mocked(dao.findByNameAndZone).mockResolvedValueOnce({} as any);
+    const useCase = new CreateRouteDraftUseCase(dao);
 
     await expect(useCase.execute(baseCommand)).rejects.toThrow(
       RouteNameAlreadyExistsError,
@@ -50,8 +50,8 @@ describe('CreateRouteDraftUseCase', () => {
   });
 
   it('should throw UnauthorizedZoneError if regional director tries to create route outside their zone', async () => {
-    const repository = createMockRepository();
-    const useCase = new CreateRouteDraftUseCase(repository);
+    const dao = createMockDao();
+    const useCase = new CreateRouteDraftUseCase(dao);
 
     const actor = {
       id: 1,
@@ -65,8 +65,8 @@ describe('CreateRouteDraftUseCase', () => {
   });
 
   it('should allow admin to create route in any zone', async () => {
-    const repository = createMockRepository();
-    const useCase = new CreateRouteDraftUseCase(repository);
+    const dao = createMockDao();
+    const useCase = new CreateRouteDraftUseCase(dao);
 
     const actor = {
       id: 2,

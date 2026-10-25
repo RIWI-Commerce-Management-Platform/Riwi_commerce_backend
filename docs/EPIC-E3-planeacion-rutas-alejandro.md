@@ -53,7 +53,7 @@ Siguiendo estrictamente la regla de dependencias de Clean Architecture, mi capa 
 - [`RouteFilterCriteria`](file:///C:/Users/pffal/Documents/RIWI/Backend/nestjs/Comercial%20360%20%E2%80%94%20Backend/Riwi_commerce_backend/src/modules/routes/domain/route-filter.criteria.ts): Contrato de filtrado dinámico para supervisión.
 
 ### Puerto de Persistencia
-- [`RouteRepository`](file:///C:/Users/pffal/Documents/RIWI/Backend/nestjs/Comercial%20360%20%E2%80%94%20Backend/Riwi_commerce_backend/src/modules/routes/domain/route.repository.ts): Clase abstracta que define los métodos `findById`, `findByNameAndZone`, `findPaginated`, `save` y `delete`.
+- [`RouteDao`](file:///C:/Users/pffal/Documents/RIWI/Backend/nestjs/Comercial%20360%20%E2%80%94%20Backend/Riwi_commerce_backend/src/modules/routes/domain/route.dao.ts): Clase abstracta que define los métodos `findById`, `findByNameAndZone`, `findPaginated`, `save` y `delete`.
 
 ---
 
@@ -90,10 +90,10 @@ En esta capa implemento la persistencia relacional en PostgreSQL mediante TypeOR
 - [`RouteMapper`](file:///C:/Users/pffal/Documents/RIWI/Backend/nestjs/Comercial%20360%20%E2%80%94%20Backend/Riwi_commerce_backend/src/modules/routes/infrastructure/route.mapper.ts): Conversión bidireccional pura entre entidades TypeORM y entidades de dominio.
 
 ### Repositorio TypeORM
-- [`TypeOrmRouteRepository`](file:///C:/Users/pffal/Documents/RIWI/Backend/nestjs/Comercial%20360%20%E2%80%94%20Backend/Riwi_commerce_backend/src/modules/routes/infrastructure/typeorm-route.repository.ts): Implementación transaccional de `RouteRepository` utilizando `DataSource.transaction` para garantizar que la ruta y sus paradas se sincronicen de manera atómica sin paradas huérfanas.
+- [`TypeOrmRouteDao`](file:///C:/Users/pffal/Documents/RIWI/Backend/nestjs/Comercial%20360%20%E2%80%94%20Backend/Riwi_commerce_backend/src/modules/routes/infrastructure/typeorm-route.dao.ts): Implementación transaccional de `RouteDao` utilizando `DataSource.transaction` para garantizar que la ruta y sus paradas se sincronicen de manera atómica sin paradas huérfanas.
 
 ### Adaptadores de Puertos (Adapters)
-- [`TypeOrmRouteClientReaderAdapter`](file:///C:/Users/pffal/Documents/RIWI/Backend/nestjs/Comercial%20360%20%E2%80%94%20Backend/Riwi_commerce_backend/src/modules/routes/infrastructure/typeorm-route-client-reader.adapter.ts): Consume `ClientRepository` para proveer coordenadas geográficas y datos de clientes a mis casos de uso.
+- [`TypeOrmRouteClientReaderAdapter`](file:///C:/Users/pffal/Documents/RIWI/Backend/nestjs/Comercial%20360%20%E2%80%94%20Backend/Riwi_commerce_backend/src/modules/routes/infrastructure/typeorm-route-client-reader.adapter.ts): Consume `ClientDao` para proveer coordenadas geográficas y datos de clientes a mis casos de uso.
 - [`HaversineRouteDistanceCalculatorAdapter`](file:///C:/Users/pffal/Documents/RIWI/Backend/nestjs/Comercial%20360%20%E2%80%94%20Backend/Riwi_commerce_backend/src/modules/routes/infrastructure/haversine-route-distance-calculator.adapter.ts): Calcula distancia geodésica acumulada con factor de trazado urbano (1.3x) y velocidad promedio (25 km/h).
 - [`TypeOrmVisitSchedulerAdapter`](file:///C:/Users/pffal/Documents/RIWI/Backend/nestjs/Comercial%20360%20%E2%80%94%20Backend/Riwi_commerce_backend/src/modules/routes/infrastructure/typeorm-visit-scheduler.adapter.ts): Proyecta las visitas en el calendario según día y frecuencia, insertándolas en la tabla `visits` (Camilo E4) en estado `PENDING`.
 

@@ -1,40 +1,40 @@
 import { describe, expect, it, vi } from 'vitest';
 import { ListClientContactsUseCase } from './list-client-contacts.use-case.js';
-import { ClientRepository } from '../domain/client.repository.js';
-import { ClientContactRepository } from '../domain/client-contact.repository.js';
+import { ClientDao } from '../domain/client.dao.js';
+import { ClientContactDao } from '../domain/client-contact.dao.js';
 import { ClientNotFoundError } from '../domain/client-not-found.error.js';
 
 describe('ListClientContactsUseCase', () => {
   it('should throw ClientNotFoundError if client does not exist', async () => {
-    const clientRepo = {
+    const clientDao = {
       findById: vi.fn().mockResolvedValue(null),
-    } as unknown as ClientRepository;
+    } as unknown as ClientDao;
 
-    const contactRepo = {
+    const contactDao = {
       findByClientId: vi.fn(),
-    } as unknown as ClientContactRepository;
+    } as unknown as ClientContactDao;
 
-    const useCase = new ListClientContactsUseCase(clientRepo, contactRepo);
+    const useCase = new ListClientContactsUseCase(clientDao, contactDao);
 
     await expect(useCase.execute(999)).rejects.toThrow(ClientNotFoundError);
-    expect(contactRepo.findByClientId).not.toHaveBeenCalled();
+    expect(contactDao.findByClientId).not.toHaveBeenCalled();
   });
 
   it('should return contacts for the client', async () => {
-    const clientRepo = {
+    const clientDao = {
       findById: vi.fn().mockResolvedValue({ id: 1 }),
-    } as unknown as ClientRepository;
+    } as unknown as ClientDao;
 
     const mockContacts = [{ id: 10, name: 'Contacto 1' }] as any[];
-    const contactRepo = {
+    const contactDao = {
       findByClientId: vi.fn().mockResolvedValue(mockContacts),
-    } as unknown as ClientContactRepository;
+    } as unknown as ClientContactDao;
 
-    const useCase = new ListClientContactsUseCase(clientRepo, contactRepo);
+    const useCase = new ListClientContactsUseCase(clientDao, contactDao);
     const result = await useCase.execute(1);
 
-    expect(clientRepo.findById).toHaveBeenCalledWith(1);
-    expect(contactRepo.findByClientId).toHaveBeenCalledWith(1);
+    expect(clientDao.findById).toHaveBeenCalledWith(1);
+    expect(contactDao.findByClientId).toHaveBeenCalledWith(1);
     expect(result).toBe(mockContacts);
   });
 });

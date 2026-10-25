@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { Client } from '../domain/client.entity.js';
-import { ClientRepository } from '../domain/client.repository.js';
+import { ClientDao } from '../domain/client.dao.js';
 import { ClientNitAlreadyExistsError } from '../domain/client-nit-already-exists.error.js';
 import { GeocodingPort } from './ports/geocoding.port.js';
 import {
@@ -14,7 +14,7 @@ describe('CreateClientUseCase', () => {
   const findByNit = vi.fn();
   const findPaginated = vi.fn();
 
-  const mockRepository: ClientRepository = {
+  const mockDao: ClientDao = {
     save,
     findById,
     findByNit,
@@ -54,7 +54,7 @@ describe('CreateClientUseCase', () => {
       }),
     );
 
-    const useCase = new CreateClientUseCase(mockRepository, mockGeocodingPort, {
+    const useCase = new CreateClientUseCase(mockDao, mockGeocodingPort, {
       record: vi.fn(),
     } as any);
 
@@ -70,7 +70,7 @@ describe('CreateClientUseCase', () => {
       lng: -75.5812,
     });
 
-    const useCase = new CreateClientUseCase(mockRepository, mockGeocodingPort, {
+    const useCase = new CreateClientUseCase(mockDao, mockGeocodingPort, {
       record: vi.fn(),
     } as any);
     const result = await useCase.execute(baseInput);
@@ -90,7 +90,7 @@ describe('CreateClientUseCase', () => {
     findByNit.mockResolvedValueOnce(null);
     geocode.mockClear();
 
-    const useCase = new CreateClientUseCase(mockRepository, mockGeocodingPort, {
+    const useCase = new CreateClientUseCase(mockDao, mockGeocodingPort, {
       record: vi.fn(),
     } as any);
     const result = await useCase.execute({
@@ -108,12 +108,27 @@ describe('CreateClientUseCase', () => {
     findByNit.mockResolvedValueOnce(null);
     geocode.mockResolvedValueOnce(null);
 
-    const useCase = new CreateClientUseCase(mockRepository, mockGeocodingPort, {
+    const useCase = new CreateClientUseCase(mockDao, mockGeocodingPort, {
       record: vi.fn(),
     } as any);
     const result = await useCase.execute(baseInput);
 
     expect(result.latitude).toBeNull();
     expect(result.longitude).toBeNull();
+  });
+
+  it('records the new client in the activity log when an actor is given', async () => {
+    findByNit.mockResolvedValueOnce(null);
+    geocode.mockResolvedValueOnce(null);
+    const record = vi.fn();
+    const useCase = new CreateClientUseCase(mockDao, mockGeocodingPort, {
+      record,
+    } as any);
+
+    await useCase.execute({ ...baseInput, actorId: 3 });
+
+    expect(record).toHaveBeenCalledWith(
+      expect.objectContaining({ action: 'client.created', actorId: 3 }),
+    );
   });
 });

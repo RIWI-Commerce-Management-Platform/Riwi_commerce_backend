@@ -1,10 +1,10 @@
 import { describe, expect, it, vi } from 'vitest';
 import { Repository, SelectQueryBuilder } from 'typeorm';
-import { TypeOrmClientRepository } from './typeorm-client.repository.js';
+import { TypeOrmClientDao } from './typeorm-client.dao.js';
 import { ClientOrmEntity } from './client.orm-entity.js';
 import { Client } from '../domain/client.entity.js';
 
-describe('TypeOrmClientRepository', () => {
+describe('TypeOrmClientDao', () => {
   const createMockOrmEntity = (): ClientOrmEntity => {
     const orm = new ClientOrmEntity();
     orm.id = 1;
@@ -35,7 +35,7 @@ describe('TypeOrmClientRepository', () => {
     const findOneBy = vi.fn().mockResolvedValueOnce(orm);
     const mockRepo = { findOneBy } as unknown as Repository<ClientOrmEntity>;
 
-    const repo = new TypeOrmClientRepository(mockRepo);
+    const repo = new TypeOrmClientDao(mockRepo);
     const result = await repo.findById(1);
 
     expect(findOneBy).toHaveBeenCalledWith({ id: 1 });
@@ -47,7 +47,7 @@ describe('TypeOrmClientRepository', () => {
     const findOneBy = vi.fn().mockResolvedValueOnce(null);
     const mockRepo = { findOneBy } as unknown as Repository<ClientOrmEntity>;
 
-    const repo = new TypeOrmClientRepository(mockRepo);
+    const repo = new TypeOrmClientDao(mockRepo);
     const result = await repo.findById(999);
 
     expect(result).toBeNull();
@@ -58,7 +58,7 @@ describe('TypeOrmClientRepository', () => {
     const findOneBy = vi.fn().mockResolvedValueOnce(orm);
     const mockRepo = { findOneBy } as unknown as Repository<ClientOrmEntity>;
 
-    const repo = new TypeOrmClientRepository(mockRepo);
+    const repo = new TypeOrmClientDao(mockRepo);
     const result = await repo.findByNit('900123456-1');
 
     expect(findOneBy).toHaveBeenCalledWith({ nit: '900123456-1' });
@@ -70,7 +70,7 @@ describe('TypeOrmClientRepository', () => {
     const save = vi.fn().mockResolvedValueOnce(orm);
     const mockRepo = { save } as unknown as Repository<ClientOrmEntity>;
 
-    const repo = new TypeOrmClientRepository(mockRepo);
+    const repo = new TypeOrmClientDao(mockRepo);
     const domain = new Client({
       id: 1,
       nit: orm.nit,
@@ -121,7 +121,7 @@ describe('TypeOrmClientRepository', () => {
       createQueryBuilder,
     } as unknown as Repository<ClientOrmEntity>;
 
-    const repo = new TypeOrmClientRepository(mockRepo);
+    const repo = new TypeOrmClientDao(mockRepo);
     const result = await repo.findPaginated({
       search: 'Andes',
       zoneId: 10,
@@ -157,5 +157,64 @@ describe('TypeOrmClientRepository', () => {
       hasNextPage: false,
       hasPreviousPage: false,
     });
+  });
+
+  it('findByNit should return null when not found', async () => {
+    const findOneBy = vi.fn().mockResolvedValueOnce(null);
+    const dao = new TypeOrmClientDao({
+      findOneBy,
+    } as unknown as Repository<ClientOrmEntity>);
+
+    expect(await dao.findByNit('000')).toBeNull();
+  });
+
+  it('findPaginated skips empty filters and falls back to page 1 and 10 rows', async () => {
+    const qb = {
+      andWhere: vi.fn().mockReturnThis(),
+      orderBy: vi.fn().mockReturnThis(),
+      skip: vi.fn().mockReturnThis(),
+      take: vi.fn().mockReturnThis(),
+      getManyAndCount: vi.fn().mockResolvedValueOnce([[], 0]),
+    };
+    const dao = new TypeOrmClientDao({
+      createQueryBuilder: vi.fn().mockReturnValue(qb),
+    } as unknown as Repository<ClientOrmEntity>);
+
+    const result = await dao.findPaginated({
+      search: '   ',
+      municipality: '  ',
+      page: 0,
+      limit: -5,
+    });
+
+    expect(qb.andWhere).not.toHaveBeenCalled();
+    expect(qb.skip).toHaveBeenCalledWith(0);
+    expect(qb.take).toHaveBeenCalledWith(10);
+    expect(result.meta).toMatchObject({ page: 1, limit: 10, total: 0 });
+  });
+
+  it('findPaginated filters inactive clients and skips to the requested page', async () => {
+    const qb = {
+      andWhere: vi.fn().mockReturnThis(),
+      orderBy: vi.fn().mockReturnThis(),
+      skip: vi.fn().mockReturnThis(),
+      take: vi.fn().mockReturnThis(),
+      getManyAndCount: vi.fn().mockResolvedValueOnce([[], 25]),
+    };
+    const dao = new TypeOrmClientDao({
+      createQueryBuilder: vi.fn().mockReturnValue(qb),
+    } as unknown as Repository<ClientOrmEntity>);
+
+    const result = await dao.findPaginated({
+      isActive: false,
+      page: 3,
+      limit: 5,
+    });
+
+    expect(qb.andWhere).toHaveBeenCalledWith('client.is_active = :isActive', {
+      isActive: false,
+    });
+    expect(qb.skip).toHaveBeenCalledWith(10);
+    expect(result.meta).toMatchObject({ page: 3, totalPages: 5 });
   });
 });

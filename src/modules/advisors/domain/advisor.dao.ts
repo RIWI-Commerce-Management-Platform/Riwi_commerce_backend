@@ -9,7 +9,7 @@ export interface AdvisorFilterCriteria {
   limit: number;
 }
 
-export abstract class AdvisorRepository {
+export abstract class AdvisorDao {
   /** Only users with the ASESOR role are advisors. */
   abstract findById(userId: number): Promise<Advisor | null>;
   abstract findPaginated(

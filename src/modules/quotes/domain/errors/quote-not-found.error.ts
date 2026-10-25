@@ -1,5 +1,5 @@
 export class QuoteNotFoundError extends Error {
-  constructor(identifier: number ) {
+  constructor(identifier: number) {
     super(`Quote '${identifier}' was not found.`);
     this.name = 'QuoteNotFoundError';
   }

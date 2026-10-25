@@ -1,5 +1,9 @@
 import { describe, expect, it, vi } from 'vitest';
-import { BadRequestException, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  HttpException,
+  NotFoundException,
+} from '@nestjs/common';
 import { AllExceptionsFilter } from './all-exceptions.filter.js';
 
 class ClientNotFoundError extends Error {
@@ -73,5 +77,27 @@ describe('AllExceptionsFilter', () => {
     const { status, body } = run(new Error('connection string leaked'));
     expect(status).toHaveBeenCalledWith(500);
     expect(body.message).toBe('Internal server error');
+  });
+
+  it('hides a thrown value that is not an Error behind a 500', () => {
+    const { status, body } = run('plain string');
+    expect(status).toHaveBeenCalledWith(500);
+    expect(body.error).toBe('INTERNAL_SERVER_ERROR');
+  });
+
+  it('uses the exception message when the payload is a string', () => {
+    const { status, body } = run(new HttpException('Teapot here', 418));
+    expect(status).toHaveBeenCalledWith(418);
+    expect(body.message).toBe('Teapot here');
+    expect(body.error).toBe('I_AM_A_TEAPOT');
+  });
+
+  it('falls back to a generic error name for unknown status codes', () => {
+    const { body } = run(new HttpException({ message: 'Odd' }, 599));
+    expect(body).toMatchObject({
+      statusCode: 599,
+      error: 'Error',
+      message: 'Odd',
+    });
   });
 });

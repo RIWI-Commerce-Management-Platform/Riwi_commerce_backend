@@ -10,7 +10,7 @@ describe('HaversineRouteDistanceCalculatorAdapter', () => {
     expect(resultEmpty.estimatedDurationMinutes).toBe(0);
 
     const resultSingle = await calculator.calculateMetrics(
-      [{ latitude: 10.99, longitude: -74.80 }],
+      [{ latitude: 10.99, longitude: -74.8 }],
       30,
     );
     expect(resultSingle.totalDistanceKm).toBe(0);

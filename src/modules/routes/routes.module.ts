@@ -7,8 +7,8 @@ import { UserOrmEntity } from '../auth/infrastructure/user.orm-entity.js';
 import { AdvisorOrmEntity } from '../advisors/infrastructure/advisor.orm-entity.js';
 import { ClientsModule } from '../clients/clients.module.js';
 
-import { RouteRepository } from './domain/route.repository.js';
-import { TypeOrmRouteRepository } from './infrastructure/typeorm-route.repository.js';
+import { RouteDao } from './domain/route.dao.js';
+import { TypeOrmRouteDao } from './infrastructure/typeorm-route.dao.js';
 
 import { RouteClientReaderPort } from './application/ports/route-client-reader.port.js';
 import { TypeOrmRouteClientReaderAdapter } from './infrastructure/typeorm-route-client-reader.adapter.js';
@@ -68,8 +68,8 @@ import { RolesGuard } from '../auth/guards/roles.guard.js';
 
     // Ports bound to infrastructure adapters
     {
-      provide: RouteRepository,
-      useClass: TypeOrmRouteRepository,
+      provide: RouteDao,
+      useClass: TypeOrmRouteDao,
     },
     {
       provide: RouteClientReaderPort,
@@ -92,6 +92,6 @@ import { RolesGuard } from '../auth/guards/roles.guard.js';
     SessionGuard,
     RolesGuard,
   ],
-  exports: [RouteRepository, FindRoutesUseCase, GetRouteByIdUseCase],
+  exports: [RouteDao, FindRoutesUseCase, GetRouteByIdUseCase],
 })
 export class RoutesModule {}

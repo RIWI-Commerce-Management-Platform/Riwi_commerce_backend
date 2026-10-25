@@ -5,7 +5,9 @@ import { FileSizeExceededError } from '../domain/errors/file-size-exceeded.error
 import { InvalidFileTypeError } from '../domain/errors/invalid-file-type.error.js';
 
 vi.mock('@aws-sdk/s3-request-presigner', () => ({
-  getSignedUrl: vi.fn().mockResolvedValue('https://s3.amazonaws.com/test-bucket/presigned-url'),
+  getSignedUrl: vi
+    .fn()
+    .mockResolvedValue('https://s3.amazonaws.com/test-bucket/presigned-url'),
 }));
 
 describe('S3FileStorageService', () => {
@@ -50,7 +52,9 @@ describe('S3FileStorageService', () => {
 
   it('should upload valid file to S3 and return result', async () => {
     const buffer = Buffer.from('valid pdf content');
-    const sendSpy = vi.spyOn((service as any).s3Client, 'send').mockResolvedValue({} as never);
+    const sendSpy = vi
+      .spyOn((service as any).s3Client, 'send')
+      .mockResolvedValue({} as never);
 
     const result = await service.upload({
       buffer,
@@ -71,8 +75,47 @@ describe('S3FileStorageService', () => {
   });
 
   it('should delete file from S3', async () => {
-    const sendSpy = vi.spyOn((service as any).s3Client, 'send').mockResolvedValue({} as never);
+    const sendSpy = vi
+      .spyOn((service as any).s3Client, 'send')
+      .mockResolvedValue({} as never);
     await service.delete('quotes/test.pdf');
     expect(sendSpy).toHaveBeenCalled();
+  });
+
+  it('uses the default region and bucket when they are not configured', async () => {
+    const defaults = new S3FileStorageService({
+      get: vi.fn(() => undefined),
+    } as unknown as ConfigService);
+
+    expect((defaults as any).bucketName).toBe('comercial-360-bucket');
+    expect(await (defaults as any).s3Client.config.region()).toBe('us-east-1');
+  });
+
+  it('signs requests with the configured access keys', async () => {
+    const values: Record<string, string> = {
+      'aws.region': 'us-east-2',
+      'aws.bucketName': 'bucket',
+      'aws.accessKeyId': 'AKIA_TEST',
+      'aws.secretAccessKey': 'secret',
+    };
+    const withKeys = new S3FileStorageService({
+      get: vi.fn((key: string) => values[key]),
+    } as unknown as ConfigService);
+
+    const credentials = await (withKeys as any).s3Client.config.credentials();
+    expect(credentials.accessKeyId).toBe('AKIA_TEST');
+  });
+
+  it('uploads to the bucket root when no folder is given', async () => {
+    vi.spyOn((service as any).s3Client, 'send').mockResolvedValue({} as never);
+
+    const result = await service.upload({
+      buffer: Buffer.from('a,b'),
+      filename: 'data.csv',
+      mimetype: 'text/csv',
+    });
+
+    expect(result.key).not.toContain('/');
+    expect(result.key).toMatch(/data\.csv$/);
   });
 });

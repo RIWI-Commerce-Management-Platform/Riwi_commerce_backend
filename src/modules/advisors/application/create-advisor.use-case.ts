@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { Advisor } from '../domain/advisor.entity.js';
-import { AdvisorRepository } from '../domain/advisor.repository.js';
+import { AdvisorDao } from '../domain/advisor.dao.js';
 import {
   AdvisorEmailAlreadyExistsError,
   AdvisorNotFoundError,
@@ -22,18 +22,18 @@ export interface CreateAdvisorInput {
 @Injectable()
 export class CreateAdvisorUseCase {
   constructor(
-    private readonly advisorRepository: AdvisorRepository,
+    private readonly advisorDao: AdvisorDao,
     private readonly accountPort: AdvisorAccountPort,
   ) {}
 
   async execute(input: CreateAdvisorInput): Promise<Advisor> {
     const email = input.email.trim().toLowerCase();
-    if (await this.advisorRepository.isEmailTaken(email)) {
+    if (await this.advisorDao.isEmailTaken(email)) {
       throw new AdvisorEmailAlreadyExistsError(email);
     }
     if (
       input.zoneId != null &&
-      !(await this.advisorRepository.zoneExists(input.zoneId))
+      !(await this.advisorDao.zoneExists(input.zoneId))
     ) {
       throw new AdvisorZoneNotFoundError(input.zoneId);
     }
@@ -44,7 +44,7 @@ export class CreateAdvisorUseCase {
       password: input.password,
     });
 
-    const created = await this.advisorRepository.findById(userId);
+    const created = await this.advisorDao.findById(userId);
     if (!created) {
       throw new AdvisorNotFoundError(userId);
     }
@@ -57,6 +57,6 @@ export class CreateAdvisorUseCase {
     });
     created.activate();
 
-    return this.advisorRepository.save(created);
+    return this.advisorDao.save(created);
   }
 }

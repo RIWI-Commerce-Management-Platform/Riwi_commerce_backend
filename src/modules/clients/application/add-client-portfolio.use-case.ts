@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
-import { ClientRepository } from '../domain/client.repository.js';
-import { ClientPortfolioRepository } from '../domain/client-portfolio.repository.js';
+import { ClientDao } from '../domain/client.dao.js';
+import { ClientPortfolioDao } from '../domain/client-portfolio.dao.js';
 import { ClientPortfolio } from '../domain/client-portfolio.entity.js';
 import { ClientNotFoundError } from '../domain/client-not-found.error.js';
 import {
@@ -19,25 +19,25 @@ export interface AddClientPortfolioInput {
 @Injectable()
 export class AddClientPortfolioUseCase {
   constructor(
-    private readonly clientRepository: ClientRepository,
-    private readonly clientPortfolioRepository: ClientPortfolioRepository,
+    private readonly clientDao: ClientDao,
+    private readonly clientPortfolioDao: ClientPortfolioDao,
     private readonly activityLog: ActivityLogService,
   ) {}
 
   async execute(input: AddClientPortfolioInput): Promise<ClientPortfolio> {
-    const client = await this.clientRepository.findById(input.clientId);
+    const client = await this.clientDao.findById(input.clientId);
     if (!client) {
       throw new ClientNotFoundError(input.clientId);
     }
 
-    const portfolio = await this.clientPortfolioRepository.findPortfolio(
+    const portfolio = await this.clientPortfolioDao.findPortfolio(
       input.portfolioId,
     );
     if (!portfolio || !portfolio.isActive) {
       throw new PortfolioNotFoundError(input.portfolioId);
     }
 
-    const existing = await this.clientPortfolioRepository.findOne(
+    const existing = await this.clientPortfolioDao.findOne(
       input.clientId,
       input.portfolioId,
     );
@@ -48,7 +48,7 @@ export class AddClientPortfolioUseCase {
       );
     }
 
-    const saved = await this.clientPortfolioRepository.save(
+    const saved = await this.clientPortfolioDao.save(
       new ClientPortfolio({
         clientId: input.clientId,
         portfolioId: input.portfolioId,

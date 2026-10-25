@@ -1,7 +1,7 @@
 import { UserRole } from '../../auth/domain/user-role.enum.js';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { AttachQuoteDocumentUseCase } from './attach-quote-document.use-case.js';
-import { QuoteRepository } from '../domain/quote.repository.js';
+import { QuoteDao } from '../domain/quote.dao.js';
 import { FileStorageService } from '../../../shared/file-storage/domain/file-storage.service.js';
 import { Quote } from '../domain/quote.entity.js';
 import { QuoteStatus } from '../domain/quote-status.enum.js';
@@ -9,7 +9,7 @@ import { QuoteNotFoundError } from '../domain/errors/quote-not-found.error.js';
 
 describe('AttachQuoteDocumentUseCase', () => {
   let useCase: AttachQuoteDocumentUseCase;
-  let quoteRepository: Partial<QuoteRepository>;
+  let quoteDao: Partial<QuoteDao>;
   let fileStorageService: Partial<FileStorageService>;
 
   const mockQuote = new Quote({
@@ -25,7 +25,7 @@ describe('AttachQuoteDocumentUseCase', () => {
   });
 
   beforeEach(() => {
-    quoteRepository = {
+    quoteDao = {
       findById: vi.fn().mockResolvedValue(mockQuote),
       save: vi.fn().mockImplementation((q) => Promise.resolve(q)),
     };
@@ -45,7 +45,7 @@ describe('AttachQuoteDocumentUseCase', () => {
     };
 
     useCase = new AttachQuoteDocumentUseCase(
-      quoteRepository as QuoteRepository,
+      quoteDao as QuoteDao,
       fileStorageService as FileStorageService,
     );
   });
@@ -60,14 +60,14 @@ describe('AttachQuoteDocumentUseCase', () => {
 
     const result = await useCase.execute(1, file);
 
-    expect(quoteRepository.findById).toHaveBeenCalledWith(1, {});
+    expect(quoteDao.findById).toHaveBeenCalledWith(1, {});
     expect(fileStorageService.upload).toHaveBeenCalledWith({
       buffer: file.buffer,
       filename: 'soporte.pdf',
       mimetype: 'application/pdf',
       folder: 'quotes',
     });
-    expect(quoteRepository.save).toHaveBeenCalled();
+    expect(quoteDao.save).toHaveBeenCalled();
     expect(fileStorageService.getPresignedUrl).toHaveBeenCalledWith(
       'quotes/173000-soporte.pdf',
     );
@@ -88,11 +88,11 @@ describe('AttachQuoteDocumentUseCase', () => {
 
     await useCase.execute(1, file, actor);
 
-    expect(quoteRepository.findById).toHaveBeenCalledWith(1, { advisorId: 3 });
+    expect(quoteDao.findById).toHaveBeenCalledWith(1, { advisorId: 3 });
   });
 
   it('throws QuoteNotFoundError if quote is not found', async () => {
-    vi.mocked(quoteRepository.findById!).mockResolvedValue(null);
+    vi.mocked(quoteDao.findById!).mockResolvedValue(null);
 
     const file = {
       buffer: Buffer.from('dummy pdf content'),

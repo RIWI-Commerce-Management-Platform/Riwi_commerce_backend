@@ -76,4 +76,3 @@ export class NominatimGeocodingAdapter implements GeocodingPort {
     }
   }
 }
-

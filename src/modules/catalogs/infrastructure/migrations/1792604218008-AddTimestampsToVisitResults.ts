@@ -1,8 +1,6 @@
 import { MigrationInterface, QueryRunner, TableColumn } from 'typeorm';
 
-export class AddTimestampsToVisitResults1792604218008
-  implements MigrationInterface
-{
+export class AddTimestampsToVisitResults1792604218008 implements MigrationInterface {
   name = 'AddTimestampsToVisitResults1792604218008';
 
   public async up(queryRunner: QueryRunner): Promise<void> {

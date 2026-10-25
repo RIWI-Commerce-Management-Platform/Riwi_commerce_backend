@@ -3,13 +3,13 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Client } from '../domain/client.entity.js';
 import { ClientFilterCriteria } from '../domain/client-filter.criteria.js';
-import { ClientRepository } from '../domain/client.repository.js';
+import { ClientDao } from '../domain/client.dao.js';
 import { PaginatedResult } from '../../../shared/pagination/paginated-result.interface.js';
 import { ClientMapper } from './client.mapper.js';
 import { ClientOrmEntity } from './client.orm-entity.js';
 
 @Injectable()
-export class TypeOrmClientRepository implements ClientRepository {
+export class TypeOrmClientDao implements ClientDao {
   constructor(
     @InjectRepository(ClientOrmEntity)
     private readonly repository: Repository<ClientOrmEntity>,
@@ -94,4 +94,3 @@ export class TypeOrmClientRepository implements ClientRepository {
     };
   }
 }
-

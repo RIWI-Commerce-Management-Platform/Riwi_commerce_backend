@@ -9,7 +9,9 @@ export class CreateOrdersTables1792700000000 implements MigrationInterface {
   name = 'CreateOrdersTables1792700000000';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
-    await queryRunner.query('CREATE SEQUENCE IF NOT EXISTS order_number_seq START 1');
+    await queryRunner.query(
+      'CREATE SEQUENCE IF NOT EXISTS order_number_seq START 1',
+    );
 
     await queryRunner.createTable(
       new Table({

@@ -1,8 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import {
-  QuoteRepository,
-  ListQuotesFilter,
-} from '../domain/quote.repository.js';
+import { QuoteDao, ListQuotesFilter } from '../domain/quote.dao.js';
 import { Quote } from '../domain/quote.entity.js';
 import { PaginatedResult } from '../../../shared/pagination/paginated-result.interface.js';
 import {
@@ -12,14 +9,14 @@ import {
 
 @Injectable()
 export class ListQuotesUseCase {
-  constructor(private readonly quoteRepository: QuoteRepository) {}
+  constructor(private readonly quoteDao: QuoteDao) {}
 
   /** An advisor only sees their quotes and a director their zone (HU-06). */
   async execute(
     filter: ListQuotesFilter,
     actor?: CurrentActor,
   ): Promise<PaginatedResult<Quote>> {
-    return this.quoteRepository.findPaginated({
+    return this.quoteDao.findPaginated({
       ...filter,
       ...scopeForActor(actor),
     });

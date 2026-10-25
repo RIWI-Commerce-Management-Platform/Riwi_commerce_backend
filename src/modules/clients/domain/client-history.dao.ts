@@ -14,7 +14,7 @@ export interface ClientHistoryEntry {
   createdAt: Date;
 }
 
-export abstract class ClientHistoryRepository {
+export abstract class ClientHistoryDao {
   abstract findByClientId(
     clientId: number,
     page: number,

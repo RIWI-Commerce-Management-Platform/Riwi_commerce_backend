@@ -4,7 +4,8 @@ import { IsIn, IsOptional, Matches } from 'class-validator';
 
 export class VisitAgendaQueryDto {
   @ApiPropertyOptional({
-    description: 'Agenda period: a single day or a full week (Monday to Sunday).',
+    description:
+      'Agenda period: a single day or a full week (Monday to Sunday).',
     enum: ['day', 'week'],
     default: 'day',
   })

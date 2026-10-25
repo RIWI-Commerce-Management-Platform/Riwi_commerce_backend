@@ -25,7 +25,7 @@ export interface CatalogSeedData {
   visitResults: string[];
 }
 
-export abstract class CatalogRepository {
+export abstract class CatalogDao {
   abstract findAll(): Promise<AllCatalogs>;
 
   abstract findClientTypes(): Promise<ClientType[]>;

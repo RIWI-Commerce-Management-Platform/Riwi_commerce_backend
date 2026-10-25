@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { Advisor } from '../domain/advisor.entity.js';
-import { AdvisorRepository } from '../domain/advisor.repository.js';
+import { AdvisorDao } from '../domain/advisor.dao.js';
 import { AdvisorNotFoundError } from '../domain/advisor.errors.js';
 import { AdvisorAccountPort } from './ports/advisor-account.port.js';
 
@@ -16,12 +16,12 @@ export interface ChangeAdvisorStatusInput {
 @Injectable()
 export class ChangeAdvisorStatusUseCase {
   constructor(
-    private readonly advisorRepository: AdvisorRepository,
+    private readonly advisorDao: AdvisorDao,
     private readonly accountPort: AdvisorAccountPort,
   ) {}
 
   async execute(input: ChangeAdvisorStatusInput): Promise<Advisor> {
-    const advisor = await this.advisorRepository.findById(input.userId);
+    const advisor = await this.advisorDao.findById(input.userId);
     if (!advisor) {
       throw new AdvisorNotFoundError(input.userId);
     }
@@ -31,7 +31,7 @@ export class ChangeAdvisorStatusUseCase {
     } else {
       advisor.deactivate();
     }
-    const saved = await this.advisorRepository.save(advisor);
+    const saved = await this.advisorDao.save(advisor);
 
     if (!input.isActive) {
       await this.accountPort.revokeSessions(input.userId);

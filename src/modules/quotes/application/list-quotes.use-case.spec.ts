@@ -1,12 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ListQuotesUseCase } from './list-quotes.use-case.js';
-import { QuoteRepository } from '../domain/quote.repository.js';
+import { QuoteDao } from '../domain/quote.dao.js';
 import { Quote } from '../domain/quote.entity.js';
 import { QuoteStatus } from '../domain/quote-status.enum.js';
 
 describe('ListQuotesUseCase (Application - HU-34)', () => {
   let useCase: ListQuotesUseCase;
-  let quoteRepository: Partial<QuoteRepository>;
+  let quoteDao: Partial<QuoteDao>;
 
   const mockQuote = new Quote({
     id: 1,
@@ -16,10 +16,12 @@ describe('ListQuotesUseCase (Application - HU-34)', () => {
     subtotal: 100,
     total: 100,
     items: [],
+    createdAt: new Date(),
+    updatedAt: new Date(),
   });
 
   beforeEach(() => {
-    quoteRepository = {
+    quoteDao = {
       findPaginated: vi.fn().mockResolvedValue({
         data: [mockQuote],
         meta: {
@@ -33,7 +35,7 @@ describe('ListQuotesUseCase (Application - HU-34)', () => {
       }),
     };
 
-    useCase = new ListQuotesUseCase(quoteRepository as QuoteRepository);
+    useCase = new ListQuotesUseCase(quoteDao as QuoteDao);
   });
 
   it('lists paginated quotes with applied filters', async () => {
@@ -47,6 +49,6 @@ describe('ListQuotesUseCase (Application - HU-34)', () => {
 
     expect(result.data).toHaveLength(1);
     expect(result.data[0].quoteNumber).toBe('COT-0001');
-    expect(quoteRepository.findPaginated).toHaveBeenCalledWith(filter);
+    expect(quoteDao.findPaginated).toHaveBeenCalledWith(filter);
   });
 });

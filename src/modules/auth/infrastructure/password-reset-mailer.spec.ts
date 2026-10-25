@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { SendEmailCommand } from '@aws-sdk/client-sesv2';
+import { SendEmailCommand, SESv2Client } from '@aws-sdk/client-sesv2';
 import { sendPasswordResetEmail } from './password-reset-mailer.js';
 
 describe('sendPasswordResetEmail', () => {
@@ -32,5 +32,21 @@ describe('sendPasswordResetEmail', () => {
     expect(command.input.FromEmailAddress).toBe('no-reply@comercial360.co');
     expect(command.input.Destination?.ToAddresses).toEqual(['ana@example.com']);
     expect(command.input.Content?.Simple?.Body?.Text?.Data).toContain(mail.url);
+  });
+
+  it('only logs the link with the default client when no sender is set', async () => {
+    await expect(sendPasswordResetEmail(mail)).resolves.toBeUndefined();
+  });
+
+  it('builds a default SES client when a sender is configured', async () => {
+    process.env.AWS_SES_FROM_EMAIL = 'no-reply@comercial360.co';
+    const send = vi
+      .spyOn(SESv2Client.prototype, 'send')
+      .mockResolvedValue({} as never);
+
+    await sendPasswordResetEmail(mail);
+
+    expect(send).toHaveBeenCalledTimes(1);
+    send.mockRestore();
   });
 });

@@ -193,9 +193,13 @@ describe('CatalogsController', () => {
     await expect(controller.getByType('client-types')).rejects.toThrow(err);
 
     vi.mocked(createItem.execute).mockRejectedValueOnce(err);
-    await expect(controller.create('client-types', { name: 'A' })).rejects.toThrow(err);
+    await expect(
+      controller.create('client-types', { name: 'A' }),
+    ).rejects.toThrow(err);
 
     vi.mocked(updateItem.execute).mockRejectedValueOnce(err);
-    await expect(controller.update('client-types', 1, { name: 'A' })).rejects.toThrow(err);
+    await expect(
+      controller.update('client-types', 1, { name: 'A' }),
+    ).rejects.toThrow(err);
   });
 });

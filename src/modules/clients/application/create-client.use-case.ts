@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { Client } from '../domain/client.entity.js';
-import { ClientRepository } from '../domain/client.repository.js';
+import { ClientDao } from '../domain/client.dao.js';
 import { ClientNitAlreadyExistsError } from '../domain/client-nit-already-exists.error.js';
 import { GeocodingPort } from './ports/geocoding.port.js';
 import { ActivityLogService } from '../../../shared/activity-log/domain/activity-log.service.js';
@@ -28,13 +28,13 @@ export interface CreateClientInput {
 @Injectable()
 export class CreateClientUseCase {
   constructor(
-    private readonly clientRepository: ClientRepository,
+    private readonly clientDao: ClientDao,
     private readonly geocodingPort: GeocodingPort,
     private readonly activityLog: ActivityLogService,
   ) {}
 
   async execute(input: CreateClientInput): Promise<Client> {
-    const existing = await this.clientRepository.findByNit(input.nit);
+    const existing = await this.clientDao.findByNit(input.nit);
     if (existing) {
       throw new ClientNitAlreadyExistsError(input.nit);
     }
@@ -77,7 +77,7 @@ export class CreateClientUseCase {
       updatedAt: now,
     });
 
-    const saved = await this.clientRepository.save(client);
+    const saved = await this.clientDao.save(client);
 
     if (input.actorId !== undefined) {
       await this.activityLog.record({

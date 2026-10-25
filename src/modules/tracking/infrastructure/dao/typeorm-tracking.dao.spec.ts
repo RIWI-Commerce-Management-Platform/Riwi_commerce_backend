@@ -99,4 +99,29 @@ describe('TypeOrmTrackingDao', () => {
       hasPreviousPage: false,
     });
   });
+
+  it('maps the route of a visit that belongs to one', async () => {
+    const { dao } = build('1', [
+      { ...dbRow, route_id: '8', route_name: 'Ruta Norte' },
+    ]);
+
+    const page = await dao.findVisits({ page: 1, limit: 5, order: 'asc' });
+
+    expect(page.data[0].route).toEqual({ id: 8, name: 'Ruta Norte' });
+  });
+
+  it('sends null for the filters that are not set', async () => {
+    const { dao, query } = build('0', []);
+
+    await dao.findVisits({ page: 1, limit: 5, order: 'asc' });
+
+    expect(query.mock.calls[0][1]).toEqual([
+      'America/Bogota',
+      null,
+      null,
+      null,
+      null,
+      null,
+    ]);
+  });
 });

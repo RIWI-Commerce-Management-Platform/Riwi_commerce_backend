@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { Route } from '../domain/route.entity.js';
-import { RouteRepository } from '../domain/route.repository.js';
+import { RouteDao } from '../domain/route.dao.js';
 import { RouteNotFoundError } from '../domain/errors/route-not-found.error.js';
 import { UnauthorizedZoneError } from '../domain/errors/unauthorized-zone.error.js';
 import {
@@ -40,7 +40,7 @@ export interface EnrichedRouteDetails {
 @Injectable()
 export class GetRouteByIdUseCase {
   constructor(
-    private readonly routeRepository: RouteRepository,
+    private readonly routeDao: RouteDao,
     private readonly clientReader: RouteClientReaderPort,
   ) {}
 
@@ -48,7 +48,7 @@ export class GetRouteByIdUseCase {
     routeId: number,
     actor?: AuthActor,
   ): Promise<EnrichedRouteDetails> {
-    const route = await this.routeRepository.findById(routeId);
+    const route = await this.routeDao.findById(routeId);
     if (!route) {
       throw new RouteNotFoundError(routeId);
     }

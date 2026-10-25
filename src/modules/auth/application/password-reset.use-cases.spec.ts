@@ -119,3 +119,44 @@ describe('StartMicrosoftLoginUseCase', () => {
     ).rejects.toThrow(SocialLoginUnavailableError);
   });
 });
+
+describe('password reset and Microsoft login edge cases', () => {
+  it('swallows a thrown value that is not an Error', async () => {
+    const useCase = new RequestPasswordResetUseCase(
+      authServiceWith({
+        requestPasswordReset: vi.fn().mockRejectedValue('down'),
+      }),
+    );
+
+    await expect(
+      useCase.execute({ email: 'ana@riwi.com', redirectTo: 'http://f/reset' }),
+    ).resolves.toBeUndefined();
+  });
+
+  it('uses the error message when Microsoft sign-in throws an Error', async () => {
+    const useCase = new StartMicrosoftLoginUseCase(
+      authServiceWith({
+        signInSocial: vi.fn().mockRejectedValue(new Error('Network down')),
+      }),
+    );
+
+    await expect(
+      useCase.execute({ callbackURL: 'http://f', headers: {} }),
+    ).rejects.toThrow('Network down');
+  });
+
+  it('fails when the Microsoft response body is not JSON', async () => {
+    const signInSocial = vi.fn().mockResolvedValue({
+      ok: true,
+      json: vi.fn().mockRejectedValue(new SyntaxError('bad json')),
+      headers: { getSetCookie: () => [] },
+    });
+    const useCase = new StartMicrosoftLoginUseCase(
+      authServiceWith({ signInSocial }),
+    );
+
+    await expect(
+      useCase.execute({ callbackURL: 'http://f', headers: {} }),
+    ).rejects.toThrow(SocialLoginUnavailableError);
+  });
+});

@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { UpdateRouteDraftUseCase } from './update-route-draft.use-case.js';
-import { RouteRepository } from '../domain/route.repository.js';
+import { RouteDao } from '../domain/route.dao.js';
 import { Route } from '../domain/route.entity.js';
 import { DayOfWeek } from '../domain/day-of-week.enum.js';
 import { RouteFrequency } from '../domain/route-frequency.enum.js';
@@ -19,7 +19,7 @@ describe('UpdateRouteDraftUseCase', () => {
     startDate: new Date('2026-10-26'),
   });
 
-  const createMockRepository = (): RouteRepository => ({
+  const createMockDao = (): RouteDao => ({
     findById: vi.fn().mockResolvedValue(existingRoute),
     findByNameAndZone: vi.fn().mockResolvedValue(null),
     findPaginated: vi.fn(),
@@ -28,8 +28,8 @@ describe('UpdateRouteDraftUseCase', () => {
   });
 
   it('should update route general info successfully', async () => {
-    const repository = createMockRepository();
-    const useCase = new UpdateRouteDraftUseCase(repository);
+    const dao = createMockDao();
+    const useCase = new UpdateRouteDraftUseCase(dao);
 
     const result = await useCase.execute(1, {
       name: 'Ruta Actualizada',
@@ -43,9 +43,9 @@ describe('UpdateRouteDraftUseCase', () => {
   });
 
   it('should throw RouteNotFoundError if route does not exist', async () => {
-    const repository = createMockRepository();
-    vi.mocked(repository.findById).mockResolvedValueOnce(null);
-    const useCase = new UpdateRouteDraftUseCase(repository);
+    const dao = createMockDao();
+    vi.mocked(dao.findById).mockResolvedValueOnce(null);
+    const useCase = new UpdateRouteDraftUseCase(dao);
 
     await expect(useCase.execute(999, { name: 'Test' })).rejects.toThrow(
       RouteNotFoundError,
@@ -53,8 +53,8 @@ describe('UpdateRouteDraftUseCase', () => {
   });
 
   it('should throw UnauthorizedZoneError if regional director manages different zone', async () => {
-    const repository = createMockRepository();
-    const useCase = new UpdateRouteDraftUseCase(repository);
+    const dao = createMockDao();
+    const useCase = new UpdateRouteDraftUseCase(dao);
 
     const actor = {
       id: 1,
@@ -68,8 +68,8 @@ describe('UpdateRouteDraftUseCase', () => {
   });
 
   it('should throw RouteNameAlreadyExistsError if new name collides in same zone', async () => {
-    const repository = createMockRepository();
-    vi.mocked(repository.findByNameAndZone).mockResolvedValueOnce(
+    const dao = createMockDao();
+    vi.mocked(dao.findByNameAndZone).mockResolvedValueOnce(
       new Route({
         id: 2, // different route
         name: 'Ruta Existente',
@@ -79,7 +79,7 @@ describe('UpdateRouteDraftUseCase', () => {
         startDate: new Date(),
       }),
     );
-    const useCase = new UpdateRouteDraftUseCase(repository);
+    const useCase = new UpdateRouteDraftUseCase(dao);
 
     await expect(
       useCase.execute(1, { name: 'Ruta Existente' }),
@@ -87,7 +87,7 @@ describe('UpdateRouteDraftUseCase', () => {
   });
 
   it('should forbid a director from moving a route to another zone', async () => {
-    const useCase = new UpdateRouteDraftUseCase(createMockRepository());
+    const useCase = new UpdateRouteDraftUseCase(createMockDao());
 
     await expect(
       useCase.execute(

@@ -11,7 +11,9 @@ export interface LogoutResult {
 export class LogoutUseCase {
   constructor(private readonly authService: AuthService) {}
 
-  async execute(headers: Record<string, string | string[] | undefined>): Promise<LogoutResult> {
+  async execute(
+    headers: Record<string, string | string[] | undefined>,
+  ): Promise<LogoutResult> {
     const response = await this.authService.api.signOut({
       headers: fromNodeHeaders(headers),
       asResponse: true,

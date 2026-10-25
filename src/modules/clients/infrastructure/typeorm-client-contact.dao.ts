@@ -2,12 +2,12 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ClientContact } from '../domain/client-contact.entity.js';
-import { ClientContactRepository } from '../domain/client-contact.repository.js';
+import { ClientContactDao } from '../domain/client-contact.dao.js';
 import { ClientContactOrmEntity } from './client-contact.orm-entity.js';
 import { ClientContactMapper } from './client-contact.mapper.js';
 
 @Injectable()
-export class TypeOrmClientContactRepository implements ClientContactRepository {
+export class TypeOrmClientContactDao implements ClientContactDao {
   constructor(
     @InjectRepository(ClientContactOrmEntity)
     private readonly repository: Repository<ClientContactOrmEntity>,

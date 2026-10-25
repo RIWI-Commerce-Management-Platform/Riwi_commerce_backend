@@ -25,7 +25,7 @@ const dbRow = (overrides: Record<string, unknown> = {}) => ({
 
 const build = (rows: unknown[]) => {
   // The day query has no FROM; the visits query reads `visits`.
-  const query = vi.fn((sql: string) =>
+  const query = vi.fn((sql: string, _params?: unknown[]) =>
     Promise.resolve(
       sql.includes('FROM visits') ? rows : [{ day: '2026-10-19' }],
     ),

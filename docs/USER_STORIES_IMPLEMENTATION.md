@@ -24,7 +24,7 @@ Before detailing individual user stories, the foundation for the module was esta
 - **Domain Layer (`src/modules/clients/domain/`):**
   - Created the pure `Client` entity with business attributes (`nit`, `businessName`, `commercialName`, `address`, `department`, `municipality`, `neighborhood`, `phone`, `email`, `zoneId`, `clientTypeId`, `potentialId`, `clientStatusId`, `visitFrequencyDays`, `latitude`, `longitude`, `isActive`).
   - Added domain methods: `activate()`, `deactivate()`, and `update()`.
-  - Defined the abstract port `ClientRepository` (`save`, `findById`, `findByNit`).
+  - Defined the abstract port `ClientDao` (`save`, `findById`, `findByNit`).
   - Defined explicit domain exceptions: `ClientNitAlreadyExistsError` and `ClientNotFoundError`.
 - **Application Layer (`src/modules/clients/application/`):**
   - Defined the `GeocodingPort` abstraction.
@@ -34,7 +34,7 @@ Before detailing individual user stories, the foundation for the module was esta
 - **Infrastructure Layer (`src/modules/clients/infrastructure/`):**
   - Created `ClientOrmEntity` mapped to the `clients` PostgreSQL table with snake_case naming conventions.
   - Implemented `ClientMapper` for bidirectional translation between domain and persistence models.
-  - Created `TypeOrmClientRepository` implementing `ClientRepository`.
+  - Created `TypeOrmClientDao` implementing `ClientDao`.
   - Implemented `NominatimGeocodingAdapter` consuming the OpenStreetMap (Nominatim) public API using native Node.js `fetch` with timeout and custom User-Agent.
   - Created migration `CreateClientsTable1792505831167`.
 - **Presentation Layer (`src/modules/clients/presentation/`):**
@@ -63,12 +63,12 @@ Before detailing individual user stories, the foundation for the module was esta
   - Built generic `PaginatedResult<T>` and OpenAPI-compatible `PaginatedResponseDto<T>`.
 - **Domain Layer:**
   - Created `ClientFilterCriteria` domain interface for dynamic query parameters.
-  - Extended `ClientRepository` with `findPaginated(criteria: ClientFilterCriteria)`.
+  - Extended `ClientDao` with `findPaginated(criteria: ClientFilterCriteria)`.
 - **Application Layer:**
   - Implemented `FindClientsUseCase` to orchestrate multi-criteria querying.
   - Implemented `GetClientByIdUseCase` to retrieve single client details.
 - **Infrastructure Layer:**
-  - In `TypeOrmClientRepository`, implemented `findPaginated` using TypeORM `createQueryBuilder`:
+  - In `TypeOrmClientDao`, implemented `findPaginated` using TypeORM `createQueryBuilder`:
     - Case-insensitive substring search matching NIT, commercial name, or business name (`LOWER(...) LIKE :search`).
     - Exact relational filters for `zone_id`, `client_type_id`, `potential_id`, `municipality`, and `is_active`.
     - Server-side pagination using `.skip((page - 1) * limit).take(limit)` and descending sort by creation date.
@@ -96,7 +96,7 @@ Before detailing individual user stories, the foundation for the module was esta
 - **Domain Layer (`src/modules/clients/domain/`):**
   - Created `ClientContact` pure entity (`id`, `clientId`, `name`, `position`, `phone`, `mobile`, `email`, `isPrimary`, `isActive`, `createdAt`, `updatedAt`).
   - Added business methods: `markAsPrimary()`, `demoteFromPrimary()`, `deactivate()`, `activate()`, and `update()`.
-  - Defined abstract `ClientContactRepository` (`save`, `findById`, `findByClientId`, `unsetPrimaryByClientId`).
+  - Defined abstract `ClientContactDao` (`save`, `findById`, `findByClientId`, `unsetPrimaryByClientId`).
   - Defined `ClientContactNotFoundError`.
 - **Application Layer (`src/modules/clients/application/`):**
   - Implemented `CreateClientContactUseCase`: Validates parent client existence. **Enforces single primary contact rule**: if the new contact is marked primary (or is the client's first contact), all previously designated primary contacts for that client are automatically demoted.
@@ -107,7 +107,7 @@ Before detailing individual user stories, the foundation for the module was esta
 - **Infrastructure Layer (`src/modules/clients/infrastructure/`):**
   - Created `ClientContactOrmEntity` mapped to `client_contacts` table with `ManyToOne` foreign key referencing `clients(id)` with `ON DELETE CASCADE`.
   - Prevented circular dependency cycles between `ClientOrmEntity` and `ClientContactOrmEntity` to preserve ESM runtime stability in Node 24.
-  - Created `TypeOrmClientContactRepository` utilizing batch `UPDATE` queries for atomic primary demotion.
+  - Created `TypeOrmClientContactDao` utilizing batch `UPDATE` queries for atomic primary demotion.
   - Created migration `CreateClientContactsTable1792505831168`.
 - **Presentation Layer (`src/modules/clients/presentation/`):**
   - Created `CreateClientContactDto`, `UpdateClientContactDto`, and `ClientContactResponseDto`.
@@ -134,7 +134,7 @@ Before detailing individual user stories, the foundation for the module was esta
 - **Domain Layer (`src/modules/catalogs/domain/`):**
   - Created domain entities: `ClientType`, `Potential` (with `order`), `ClientStatus`, `Portfolio` (with `description`), and `VisitResult`.
   - Added domain methods for updating names, descriptions, priorities, and deactivating items.
-  - Defined abstract `CatalogRepository` covering CRUD and initial data seeding.
+  - Defined abstract `CatalogDao` covering CRUD and initial data seeding.
   - Defined explicit domain errors: `InvalidCatalogTypeError` and `CatalogItemNotFoundError`.
 - **Application Layer (`src/modules/catalogs/application/`):**
   - Implemented `ListCatalogsUseCase`: Returns all system catalogs grouped in a single structured object (`zones`, `clientTypes`, `potentials`, `clientStatuses`, `portfolios`, `visitResults`).
@@ -145,7 +145,7 @@ Before detailing individual user stories, the foundation for the module was esta
 - **Infrastructure Layer (`src/modules/catalogs/infrastructure/`):**
   - Created ORM entities for `client_types`, `potentials`, `client_statuses`, `portfolios`, and `visit_results`.
   - Created `CatalogMapper` for bidirectional entity translation.
-  - Implemented `TypeOrmCatalogRepository` with idempotent upsert queries.
+  - Implemented `TypeOrmCatalogDao` with idempotent upsert queries.
   - Implemented `CatalogsSeedService` implementing `OnApplicationBootstrap` to automatically seed catalogs upon application startup.
   - Created database migration `CreateCatalogsTables1792505831169`.
 - **Presentation Layer (`src/modules/catalogs/presentation/`):**

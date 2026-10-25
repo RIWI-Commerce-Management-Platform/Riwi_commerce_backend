@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { GetRouteByIdUseCase } from './get-route-by-id.use-case.js';
-import { RouteRepository } from '../domain/route.repository.js';
+import { RouteDao } from '../domain/route.dao.js';
 import {
   RouteClientReaderPort,
   RouteClientDetails,
@@ -39,7 +39,7 @@ describe('GetRouteByIdUseCase', () => {
 
   it('should return enriched route details with client coordinates for map rendering', async () => {
     const route = createRouteWithStops();
-    const repo: RouteRepository = {
+    const dao: RouteDao = {
       findById: vi.fn().mockResolvedValue(route),
       findByNameAndZone: vi.fn(),
       findPaginated: vi.fn(),
@@ -51,7 +51,7 @@ describe('GetRouteByIdUseCase', () => {
       findByIds: vi.fn().mockResolvedValue([clientDetails]),
     };
 
-    const useCase = new GetRouteByIdUseCase(repo, clientReader);
+    const useCase = new GetRouteByIdUseCase(dao, clientReader);
     const result = await useCase.execute(1);
 
     expect(result.route.id).toBe(1);
@@ -61,7 +61,7 @@ describe('GetRouteByIdUseCase', () => {
   });
 
   it('should throw RouteNotFoundError if route does not exist', async () => {
-    const repo: RouteRepository = {
+    const dao: RouteDao = {
       findById: vi.fn().mockResolvedValue(null),
       findByNameAndZone: vi.fn(),
       findPaginated: vi.fn(),
@@ -73,13 +73,13 @@ describe('GetRouteByIdUseCase', () => {
       findByIds: vi.fn(),
     };
 
-    const useCase = new GetRouteByIdUseCase(repo, clientReader);
+    const useCase = new GetRouteByIdUseCase(dao, clientReader);
     await expect(useCase.execute(999)).rejects.toThrow(RouteNotFoundError);
   });
 
   it('should throw UnauthorizedZoneError if regional director manages different zone', async () => {
     const route = createRouteWithStops();
-    const repo: RouteRepository = {
+    const dao: RouteDao = {
       findById: vi.fn().mockResolvedValue(route),
       findByNameAndZone: vi.fn(),
       findPaginated: vi.fn(),
@@ -91,7 +91,7 @@ describe('GetRouteByIdUseCase', () => {
       findByIds: vi.fn(),
     };
 
-    const useCase = new GetRouteByIdUseCase(repo, clientReader);
+    const useCase = new GetRouteByIdUseCase(dao, clientReader);
     const actor = {
       id: 1,
       role: UserRole.DIRECTOR_REGIONAL,
@@ -105,7 +105,7 @@ describe('GetRouteByIdUseCase', () => {
 
   describe('advisor scope (HU-06)', () => {
     const buildUseCase = (route: Route) => {
-      const repo: RouteRepository = {
+      const dao: RouteDao = {
         findById: vi.fn().mockResolvedValue(route),
         findByNameAndZone: vi.fn(),
         findPaginated: vi.fn(),
@@ -116,7 +116,7 @@ describe('GetRouteByIdUseCase', () => {
         findById: vi.fn(),
         findByIds: vi.fn().mockResolvedValue([clientDetails]),
       };
-      return new GetRouteByIdUseCase(repo, clientReader);
+      return new GetRouteByIdUseCase(dao, clientReader);
     };
 
     it('lets an advisor read a route assigned to them', async () => {

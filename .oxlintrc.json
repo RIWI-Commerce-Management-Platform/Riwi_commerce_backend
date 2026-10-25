@@ -4,6 +4,14 @@
     "typescript/no-explicit-any": "off",
     "typescript/no-floating-promises": "error"
   },
+  "overrides": [
+    {
+      "files": ["**/*.spec.ts", "**/*.e2e-spec.ts"],
+      "rules": {
+        "typescript/unbound-method": "off"
+      }
+    }
+  ],
   "env": {
     "node": true
   }

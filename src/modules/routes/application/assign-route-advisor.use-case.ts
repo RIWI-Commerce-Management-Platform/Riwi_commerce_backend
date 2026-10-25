@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { Route } from '../domain/route.entity.js';
-import { RouteRepository } from '../domain/route.repository.js';
+import { RouteDao } from '../domain/route.dao.js';
 import { RouteNotFoundError } from '../domain/errors/route-not-found.error.js';
 import { UnauthorizedZoneError } from '../domain/errors/unauthorized-zone.error.js';
 import { VisitSchedulerPort } from './ports/visit-scheduler.port.js';
@@ -19,7 +19,7 @@ import { UserRole } from '../../auth/domain/user-role.enum.js';
 @Injectable()
 export class AssignRouteAdvisorUseCase {
   constructor(
-    private readonly routeRepository: RouteRepository,
+    private readonly routeDao: RouteDao,
     private readonly visitScheduler: VisitSchedulerPort,
     private readonly advisorReader: RouteAdvisorReaderPort,
   ) {}
@@ -29,7 +29,7 @@ export class AssignRouteAdvisorUseCase {
     advisorId: number,
     actor?: AuthActor,
   ): Promise<Route> {
-    const route = await this.routeRepository.findById(routeId);
+    const route = await this.routeDao.findById(routeId);
     if (!route) {
       throw new RouteNotFoundError(routeId);
     }
@@ -47,7 +47,7 @@ export class AssignRouteAdvisorUseCase {
 
     route.assignAdvisor(advisorId);
 
-    const savedRoute = await this.routeRepository.save(route);
+    const savedRoute = await this.routeDao.save(route);
 
     // Schedule the visits in the advisor's agenda (E4)
     await this.visitScheduler.scheduleVisitsForRoute({

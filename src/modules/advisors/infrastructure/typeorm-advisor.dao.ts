@@ -2,10 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Not, Repository } from 'typeorm';
 import { Advisor } from '../domain/advisor.entity.js';
-import {
-  AdvisorFilterCriteria,
-  AdvisorRepository,
-} from '../domain/advisor.repository.js';
+import { AdvisorFilterCriteria, AdvisorDao } from '../domain/advisor.dao.js';
 import { AdvisorOrmEntity } from './advisor.orm-entity.js';
 import { UserOrmEntity } from '../../auth/infrastructure/user.orm-entity.js';
 import { ZoneOrmEntity } from '../../zones/infrastructure/zone.orm-entity.js';
@@ -31,7 +28,7 @@ interface AdvisorRow {
  * listed as active with an empty profile.
  */
 @Injectable()
-export class TypeOrmAdvisorRepository implements AdvisorRepository {
+export class TypeOrmAdvisorDao implements AdvisorDao {
   constructor(
     @InjectRepository(AdvisorOrmEntity)
     private readonly advisorRepository: Repository<AdvisorOrmEntity>,

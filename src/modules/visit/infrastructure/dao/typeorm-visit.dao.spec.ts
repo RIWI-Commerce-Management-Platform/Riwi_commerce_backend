@@ -196,8 +196,8 @@ describe('TypeOrmVisitDao', () => {
       id: 1,
       clientId: 10,
       advisorId: 20,
-      scheduledDate: new Date('2026-10-20'),
-      scheduledTime: '09:00',
+      scheduledAt: new Date('2026-10-20T09:00:00'),
+      routeId: null,
       status: VisitStatus.VISITED,
       actualDate: new Date('2026-10-20'),
       startTime: '09:00',
@@ -224,8 +224,11 @@ describe('TypeOrmVisitDao', () => {
       id: 2,
       clientId: 10,
       advisorId: 20,
-      scheduledDate: new Date('2026-10-20'),
-      scheduledTime: '09:00',
+      scheduledAt: new Date('2026-10-20T09:00:00'),
+      routeId: null,
+      actualDate: null,
+      startTime: null,
+      endTime: null,
       status: VisitStatus.PENDING,
       objective: 'Presentar',
       results: [],
@@ -239,5 +242,55 @@ describe('TypeOrmVisitDao', () => {
     const saved = await dao.save(visitDomain);
     expect(saved.id).toBe(2);
     expect(mockLinkRepository.delete).not.toHaveBeenCalled();
+  });
+
+  it('maps the agenda rows to domain visits', async () => {
+    mockRepository.find.mockResolvedValue([buildVisitEntity({ id: 7 })]);
+
+    const visits = await dao.findAgenda({
+      advisorId: 20,
+      startDate: new Date(2026, 9, 20),
+      endDate: new Date(2026, 9, 21),
+    });
+
+    expect(visits).toHaveLength(1);
+    expect(visits[0]).toBeInstanceOf(Visit);
+    expect(visits[0].id).toBe(7);
+  });
+
+  it('uses an empty name when a linked result option no longer exists', async () => {
+    mockRepository.findOne.mockResolvedValue(buildVisitEntity());
+    mockLinkRepository.find.mockResolvedValue([buildLink(9)]);
+    mockOptionRepository.find.mockResolvedValue([]);
+
+    const result = await dao.findByIdAndAdvisor(1, 20);
+
+    expect(result?.results).toEqual([
+      { id: 9, name: '', observation: undefined },
+    ]);
+  });
+
+  it('stores a null observation for results saved without one', async () => {
+    mockRepository.save.mockResolvedValue(buildVisitEntity());
+    mockLinkRepository.find.mockResolvedValue([]);
+
+    await dao.save(
+      new Visit({
+        id: 1,
+        clientId: 10,
+        advisorId: 20,
+        routeId: null,
+        scheduledAt: new Date('2026-10-20T09:00:00'),
+        actualDate: new Date('2026-10-20'),
+        startTime: '09:00',
+        endTime: '10:00',
+        status: VisitStatus.VISITED,
+        objective: null,
+        results: [{ id: 1, name: 'Visita realizada' }],
+      }),
+    );
+
+    const [links] = mockLinkRepository.save.mock.calls[0];
+    expect(links[0].observation).toBeNull();
   });
 });

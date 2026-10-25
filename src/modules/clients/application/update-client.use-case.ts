@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { Client } from '../domain/client.entity.js';
-import { ClientRepository } from '../domain/client.repository.js';
+import { ClientDao } from '../domain/client.dao.js';
 import { ClientNotFoundError } from '../domain/client-not-found.error.js';
 import { ClientNitAlreadyExistsError } from '../domain/client-nit-already-exists.error.js';
 import { GeocodingPort } from './ports/geocoding.port.js';
@@ -30,19 +30,19 @@ export interface UpdateClientInput {
 @Injectable()
 export class UpdateClientUseCase {
   constructor(
-    private readonly clientRepository: ClientRepository,
+    private readonly clientDao: ClientDao,
     private readonly geocodingPort: GeocodingPort,
     private readonly activityLog: ActivityLogService,
   ) {}
 
   async execute(input: UpdateClientInput): Promise<Client> {
-    const client = await this.clientRepository.findById(input.id);
+    const client = await this.clientDao.findById(input.id);
     if (!client) {
       throw new ClientNotFoundError(input.id);
     }
 
     if (input.nit !== undefined && input.nit !== client.nit) {
-      const existing = await this.clientRepository.findByNit(input.nit);
+      const existing = await this.clientDao.findByNit(input.nit);
       if (existing && existing.id !== client.id) {
         throw new ClientNitAlreadyExistsError(input.nit);
       }
@@ -98,7 +98,7 @@ export class UpdateClientUseCase {
       longitude: lng,
     });
 
-    const saved = await this.clientRepository.save(client);
+    const saved = await this.clientDao.save(client);
 
     if (input.actorId !== undefined) {
       await this.activityLog.record({

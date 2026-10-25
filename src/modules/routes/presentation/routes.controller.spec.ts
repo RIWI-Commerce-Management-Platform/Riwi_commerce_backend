@@ -54,12 +54,10 @@ describe('RoutesController', () => {
       execute: vi.fn().mockResolvedValue(mockRoute),
     } as any,
     calculateRouteMetricsUseCase: {
-      execute: vi
-        .fn()
-        .mockResolvedValue({
-          totalDistanceKm: 10,
-          estimatedDurationMinutes: 60,
-        }),
+      execute: vi.fn().mockResolvedValue({
+        totalDistanceKm: 10,
+        estimatedDurationMinutes: 60,
+      }),
     } as any,
     findRoutesUseCase: {
       execute: vi.fn().mockResolvedValue({
@@ -462,6 +460,89 @@ describe('RoutesController', () => {
       await expect(
         buildController(useCases).updateDraft(1, { name: 'Ruta 1' }, mockUser),
       ).rejects.toBeInstanceOf(ConflictException);
+    });
+  });
+
+  describe('success paths and date conversion', () => {
+    const buildController = (useCases: ReturnType<typeof createMockUseCases>) =>
+      new RoutesController(
+        useCases.createRouteDraftUseCase,
+        useCases.updateRouteDraftUseCase,
+        useCases.addRouteStopUseCase,
+        useCases.removeRouteStopUseCase,
+        useCases.reorderRouteStopsUseCase,
+        useCases.assignRouteAdvisorUseCase,
+        useCases.calculateRouteMetricsUseCase,
+        useCases.findRoutesUseCase,
+        useCases.getRouteByIdUseCase,
+        useCases.toggleRouteStatusUseCase,
+      );
+
+    it('converts the end date of a new draft', async () => {
+      const useCases = createMockUseCases();
+
+      await buildController(useCases).createDraft(
+        {
+          name: 'Ruta 1',
+          zoneId: 1,
+          dayOfWeek: DayOfWeek.MONDAY,
+          frequency: RouteFrequency.WEEKLY,
+          startDate: '2026-10-26',
+          endDate: '2026-12-31',
+        } as any,
+        mockUser,
+      );
+
+      const [input] = useCases.createRouteDraftUseCase.execute.mock.calls[0];
+      expect(input.endDate).toEqual(new Date('2026-12-31'));
+    });
+
+    it('converts both dates when a draft update sends them', async () => {
+      const useCases = createMockUseCases();
+
+      await buildController(useCases).updateDraft(
+        1,
+        { startDate: '2026-11-02', endDate: '2026-12-28' } as any,
+        mockUser,
+      );
+
+      const [, input] = useCases.updateRouteDraftUseCase.execute.mock.calls[0];
+      expect(input.startDate).toEqual(new Date('2026-11-02'));
+      expect(input.endDate).toEqual(new Date('2026-12-28'));
+    });
+
+    it('adds a stop and returns the route', async () => {
+      const useCases = createMockUseCases();
+
+      const result = await buildController(useCases).addStop(
+        1,
+        { clientId: 101, suggestedTime: '09:00', estimatedDurationMinutes: 20 },
+        mockUser,
+      );
+
+      expect(result.id).toBe(1);
+      expect(useCases.addRouteStopUseCase.execute).toHaveBeenCalledWith(
+        1,
+        { clientId: 101, suggestedTime: '09:00', estimatedDurationMinutes: 20 },
+        mockUser,
+      );
+    });
+
+    it('assigns an advisor and returns the route', async () => {
+      const useCases = createMockUseCases();
+
+      const result = await buildController(useCases).assignAdvisor(
+        1,
+        { advisorId: 5 },
+        mockUser,
+      );
+
+      expect(result.id).toBe(1);
+      expect(useCases.assignRouteAdvisorUseCase.execute).toHaveBeenCalledWith(
+        1,
+        5,
+        mockUser,
+      );
     });
   });
 });

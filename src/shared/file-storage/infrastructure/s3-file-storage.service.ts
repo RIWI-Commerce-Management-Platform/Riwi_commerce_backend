@@ -34,10 +34,13 @@ export class S3FileStorageService implements FileStorageService {
   constructor(private readonly configService: ConfigService) {
     const region = this.configService.get<string>('aws.region') ?? 'us-east-1';
     this.bucketName =
-      this.configService.get<string>('aws.bucketName') ?? 'comercial-360-bucket';
+      this.configService.get<string>('aws.bucketName') ??
+      'comercial-360-bucket';
 
     const accessKeyId = this.configService.get<string>('aws.accessKeyId');
-    const secretAccessKey = this.configService.get<string>('aws.secretAccessKey');
+    const secretAccessKey = this.configService.get<string>(
+      'aws.secretAccessKey',
+    );
 
     this.s3Client = new S3Client({
       region,

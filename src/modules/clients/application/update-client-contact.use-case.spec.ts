@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { UpdateClientContactUseCase } from './update-client-contact.use-case.js';
 import { ClientContact } from '../domain/client-contact.entity.js';
 import { ClientContactNotFoundError } from '../domain/client-contact-not-found.error.js';
-import { ClientContactRepository } from '../domain/client-contact.repository.js';
+import { ClientContactDao } from '../domain/client-contact.dao.js';
 
 describe('UpdateClientContactUseCase', () => {
   const createMockContact = (isPrimary = false): ClientContact =>
@@ -21,23 +21,25 @@ describe('UpdateClientContactUseCase', () => {
     });
 
   const setup = () => {
-    const contactRepository = {
+    const contactDao = {
       save: vi.fn((c: ClientContact) => Promise.resolve(c)),
       findById: vi.fn(),
       findByClientId: vi.fn(),
       unsetPrimaryByClientId: vi.fn(),
-    } as unknown as ClientContactRepository;
+    } as unknown as ClientContactDao;
 
-    const useCase = new UpdateClientContactUseCase(contactRepository, {
-      record: vi.fn(),
-    } as any);
+    const activityLog = { record: vi.fn() };
+    const useCase = new UpdateClientContactUseCase(
+      contactDao,
+      activityLog as any,
+    );
 
-    return { useCase, contactRepository };
+    return { useCase, contactDao, activityLog };
   };
 
   it('should throw ClientContactNotFoundError if contact does not exist', async () => {
-    const { useCase, contactRepository } = setup();
-    vi.mocked(contactRepository.findById).mockResolvedValue(null);
+    const { useCase, contactDao } = setup();
+    vi.mocked(contactDao.findById).mockResolvedValue(null);
 
     await expect(
       useCase.execute({
@@ -49,8 +51,8 @@ describe('UpdateClientContactUseCase', () => {
   });
 
   it('should throw ClientContactNotFoundError if contact belongs to another client', async () => {
-    const { useCase, contactRepository } = setup();
-    vi.mocked(contactRepository.findById).mockResolvedValue(
+    const { useCase, contactDao } = setup();
+    vi.mocked(contactDao.findById).mockResolvedValue(
       createMockContact(false), // clientId is 1
     );
 
@@ -64,10 +66,8 @@ describe('UpdateClientContactUseCase', () => {
   });
 
   it('should promote contact to primary and unset others', async () => {
-    const { useCase, contactRepository } = setup();
-    vi.mocked(contactRepository.findById).mockResolvedValue(
-      createMockContact(false),
-    );
+    const { useCase, contactDao } = setup();
+    vi.mocked(contactDao.findById).mockResolvedValue(createMockContact(false));
 
     const result = await useCase.execute({
       clientId: 1,
@@ -76,15 +76,13 @@ describe('UpdateClientContactUseCase', () => {
     });
 
     expect(result.isPrimary).toBe(true);
-    expect(contactRepository.unsetPrimaryByClientId).toHaveBeenCalledWith(1, 5);
-    expect(contactRepository.save).toHaveBeenCalled();
+    expect(contactDao.unsetPrimaryByClientId).toHaveBeenCalledWith(1, 5);
+    expect(contactDao.save).toHaveBeenCalled();
   });
 
   it('should update mutable fields correctly', async () => {
-    const { useCase, contactRepository } = setup();
-    vi.mocked(contactRepository.findById).mockResolvedValue(
-      createMockContact(false),
-    );
+    const { useCase, contactDao } = setup();
+    vi.mocked(contactDao.findById).mockResolvedValue(createMockContact(false));
 
     const result = await useCase.execute({
       clientId: 1,
@@ -95,6 +93,22 @@ describe('UpdateClientContactUseCase', () => {
 
     expect(result.name).toBe('Updated Contact Name');
     expect(result.position).toBe('Director General');
-    expect(contactRepository.unsetPrimaryByClientId).not.toHaveBeenCalled();
+    expect(contactDao.unsetPrimaryByClientId).not.toHaveBeenCalled();
+  });
+
+  it('records the change in the activity log when an actor is given', async () => {
+    const { useCase, contactDao, activityLog } = setup();
+    vi.mocked(contactDao.findById).mockResolvedValue(createMockContact(false));
+
+    await useCase.execute({
+      clientId: 1,
+      contactId: 5,
+      name: 'Nuevo',
+      actorId: 3,
+    });
+
+    expect(activityLog.record).toHaveBeenCalledWith(
+      expect.objectContaining({ action: 'client.contact_updated', actorId: 3 }),
+    );
   });
 });

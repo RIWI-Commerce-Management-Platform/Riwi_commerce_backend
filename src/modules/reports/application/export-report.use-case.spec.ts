@@ -101,3 +101,75 @@ describe('ExportReportUseCase', () => {
     expect(report.content.split('\r\n')[0]).toContain(';');
   });
 });
+
+describe('ExportReportUseCase rows', () => {
+  const createdAt = new Date('2026-10-20T15:00:00.000Z');
+  const today = new Date('2026-10-24T12:00:00.000Z');
+  const dao = {
+    findVisits: vi.fn().mockResolvedValue([]),
+    findClients: vi.fn().mockResolvedValue([
+      {
+        id: 1,
+        nit: '900123',
+        businessName: 'Tienda SAS',
+        commercialName: 'Tienda',
+        address: 'Calle 1',
+        neighborhood: 'Centro',
+        municipality: 'Soledad',
+        department: 'Atlántico',
+        phone: '3001234567',
+        email: 'tienda@example.com',
+        zoneName: 'Soledad',
+        clientType: 'Retail',
+        potential: 'Alto',
+        clientStatus: 'Activo',
+        visitFrequencyDays: 7,
+        latitude: 10.9,
+        longitude: -74.8,
+        isActive: true,
+        createdAt,
+      },
+    ]),
+    findQuotes: vi.fn().mockResolvedValue([
+      {
+        quoteNumber: 'COT-0001',
+        createdAt,
+        status: 'APPROVED',
+        clientNit: '900123',
+        clientName: 'Tienda',
+        zoneName: 'Soledad',
+        advisorName: 'Laura',
+        itemsCount: 2,
+        subtotal: 100,
+        total: 119,
+        visitId: 4,
+      },
+    ]),
+    findOrders: vi.fn().mockResolvedValue([
+      {
+        orderNumber: 'PED-0001',
+        createdAt,
+        status: 'CREATED',
+        quoteNumber: 'COT-0001',
+        clientNit: '900123',
+        clientName: 'Tienda',
+        zoneName: 'Soledad',
+        advisorName: 'Laura',
+        total: 119,
+      },
+    ]),
+  };
+
+  it.each([
+    ['clients', '1,900123,Tienda SAS'],
+    ['quotes', 'COT-0001,2026-10-20T15:00:00.000Z,APPROVED'],
+    ['orders', 'PED-0001,2026-10-20T15:00:00.000Z,CREATED,COT-0001'],
+  ] as const)('writes one row per %s record', async (type, expected) => {
+    const useCase = new ExportReportUseCase(dao as any);
+
+    const report = await useCase.execute(type, {}, undefined, ',', today);
+
+    const [, row] = report.content.slice(1).split('\r\n');
+    expect(row.startsWith(expected)).toBe(true);
+  });
+});

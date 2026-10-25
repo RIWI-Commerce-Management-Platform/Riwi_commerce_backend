@@ -8,10 +8,7 @@ import { VisitDao } from '../../domain/dao/visit.dao.js';
 
 import { VisitResultCatalogDao } from '../../domain/dao/visit-result-catalog.dao.js';
 
-import {
-  VisitResult,
-  Visit,
-} from '../../domain/visit.entity.js';
+import { VisitResult, Visit } from '../../domain/visit.entity.js';
 
 import { EmptyVisitResultsError } from '../../domain/errors/empty-visit-results.error.js';
 
@@ -38,7 +35,11 @@ export class RegisterVisitResultUseCase {
     private readonly activityLog: ActivityLogService,
   ) {}
 
-  async execute(id: number, advisorId: number, data: RegisterVisitResultCommand) {
+  async execute(
+    id: number,
+    advisorId: number,
+    data: RegisterVisitResultCommand,
+  ) {
     const visit = await this.visitDao.findByIdAndAdvisor(id, advisorId);
 
     if (!visit) {
@@ -95,7 +96,9 @@ export class RegisterVisitResultUseCase {
 
     const optionById = new Map(options.map((option) => [option.id, option]));
 
-    const invalidIds = uniqueIds.filter((resultId) => !optionById.has(resultId));
+    const invalidIds = uniqueIds.filter(
+      (resultId) => !optionById.has(resultId),
+    );
 
     if (invalidIds.length > 0) {
       throw new BadRequestException(

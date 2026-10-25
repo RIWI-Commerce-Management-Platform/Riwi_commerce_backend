@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { Client } from '../domain/client.entity.js';
-import { ClientRepository } from '../domain/client.repository.js';
+import { ClientDao } from '../domain/client.dao.js';
 import { ClientNotFoundError } from '../domain/client-not-found.error.js';
 import { GetClientByIdUseCase } from './get-client-by-id.use-case.js';
 
@@ -10,7 +10,7 @@ describe('GetClientByIdUseCase', () => {
   const findByNit = vi.fn();
   const findPaginated = vi.fn();
 
-  const mockRepository: ClientRepository = {
+  const mockDao: ClientDao = {
     save,
     findById,
     findByNit,
@@ -43,7 +43,7 @@ describe('GetClientByIdUseCase', () => {
 
     findById.mockResolvedValueOnce(dummyClient);
 
-    const useCase = new GetClientByIdUseCase(mockRepository);
+    const useCase = new GetClientByIdUseCase(mockDao);
     const result = await useCase.execute(1);
 
     expect(findById).toHaveBeenCalledWith(1);
@@ -53,10 +53,8 @@ describe('GetClientByIdUseCase', () => {
   it('should throw ClientNotFoundError when client is not found', async () => {
     findById.mockResolvedValueOnce(null);
 
-    const useCase = new GetClientByIdUseCase(mockRepository);
+    const useCase = new GetClientByIdUseCase(mockDao);
 
-    await expect(useCase.execute(999)).rejects.toThrow(
-      ClientNotFoundError,
-    );
+    await expect(useCase.execute(999)).rejects.toThrow(ClientNotFoundError);
   });
 });

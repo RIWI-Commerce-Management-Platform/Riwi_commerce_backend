@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { Zone } from '../domain/zone.entity.js';
-import { ZoneRepository } from '../domain/zone.repository.js';
+import { ZoneDao } from '../domain/zone.dao.js';
 import { ZoneNameAlreadyExistsError } from '../domain/zone-name-already-exists.error.js';
 
 export interface CreateZoneInput {
@@ -9,10 +9,10 @@ export interface CreateZoneInput {
 
 @Injectable()
 export class CreateZoneUseCase {
-  constructor(private readonly zoneRepository: ZoneRepository) {}
+  constructor(private readonly zoneDao: ZoneDao) {}
 
   async execute(input: CreateZoneInput): Promise<Zone> {
-    const existing = await this.zoneRepository.findByName(input.name);
+    const existing = await this.zoneDao.findByName(input.name);
     if (existing) {
       throw new ZoneNameAlreadyExistsError(input.name);
     }
@@ -25,6 +25,6 @@ export class CreateZoneUseCase {
       updatedAt: now,
     });
 
-    return this.zoneRepository.save(zone);
+    return this.zoneDao.save(zone);
   }
 }

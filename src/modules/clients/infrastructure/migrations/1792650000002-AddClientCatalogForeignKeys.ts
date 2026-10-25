@@ -7,9 +7,7 @@ import { MigrationInterface, QueryRunner, TableForeignKey } from 'typeorm';
  * Assumes every existing row already has ids that exist in the referenced
  * tables — this will fail if orphaned rows are present.
  */
-export class AddClientCatalogForeignKeys1792650000002
-  implements MigrationInterface
-{
+export class AddClientCatalogForeignKeys1792650000002 implements MigrationInterface {
   name = 'AddClientCatalogForeignKeys1792650000002';
 
   public async up(queryRunner: QueryRunner): Promise<void> {

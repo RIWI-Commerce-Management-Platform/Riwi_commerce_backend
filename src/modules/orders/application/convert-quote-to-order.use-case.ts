@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
-import { OrderRepository } from '../domain/order.repository.js';
-import { QuoteRepository } from '../../quotes/domain/quote.repository.js';
+import { OrderDao } from '../domain/order.dao.js';
+import { QuoteDao } from '../../quotes/domain/quote.dao.js';
 import { ActivityLogService } from '../../../shared/activity-log/domain/activity-log.service.js';
 import { Order } from '../domain/order.entity.js';
 import { OrderItem } from '../domain/order-item.entity.js';
@@ -15,13 +15,13 @@ import { ConvertQuoteToOrderCommand } from './dto/convert-quote-to-order.command
 @Injectable()
 export class ConvertQuoteToOrderUseCase {
   constructor(
-    private readonly orderRepository: OrderRepository,
-    private readonly quoteRepository: QuoteRepository,
+    private readonly orderDao: OrderDao,
+    private readonly quoteDao: QuoteDao,
     private readonly activityLogService: ActivityLogService,
   ) {}
 
   async execute(command: ConvertQuoteToOrderCommand): Promise<Order> {
-    const quote = await this.quoteRepository.findById(
+    const quote = await this.quoteDao.findById(
       command.quoteId,
       scopeForActor(command.actor),
     );
@@ -36,9 +36,7 @@ export class ConvertQuoteToOrderUseCase {
       );
     }
 
-    const existingOrder = await this.orderRepository.findByQuoteId(
-      command.quoteId,
-    );
+    const existingOrder = await this.orderDao.findByQuoteId(command.quoteId);
     if (existingOrder) {
       throw new QuoteAlreadyConvertedError(
         command.quoteId,
@@ -46,7 +44,7 @@ export class ConvertQuoteToOrderUseCase {
       );
     }
 
-    const orderNumber = await this.orderRepository.generateNextOrderNumber();
+    const orderNumber = await this.orderDao.generateNextOrderNumber();
 
     const items = quote.items.map(
       (item) =>
@@ -69,7 +67,7 @@ export class ConvertQuoteToOrderUseCase {
       items,
     });
 
-    const savedOrder = await this.orderRepository.save(newOrder);
+    const savedOrder = await this.orderDao.save(newOrder);
 
     await this.activityLogService.record({
       action: 'order.created',

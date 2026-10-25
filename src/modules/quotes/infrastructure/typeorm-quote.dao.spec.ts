@@ -1,12 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { Repository } from 'typeorm';
-import { TypeOrmQuoteRepository } from './typeorm-quote.repository.js';
+import { TypeOrmQuoteDao } from './typeorm-quote.dao.js';
 import { QuoteOrmEntity } from './quote.orm-entity.js';
 import { Quote } from '../domain/quote.entity.js';
 import { QuoteStatus } from '../domain/quote-status.enum.js';
 
-describe('TypeOrmQuoteRepository (Infrastructure)', () => {
-  let repository: TypeOrmQuoteRepository;
+describe('TypeOrmQuoteDao (Infrastructure)', () => {
+  let dao: TypeOrmQuoteDao;
   let ormRepo: Partial<Repository<QuoteOrmEntity>>;
 
   const mockOrmEntity = {
@@ -30,7 +30,7 @@ describe('TypeOrmQuoteRepository (Infrastructure)', () => {
       query: vi.fn().mockResolvedValue([{ nextval: '1' }]),
     };
 
-    repository = new TypeOrmQuoteRepository(ormRepo as Repository<QuoteOrmEntity>);
+    dao = new TypeOrmQuoteDao(ormRepo as Repository<QuoteOrmEntity>);
   });
 
   it('saves a quote entity', async () => {
@@ -42,70 +42,78 @@ describe('TypeOrmQuoteRepository (Infrastructure)', () => {
       subtotal: 100,
       total: 100,
       items: [],
+      createdAt: new Date(),
+      updatedAt: new Date(),
     });
 
-    const result = await repository.save(quote);
+    const result = await dao.save(quote);
     expect(result.id).toBe(1);
     expect(ormRepo.save).toHaveBeenCalled();
   });
 
   it('finds quote by ID when it exists', async () => {
-    const result = await repository.findById(1);
+    const result = await dao.findById(1);
     expect(result).not.toBeNull();
     expect(result?.quoteNumber).toBe('COT-0001');
   });
 
   it('returns null when quote is not found by ID', async () => {
     vi.mocked(ormRepo.findOne!).mockResolvedValue(null);
-    const result = await repository.findById(999);
+    const result = await dao.findById(999);
     expect(result).toBeNull();
   });
 
   it('finds quote by quote number when it exists', async () => {
-    const result = await repository.findByQuoteNumber('COT-0001');
+    const result = await dao.findByQuoteNumber('COT-0001');
     expect(result).not.toBeNull();
     expect(result?.quoteNumber).toBe('COT-0001');
   });
 
   it('returns null when quote is not found by quote number', async () => {
     vi.mocked(ormRepo.findOne!).mockResolvedValue(null);
-    const result = await repository.findByQuoteNumber('COT-9999');
+    const result = await dao.findByQuoteNumber('COT-9999');
     expect(result).toBeNull();
   });
 
   describe('generateNextQuoteNumber', () => {
     it('uses sequence when available', async () => {
       vi.mocked(ormRepo.query!).mockResolvedValue([{ nextval: '5' }]);
-      const nextNum = await repository.generateNextQuoteNumber();
+      const nextNum = await dao.generateNextQuoteNumber();
       expect(nextNum).toBe('COT-0005');
     });
 
     it('falls back to COT-0001 when query fails and no records exist', async () => {
-      vi.mocked(ormRepo.query!).mockRejectedValue(new Error('Sequence missing'));
+      vi.mocked(ormRepo.query!).mockRejectedValue(
+        new Error('Sequence missing'),
+      );
       vi.mocked(ormRepo.find!).mockResolvedValue([]);
 
-      const nextNum = await repository.generateNextQuoteNumber();
+      const nextNum = await dao.generateNextQuoteNumber();
       expect(nextNum).toBe('COT-0001');
     });
 
     it('falls back to regex parsing when latest quote exists', async () => {
-      vi.mocked(ormRepo.query!).mockRejectedValue(new Error('Sequence missing'));
+      vi.mocked(ormRepo.query!).mockRejectedValue(
+        new Error('Sequence missing'),
+      );
       vi.mocked(ormRepo.find!).mockResolvedValue([
         { quoteNumber: 'COT-0015' } as QuoteOrmEntity,
       ]);
 
-      const nextNum = await repository.generateNextQuoteNumber();
+      const nextNum = await dao.generateNextQuoteNumber();
       expect(nextNum).toBe('COT-0016');
     });
 
     it('falls back to count when regex does not match', async () => {
-      vi.mocked(ormRepo.query!).mockRejectedValue(new Error('Sequence missing'));
+      vi.mocked(ormRepo.query!).mockRejectedValue(
+        new Error('Sequence missing'),
+      );
       vi.mocked(ormRepo.find!).mockResolvedValue([
         { quoteNumber: 'CUSTOM-QUOTE' } as QuoteOrmEntity,
       ]);
       vi.mocked(ormRepo.count!).mockResolvedValue(4);
 
-      const nextNum = await repository.generateNextQuoteNumber();
+      const nextNum = await dao.generateNextQuoteNumber();
       expect(nextNum).toBe('COT-0005');
     });
   });
@@ -121,7 +129,7 @@ describe('TypeOrmQuoteRepository (Infrastructure)', () => {
       };
       ormRepo.createQueryBuilder = vi.fn().mockReturnValue(qbMock);
 
-      const result = await repository.findPaginated({
+      const result = await dao.findPaginated({
         clientId: 5,
         status: 'DRAFT',
         startDate: '2026-10-01',
@@ -132,9 +140,12 @@ describe('TypeOrmQuoteRepository (Infrastructure)', () => {
 
       expect(result.data).toHaveLength(1);
       expect(result.meta.total).toBe(1);
-      expect(qbMock.andWhere).toHaveBeenCalledWith('quote.clientId = :clientId', {
-        clientId: 5,
-      });
+      expect(qbMock.andWhere).toHaveBeenCalledWith(
+        'quote.clientId = :clientId',
+        {
+          clientId: 5,
+        },
+      );
       expect(qbMock.andWhere).toHaveBeenCalledWith('quote.status = :status', {
         status: 'DRAFT',
       });
@@ -150,7 +161,7 @@ describe('TypeOrmQuoteRepository (Infrastructure)', () => {
       };
       ormRepo.createQueryBuilder = vi.fn().mockReturnValue(qbMock);
 
-      const result = await repository.findPaginated({
+      const result = await dao.findPaginated({
         page: -1,
         limit: 0,
       });
@@ -160,5 +171,61 @@ describe('TypeOrmQuoteRepository (Infrastructure)', () => {
       expect(result.meta.limit).toBe(10);
       expect(result.meta.totalPages).toBe(1);
     });
+  });
+});
+
+describe('TypeOrmQuoteDao.findById with an actor scope', () => {
+  const build = (found: unknown) => {
+    const query: any = {
+      leftJoinAndSelect: vi.fn().mockReturnThis(),
+      where: vi.fn().mockReturnThis(),
+      andWhere: vi.fn().mockReturnThis(),
+      innerJoin: vi.fn().mockReturnThis(),
+      getOne: vi.fn().mockResolvedValue(found),
+    };
+    const ormRepo = {
+      findOne: vi.fn(),
+      createQueryBuilder: vi.fn().mockReturnValue(query),
+    };
+    return {
+      dao: new TypeOrmQuoteDao(
+        ormRepo as unknown as Repository<QuoteOrmEntity>,
+      ),
+      ormRepo,
+      query,
+    };
+  };
+
+  it('filters by advisor when the actor is an advisor', async () => {
+    const { dao, ormRepo, query } = build(null);
+
+    const result = await dao.findById(1, { advisorId: 7 });
+
+    expect(result).toBeNull();
+    expect(ormRepo.findOne).not.toHaveBeenCalled();
+    expect(query.where).toHaveBeenCalledWith('quote.id = :id', { id: 1 });
+    expect(query.andWhere).toHaveBeenCalledWith(
+      'quote.advisorId = :advisorId',
+      {
+        advisorId: 7,
+      },
+    );
+  });
+
+  it('joins the client zone when the actor is a regional director', async () => {
+    const { dao, query } = build(null);
+
+    await dao.findById(1, { zoneId: 3 });
+
+    expect(query.innerJoin).toHaveBeenCalledWith(
+      'quote.client',
+      'quote_client',
+    );
+    expect(query.andWhere).toHaveBeenCalledWith(
+      'quote_client.zoneId = :zoneId',
+      {
+        zoneId: 3,
+      },
+    );
   });
 });

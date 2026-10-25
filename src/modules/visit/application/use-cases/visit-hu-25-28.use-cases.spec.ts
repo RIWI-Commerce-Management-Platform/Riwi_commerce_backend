@@ -26,6 +26,8 @@ import { ListVisitAttachmentsUseCase } from './list-visit-attachments.use-case.j
 
 import { DeleteVisitAttachmentUseCase } from './delete-visit-attachment.use-case.js';
 
+import { InvalidVisitObservationsError } from '../../domain/errors/invalid-visit-observations.error.js';
+
 import { InvalidFileTypeError } from '../../../../shared/file-storage/domain/errors/invalid-file-type.error.js';
 
 const buildVisit = (status = VisitStatus.PENDING) =>
@@ -419,5 +421,185 @@ describe('Visit attachment use cases (HU-28)', () => {
       NotFoundException,
     );
     await expect(list.execute(1, 20)).rejects.toThrow(NotFoundException);
+  });
+});
+
+describe('Visit use cases edge cases', () => {
+  // A visit whose transition throws the given error, to reach the mapping.
+  const failingVisit = (error: Error) => ({
+    scheduledAt: new Date(2026, 0, 1),
+    reschedule: () => {
+      throw error;
+    },
+    markNotVisited: () => {
+      throw error;
+    },
+    registerCommercialOutcome: () => {
+      throw error;
+    },
+  });
+  const daoReturning = (visit: unknown) => ({
+    findByIdAndAdvisor: vi.fn().mockResolvedValue(visit),
+    save: vi.fn(),
+  });
+  const tooLong = new InvalidVisitObservationsError(600, 500);
+  const unexpected = new Error('database down');
+
+  it('logs a reschedule without a reason', async () => {
+    const log = activityLog();
+    const useCase = new RescheduleVisitUseCase(
+      visitDaoWith(buildVisit()) as any,
+      log as any,
+    );
+
+    await useCase.execute(1, 20, {
+      scheduledAt: new Date(Date.now() + 86_400_000),
+    });
+
+    expect(log.record).toHaveBeenCalledWith(
+      expect.objectContaining({ description: 'Visit rescheduled' }),
+    );
+  });
+
+  it('maps an invalid reschedule reason to 400 and rethrows other errors', async () => {
+    const run = (error: Error) =>
+      new RescheduleVisitUseCase(
+        daoReturning(failingVisit(error)) as any,
+        activityLog() as any,
+      ).execute(1, 20, { scheduledAt: new Date() });
+
+    await expect(run(tooLong)).rejects.toThrow(BadRequestException);
+    await expect(run(unexpected)).rejects.toBe(unexpected);
+  });
+
+  it('logs a not-visited visit without a reason', async () => {
+    const log = activityLog();
+    const useCase = new MarkVisitNotVisitedUseCase(
+      visitDaoWith(buildVisit()) as any,
+      log as any,
+    );
+
+    await useCase.execute(1, 20);
+
+    expect(log.record).toHaveBeenCalledWith(
+      expect.objectContaining({ description: 'Visit not done' }),
+    );
+  });
+
+  it('maps an invalid not-visited reason to 400 and rethrows other errors', async () => {
+    const run = (error: Error) =>
+      new MarkVisitNotVisitedUseCase(
+        daoReturning(failingVisit(error)) as any,
+        activityLog() as any,
+      ).execute(1, 20, 'x');
+
+    await expect(run(tooLong)).rejects.toThrow(BadRequestException);
+    await expect(run(unexpected)).rejects.toBe(unexpected);
+  });
+
+  it('logs a visit that generated nothing', async () => {
+    const log = activityLog();
+    const useCase = new RegisterCommercialOutcomeUseCase(
+      visitDaoWith(buildVisit(VisitStatus.VISITED)) as any,
+      log as any,
+    );
+
+    await useCase.execute(1, 20, {
+      quoteGenerated: false,
+      orderGenerated: false,
+    });
+
+    expect(log.record).toHaveBeenCalledWith(
+      expect.objectContaining({
+        description: 'Quote generated: no, order generated: no',
+      }),
+    );
+  });
+
+  it('rethrows unexpected errors from the commercial outcome', async () => {
+    const useCase = new RegisterCommercialOutcomeUseCase(
+      daoReturning(failingVisit(unexpected)) as any,
+      activityLog() as any,
+    );
+
+    await expect(
+      useCase.execute(1, 20, { quoteGenerated: true, orderGenerated: true }),
+    ).rejects.toBe(unexpected);
+  });
+
+  it('keeps a follow-up without a name when its client is gone', async () => {
+    const followUp = FollowUp.schedule({
+      id: 3,
+      visitId: 1,
+      clientId: 10,
+      responsibleId: 20,
+      createdById: 20,
+      dueDate: new Date(2026, 9, 21),
+      activity: 'Call',
+      observation: null,
+    });
+    const useCase = new GetFollowUpAgendaUseCase(
+      { findAgenda: vi.fn().mockResolvedValue([followUp]) } as any,
+      { findById: vi.fn().mockResolvedValue(null) } as any,
+    );
+
+    const agenda = await useCase.execute(20, 'day');
+
+    expect(agenda).toEqual([followUp]);
+    expect(agenda[0].clientName).toBeUndefined();
+  });
+});
+
+describe('Follow-up and attachment unexpected errors', () => {
+  const unexpected = new Error('database down');
+
+  it('rethrows unexpected errors while scheduling a follow-up', async () => {
+    const schedule = vi.spyOn(FollowUp, 'schedule').mockImplementation(() => {
+      throw unexpected;
+    });
+    const useCase = new CreateFollowUpUseCase(
+      visitDaoWith(buildVisit()) as any,
+      { save: vi.fn() } as any,
+      activityLog() as any,
+    );
+
+    await expect(
+      useCase.execute(1, 20, { dueDate: new Date(), activity: 'Call' }),
+    ).rejects.toBe(unexpected);
+    schedule.mockRestore();
+  });
+
+  it('rethrows unexpected errors while completing a follow-up', async () => {
+    const followUp = {
+      responsibleId: 20,
+      createdById: 20,
+      complete: () => {
+        throw unexpected;
+      },
+    };
+    const useCase = new CompleteFollowUpUseCase(
+      { findById: vi.fn().mockResolvedValue(followUp), save: vi.fn() } as any,
+      activityLog() as any,
+    );
+
+    await expect(useCase.execute(3, 20)).rejects.toBe(unexpected);
+  });
+
+  it('rethrows unexpected storage errors while uploading', async () => {
+    const useCase = new UploadVisitAttachmentUseCase(
+      visitDaoWith(buildVisit()) as any,
+      { save: vi.fn() } as any,
+      { upload: vi.fn().mockRejectedValue(unexpected) } as any,
+      activityLog() as any,
+    );
+
+    await expect(
+      useCase.execute(1, 20, {
+        buffer: Buffer.from('img'),
+        originalname: 'front.jpg',
+        mimetype: 'image/jpeg',
+        size: 3,
+      }),
+    ).rejects.toBe(unexpected);
   });
 });

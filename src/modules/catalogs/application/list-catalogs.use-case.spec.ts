@@ -1,9 +1,9 @@
 import { describe, expect, it, vi } from 'vitest';
 import { ListCatalogsUseCase } from './list-catalogs.use-case.js';
-import { AllCatalogs, CatalogRepository } from '../domain/catalog.repository.js';
+import { AllCatalogs, CatalogDao } from '../domain/catalog.dao.js';
 
 describe('ListCatalogsUseCase', () => {
-  it('should call catalogRepository.findAll and return all catalogs', async () => {
+  it('should call catalogDao.findAll and return all catalogs', async () => {
     const mockCatalogs: AllCatalogs = {
       zones: [],
       clientTypes: [],
@@ -13,14 +13,14 @@ describe('ListCatalogsUseCase', () => {
       visitResults: [],
     };
 
-    const catalogRepository = {
+    const catalogDao = {
       findAll: vi.fn().mockResolvedValue(mockCatalogs),
-    } as unknown as CatalogRepository;
+    } as unknown as CatalogDao;
 
-    const useCase = new ListCatalogsUseCase(catalogRepository);
+    const useCase = new ListCatalogsUseCase(catalogDao);
     const result = await useCase.execute();
 
-    expect(catalogRepository.findAll).toHaveBeenCalled();
+    expect(catalogDao.findAll).toHaveBeenCalled();
     expect(result).toBe(mockCatalogs);
   });
 });

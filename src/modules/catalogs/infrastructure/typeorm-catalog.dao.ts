@@ -3,9 +3,9 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import {
   AllCatalogs,
-  CatalogRepository,
+  CatalogDao,
   CatalogSeedData,
-} from '../domain/catalog.repository.js';
+} from '../domain/catalog.dao.js';
 import {
   ClientType,
   Potential,
@@ -23,7 +23,7 @@ import { CatalogMapper } from './catalog.mapper.js';
 import { ZoneMapper } from '../../zones/infrastructure/zone.mapper.js';
 
 @Injectable()
-export class TypeOrmCatalogRepository implements CatalogRepository {
+export class TypeOrmCatalogDao implements CatalogDao {
   constructor(
     @InjectRepository(ClientTypeOrmEntity)
     private readonly clientTypeRepo: Repository<ClientTypeOrmEntity>,

@@ -1,11 +1,11 @@
 import { Injectable } from '@nestjs/common';
-import { AllCatalogs, CatalogRepository } from '../domain/catalog.repository.js';
+import { AllCatalogs, CatalogDao } from '../domain/catalog.dao.js';
 
 @Injectable()
 export class ListCatalogsUseCase {
-  constructor(private readonly catalogRepository: CatalogRepository) {}
+  constructor(private readonly catalogDao: CatalogDao) {}
 
   async execute(): Promise<AllCatalogs> {
-    return this.catalogRepository.findAll();
+    return this.catalogDao.findAll();
   }
 }

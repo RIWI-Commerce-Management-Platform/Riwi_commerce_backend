@@ -1,6 +1,6 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { CreateQuoteUseCase } from './create-quote.use-case.js';
-import { QuoteRepository } from '../domain/quote.repository.js';
+import { QuoteDao } from '../domain/quote.dao.js';
 import { QuoteStatus } from '../domain/quote-status.enum.js';
 import { EmptyQuoteItemsError } from '../domain/errors/empty-quote-items.error.js';
 import { InvalidQuoteItemValuesError } from '../domain/errors/invalid-quote-item-values.error.js';
@@ -10,11 +10,11 @@ import { ClientReader } from '../../../shared/clients/domain/client-reader.js';
 
 describe('CreateQuoteUseCase', () => {
   let useCase: CreateQuoteUseCase;
-  let mockQuoteRepository: Partial<QuoteRepository>;
+  let mockQuoteDao: Partial<QuoteDao>;
   let mockClientReader: Partial<ClientReader>;
 
   beforeEach(() => {
-    mockQuoteRepository = {
+    mockQuoteDao = {
       generateNextQuoteNumber: vi.fn().mockResolvedValue('COT-0001'),
       save: vi
         .fn()
@@ -30,7 +30,7 @@ describe('CreateQuoteUseCase', () => {
     };
 
     useCase = new CreateQuoteUseCase(
-      mockQuoteRepository as QuoteRepository,
+      mockQuoteDao as QuoteDao,
       mockClientReader as ClientReader,
     );
   });
@@ -113,6 +113,6 @@ describe('CreateQuoteUseCase', () => {
     expect(result.items[1].subtotal).toBe(76.5);
     expect(result.subtotal).toBe(1076.5);
     expect(result.total).toBe(1076.5);
-    expect(mockQuoteRepository.save).toHaveBeenCalledTimes(1);
+    expect(mockQuoteDao.save).toHaveBeenCalledTimes(1);
   });
 });

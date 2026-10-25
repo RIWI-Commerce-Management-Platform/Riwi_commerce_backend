@@ -3,14 +3,14 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { In, Repository } from 'typeorm';
 import {
   ClientHistoryEntry,
-  ClientHistoryRepository,
-} from '../domain/client-history.repository.js';
+  ClientHistoryDao,
+} from '../domain/client-history.dao.js';
 import { ClientHistoryOrmEntity } from './client-history.orm-entity.js';
 import { UserOrmEntity } from '../../auth/infrastructure/user.orm-entity.js';
 import { PaginatedResult } from '../../../shared/pagination/paginated-result.interface.js';
 
 @Injectable()
-export class TypeOrmClientHistoryRepository implements ClientHistoryRepository {
+export class TypeOrmClientHistoryDao implements ClientHistoryDao {
   constructor(
     @InjectRepository(ClientHistoryOrmEntity)
     private readonly repository: Repository<ClientHistoryOrmEntity>,

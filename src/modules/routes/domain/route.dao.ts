@@ -3,10 +3,10 @@ import { RouteFilterCriteria } from './route-filter.criteria.js';
 import { PaginatedResult } from '../../../shared/pagination/paginated-result.interface.js';
 
 /**
- * Repository port for the Route aggregate. The application layer depends on
- * it; TypeOrmRouteRepository implements it in the infrastructure layer.
+ * DAO port for the Route aggregate. The application layer depends on
+ * it; TypeOrmRouteDao implements it in the infrastructure layer.
  */
-export abstract class RouteRepository {
+export abstract class RouteDao {
   /**
    * Finds a route by id, including its ordered stops.
    */

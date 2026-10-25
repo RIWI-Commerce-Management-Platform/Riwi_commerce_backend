@@ -1,9 +1,9 @@
 import { Injectable } from '@nestjs/common';
-import { ClientRepository } from '../domain/client.repository.js';
+import { ClientDao } from '../domain/client.dao.js';
 import {
   ClientHistoryEntry,
-  ClientHistoryRepository,
-} from '../domain/client-history.repository.js';
+  ClientHistoryDao,
+} from '../domain/client-history.dao.js';
 import { ClientNotFoundError } from '../domain/client-not-found.error.js';
 import { PaginatedResult } from '../../../shared/pagination/paginated-result.interface.js';
 
@@ -17,19 +17,19 @@ export interface ListClientHistoryInput {
 @Injectable()
 export class ListClientHistoryUseCase {
   constructor(
-    private readonly clientRepository: ClientRepository,
-    private readonly historyRepository: ClientHistoryRepository,
+    private readonly clientDao: ClientDao,
+    private readonly historyDao: ClientHistoryDao,
   ) {}
 
   async execute(
     input: ListClientHistoryInput,
   ): Promise<PaginatedResult<ClientHistoryEntry>> {
-    const client = await this.clientRepository.findById(input.clientId);
+    const client = await this.clientDao.findById(input.clientId);
     if (!client) {
       throw new ClientNotFoundError(input.clientId);
     }
 
-    return this.historyRepository.findByClientId(
+    return this.historyDao.findByClientId(
       input.clientId,
       input.page,
       input.limit,

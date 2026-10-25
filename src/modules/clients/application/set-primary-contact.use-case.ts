@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { ClientContact } from '../domain/client-contact.entity.js';
-import { ClientContactRepository } from '../domain/client-contact.repository.js';
+import { ClientContactDao } from '../domain/client-contact.dao.js';
 import { ClientContactNotFoundError } from '../domain/client-contact-not-found.error.js';
 import { ActivityLogService } from '../../../shared/activity-log/domain/activity-log.service.js';
 
@@ -13,12 +13,12 @@ export interface SetPrimaryContactInput {
 @Injectable()
 export class SetPrimaryContactUseCase {
   constructor(
-    private readonly contactRepository: ClientContactRepository,
+    private readonly contactDao: ClientContactDao,
     private readonly activityLog: ActivityLogService,
   ) {}
 
   async execute(input: SetPrimaryContactInput): Promise<ClientContact> {
-    const contact = await this.contactRepository.findById(input.contactId);
+    const contact = await this.contactDao.findById(input.contactId);
     if (!contact || contact.clientId !== input.clientId) {
       throw new ClientContactNotFoundError(input.contactId);
     }
@@ -27,13 +27,13 @@ export class SetPrimaryContactUseCase {
       return contact;
     }
 
-    await this.contactRepository.unsetPrimaryByClientId(
+    await this.contactDao.unsetPrimaryByClientId(
       input.clientId,
       input.contactId,
     );
 
     contact.markAsPrimary();
-    const saved = await this.contactRepository.save(contact);
+    const saved = await this.contactDao.save(contact);
 
     if (input.actorId !== undefined) {
       await this.activityLog.record({

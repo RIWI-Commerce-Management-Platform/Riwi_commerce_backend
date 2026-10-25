@@ -97,19 +97,26 @@ export class Client {
 
   update(props: UpdateClientProps): void {
     if (props.nit !== undefined) this.nit = props.nit;
-    if (props.businessName !== undefined) this.businessName = props.businessName;
-    if (props.commercialName !== undefined) this.commercialName = props.commercialName;
+    if (props.businessName !== undefined)
+      this.businessName = props.businessName;
+    if (props.commercialName !== undefined)
+      this.commercialName = props.commercialName;
     if (props.address !== undefined) this.address = props.address;
     if (props.department !== undefined) this.department = props.department;
-    if (props.municipality !== undefined) this.municipality = props.municipality;
-    if (props.neighborhood !== undefined) this.neighborhood = props.neighborhood;
+    if (props.municipality !== undefined)
+      this.municipality = props.municipality;
+    if (props.neighborhood !== undefined)
+      this.neighborhood = props.neighborhood;
     if (props.phone !== undefined) this.phone = props.phone;
     if (props.email !== undefined) this.email = props.email;
     if (props.zoneId !== undefined) this.zoneId = props.zoneId;
-    if (props.clientTypeId !== undefined) this.clientTypeId = props.clientTypeId;
+    if (props.clientTypeId !== undefined)
+      this.clientTypeId = props.clientTypeId;
     if (props.potentialId !== undefined) this.potentialId = props.potentialId;
-    if (props.clientStatusId !== undefined) this.clientStatusId = props.clientStatusId;
-    if (props.visitFrequencyDays !== undefined) this.visitFrequencyDays = props.visitFrequencyDays;
+    if (props.clientStatusId !== undefined)
+      this.clientStatusId = props.clientStatusId;
+    if (props.visitFrequencyDays !== undefined)
+      this.visitFrequencyDays = props.visitFrequencyDays;
     if (props.latitude !== undefined) this.latitude = props.latitude;
     if (props.longitude !== undefined) this.longitude = props.longitude;
     this.updatedAt = new Date();

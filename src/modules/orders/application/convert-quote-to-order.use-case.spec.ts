@@ -1,8 +1,8 @@
 import { UserRole } from '../../auth/domain/user-role.enum.js';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ConvertQuoteToOrderUseCase } from './convert-quote-to-order.use-case.js';
-import { OrderRepository } from '../domain/order.repository.js';
-import { QuoteRepository } from '../../quotes/domain/quote.repository.js';
+import { OrderDao } from '../domain/order.dao.js';
+import { QuoteDao } from '../../quotes/domain/quote.dao.js';
 import { ActivityLogService } from '../../../shared/activity-log/domain/activity-log.service.js';
 import { Quote } from '../../quotes/domain/quote.entity.js';
 import { QuoteItem } from '../../quotes/domain/quote-item.entity.js';
@@ -15,8 +15,8 @@ import { QuoteAlreadyConvertedError } from '../domain/errors/quote-already-conve
 
 describe('ConvertQuoteToOrderUseCase (Application)', () => {
   let useCase: ConvertQuoteToOrderUseCase;
-  let orderRepository: Partial<OrderRepository>;
-  let quoteRepository: Partial<QuoteRepository>;
+  let orderDao: Partial<OrderDao>;
+  let quoteDao: Partial<QuoteDao>;
   let activityLogService: Partial<ActivityLogService>;
 
   const mockQuote = new Quote({
@@ -41,13 +41,13 @@ describe('ConvertQuoteToOrderUseCase (Application)', () => {
   });
 
   beforeEach(() => {
-    orderRepository = {
+    orderDao = {
       findByQuoteId: vi.fn().mockResolvedValue(null),
       generateNextOrderNumber: vi.fn().mockResolvedValue('PED-0001'),
       save: vi.fn().mockImplementation(async (order: Order) => order),
     };
 
-    quoteRepository = {
+    quoteDao = {
       findById: vi.fn().mockResolvedValue(mockQuote),
     };
 
@@ -56,8 +56,8 @@ describe('ConvertQuoteToOrderUseCase (Application)', () => {
     };
 
     useCase = new ConvertQuoteToOrderUseCase(
-      orderRepository as OrderRepository,
-      quoteRepository as QuoteRepository,
+      orderDao as OrderDao,
+      quoteDao as QuoteDao,
       activityLogService as ActivityLogService,
     );
   });
@@ -73,7 +73,7 @@ describe('ConvertQuoteToOrderUseCase (Application)', () => {
     expect(result.total).toBe(500);
     expect(result.items).toHaveLength(1);
     expect(result.items[0].productName).toBe('Printer');
-    expect(orderRepository.save).toHaveBeenCalled();
+    expect(orderDao.save).toHaveBeenCalled();
     expect(activityLogService.record).toHaveBeenCalledWith(
       expect.objectContaining({
         action: 'order.created',
@@ -90,13 +90,13 @@ describe('ConvertQuoteToOrderUseCase (Application)', () => {
       actor: { id: 7, role: UserRole.ASESOR, zoneId: null },
     });
 
-    expect(quoteRepository.findById).toHaveBeenCalledWith(10, {
+    expect(quoteDao.findById).toHaveBeenCalledWith(10, {
       advisorId: 7,
     });
   });
 
   it('throws QuoteNotFoundError when quote does not exist', async () => {
-    vi.mocked(quoteRepository.findById!).mockResolvedValue(null);
+    vi.mocked(quoteDao.findById!).mockResolvedValue(null);
 
     await expect(useCase.execute({ quoteId: 999, actorId: 5 })).rejects.toThrow(
       QuoteNotFoundError,
@@ -115,7 +115,7 @@ describe('ConvertQuoteToOrderUseCase (Application)', () => {
       createdAt: new Date(),
       updatedAt: new Date(),
     });
-    vi.mocked(quoteRepository.findById!).mockResolvedValue(draftQuote);
+    vi.mocked(quoteDao.findById!).mockResolvedValue(draftQuote);
 
     await expect(useCase.execute({ quoteId: 11, actorId: 5 })).rejects.toThrow(
       QuoteNotApprovedForOrderError,
@@ -132,7 +132,7 @@ describe('ConvertQuoteToOrderUseCase (Application)', () => {
       total: 500,
       items: [],
     });
-    vi.mocked(orderRepository.findByQuoteId!).mockResolvedValue(existingOrder);
+    vi.mocked(orderDao.findByQuoteId!).mockResolvedValue(existingOrder);
 
     await expect(useCase.execute({ quoteId: 10, actorId: 5 })).rejects.toThrow(
       QuoteAlreadyConvertedError,

@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { Advisor, UpdateAdvisorProps } from '../domain/advisor.entity.js';
-import { AdvisorRepository } from '../domain/advisor.repository.js';
+import { AdvisorDao } from '../domain/advisor.dao.js';
 import {
   AdvisorEmailAlreadyExistsError,
   AdvisorNotFoundError,
@@ -13,10 +13,10 @@ export interface UpdateAdvisorInput extends UpdateAdvisorProps {
 
 @Injectable()
 export class UpdateAdvisorUseCase {
-  constructor(private readonly advisorRepository: AdvisorRepository) {}
+  constructor(private readonly advisorDao: AdvisorDao) {}
 
   async execute(input: UpdateAdvisorInput): Promise<Advisor> {
-    const advisor = await this.advisorRepository.findById(input.userId);
+    const advisor = await this.advisorDao.findById(input.userId);
     if (!advisor) {
       throw new AdvisorNotFoundError(input.userId);
     }
@@ -26,19 +26,19 @@ export class UpdateAdvisorUseCase {
       changes.email = changes.email.trim().toLowerCase();
       if (
         changes.email !== advisor.email &&
-        (await this.advisorRepository.isEmailTaken(changes.email, userId))
+        (await this.advisorDao.isEmailTaken(changes.email, userId))
       ) {
         throw new AdvisorEmailAlreadyExistsError(changes.email);
       }
     }
     if (
       changes.zoneId != null &&
-      !(await this.advisorRepository.zoneExists(changes.zoneId))
+      !(await this.advisorDao.zoneExists(changes.zoneId))
     ) {
       throw new AdvisorZoneNotFoundError(changes.zoneId);
     }
 
     advisor.update(changes);
-    return this.advisorRepository.save(advisor);
+    return this.advisorDao.save(advisor);
   }
 }

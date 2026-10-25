@@ -17,7 +17,7 @@ export interface ListQuotesFilter {
  * Port that the application layer depends on.
  * Concrete TypeORM implementation is provided in infrastructure layer.
  */
-export abstract class QuoteRepository {
+export abstract class QuoteDao {
   abstract save(quote: Quote): Promise<Quote>;
   /** With a scope, a quote outside it is reported as not found (HU-06). */
   abstract findById(id: number, scope?: ActorScope): Promise<Quote | null>;

@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { ClientHistoryEntry } from '../../domain/client-history.repository.js';
+import { ClientHistoryEntry } from '../../domain/client-history.dao.js';
 
 export class ClientHistoryEntryResponseDto {
   @ApiProperty({ example: 1 })

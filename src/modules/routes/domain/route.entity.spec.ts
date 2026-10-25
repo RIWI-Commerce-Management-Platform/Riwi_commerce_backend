@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { Route } from './route.entity.js';
+import { RouteStop } from './route-stop.entity.js';
 import { RouteStatus } from './route-status.enum.js';
 import { DayOfWeek } from './day-of-week.enum.js';
 import { RouteFrequency } from './route-frequency.enum.js';
@@ -186,5 +187,54 @@ describe('Route Domain Entity', () => {
     route.activate();
     expect(route.isActive).toBe(true);
     expect(route.status).toBe(RouteStatus.ASSIGNED);
+  });
+
+  it('sorts the stops it is built with by visit order', () => {
+    const route = new Route({
+      ...baseRouteProps,
+      stops: [
+        new RouteStop({ clientId: 2, visitOrder: 2 }),
+        new RouteStop({ clientId: 1, visitOrder: 1 }),
+      ],
+    });
+
+    expect(route.stops.map((stop) => stop.clientId)).toEqual([1, 2]);
+  });
+
+  it('updates every general field', () => {
+    const route = new Route(baseRouteProps);
+    const startDate = new Date('2026-11-02');
+    const endDate = new Date('2026-12-28');
+
+    route.updateGeneralInfo({
+      name: '  Ruta Sur  ',
+      zoneId: 3,
+      frequency: RouteFrequency.BIWEEKLY,
+      startTime: '07:00:00',
+      endTime: '15:00:00',
+      startDate,
+      endDate,
+    });
+
+    expect(route).toMatchObject({
+      name: 'Ruta Sur',
+      zoneId: 3,
+      frequency: RouteFrequency.BIWEEKLY,
+      startTime: '07:00:00',
+      endTime: '15:00:00',
+      startDate,
+      endDate,
+    });
+  });
+
+  it('rejects an empty name or a non-positive zone on update', () => {
+    const route = new Route(baseRouteProps);
+
+    expect(() => route.updateGeneralInfo({ name: '   ' })).toThrow(
+      'Route name cannot be empty',
+    );
+    expect(() => route.updateGeneralInfo({ zoneId: 0 })).toThrow(
+      'Zone ID must be a positive integer',
+    );
   });
 });

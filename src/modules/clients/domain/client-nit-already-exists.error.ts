@@ -4,4 +4,3 @@ export class ClientNitAlreadyExistsError extends Error {
     this.name = 'ClientNitAlreadyExistsError';
   }
 }
-

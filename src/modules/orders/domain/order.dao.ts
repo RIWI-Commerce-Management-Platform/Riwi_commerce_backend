@@ -13,7 +13,7 @@ export interface ListOrdersFilter {
   limit?: number;
 }
 
-export abstract class OrderRepository {
+export abstract class OrderDao {
   abstract save(order: Order): Promise<Order>;
   /** With a scope, an order outside it is reported as not found (HU-06). */
   abstract findById(id: number, scope?: ActorScope): Promise<Order | null>;

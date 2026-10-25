@@ -10,7 +10,7 @@ export interface UserFilterCriteria {
   limit: number;
 }
 
-export abstract class UserRepository {
+export abstract class UserDao {
   abstract findById(id: number): Promise<User | null>;
   abstract findPaginated(
     criteria: UserFilterCriteria,

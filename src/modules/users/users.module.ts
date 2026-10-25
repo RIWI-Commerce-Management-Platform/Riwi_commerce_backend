@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { UserRepository } from './domain/user.repository.js';
-import { TypeOrmUserRepository } from './infrastructure/typeorm-user.repository.js';
+import { UserDao } from './domain/user.dao.js';
+import { TypeOrmUserDao } from './infrastructure/typeorm-user.dao.js';
 import { ListUsersUseCase } from './application/list-users.use-case.js';
 import { GetUserByIdUseCase } from './application/get-user-by-id.use-case.js';
 import { AssignUserRoleUseCase } from './application/assign-user-role.use-case.js';
@@ -20,7 +20,7 @@ import { ZoneOrmEntity } from '../zones/infrastructure/zone.orm-entity.js';
     ListUsersUseCase,
     GetUserByIdUseCase,
     AssignUserRoleUseCase,
-    { provide: UserRepository, useClass: TypeOrmUserRepository },
+    { provide: UserDao, useClass: TypeOrmUserDao },
   ],
   exports: [AssignUserRoleUseCase],
 })
