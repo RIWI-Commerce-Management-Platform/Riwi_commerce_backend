@@ -1,29 +1,34 @@
-
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { ApiPropertyOptional } from '@nestjs/swagger';
+import { Type } from 'class-transformer';
+import {
+  IsISO8601,
+  IsInt,
+  IsOptional,
+  IsPositive,
+  Matches,
+} from 'class-validator';
 
 export class DashboardFiltersDto {
-  @ApiProperty({
+  @ApiPropertyOptional({
     example: '2026-10-19',
-    description: 'Monday of the requested week (YYYY-MM-DD)',
+    description:
+      "Any day of the week to show ('YYYY-MM-DD'); the week runs from its Monday. Defaults to the current week.",
   })
-  weekStart!: string;
+  @IsOptional()
+  @Matches(/^\d{4}-\d{2}-\d{2}$/, {
+    message: "weekStart must use the 'YYYY-MM-DD' format",
+  })
+  @IsISO8601({ strict: true }, { message: 'weekStart must be a valid date' })
+  weekStart?: string;
 
   @ApiPropertyOptional({
     example: 1,
-    description: 'Territory identifier',
-    type: Number,
+    description:
+      'Territory (zone). Every territory when omitted; forced to their own zone for regional directors.',
   })
-  territoryId?: number | string;
-
-  get parsedTerritoryId(): number | undefined {
-    if (
-      this.territoryId === undefined ||
-      this.territoryId === null ||
-      this.territoryId === ''
-    ) {
-      return undefined;
-    }
-    const parsed = Number(this.territoryId);
-    return Number.isInteger(parsed) ? parsed : undefined;
-  }
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @IsPositive()
+  territoryId?: number;
 }
