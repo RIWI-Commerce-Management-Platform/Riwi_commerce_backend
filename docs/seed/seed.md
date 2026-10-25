@@ -27,7 +27,7 @@ npm run migration:run
 npm run seed:demo
 ```
 
-`seed:demo` builds the app and runs `dist/seeds/demo.seed.js`. The demo data itself (clients, advisors, routes, products) is in `src/seeds/demo-data.ts`.
+`seed:demo` builds the app and runs `dist/seeds/demo.seed.js` on the host, with the database running in docker compose. Keep `POSTGRES_HOST=db` in `.env` (the `app` container needs it): `src/seeds/host-database-env.ts` is preloaded and, when the host is `db`, switches the seed to `localhost` on `POSTGRES_HOST_PORT`. The demo data itself (clients, advisors, routes, products) is in `src/seeds/demo-data.ts`.
 
 ## Catalogs
 

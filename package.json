@@ -24,7 +24,7 @@
     "migration:generate": "npm run typeorm -- migration:generate",
     "migration:run": "npm run typeorm -- migration:run",
     "migration:revert": "npm run typeorm -- migration:revert",
-    "seed:demo": "nest build && node --env-file=.env dist/seeds/demo.seed.js",
+    "seed:demo": "nest build && node --env-file=.env --import ./dist/seeds/host-database-env.js dist/seeds/demo.seed.js",
     "sonar": "npm run test:cov && sonar-scanner",
     "prepare": "husky"
   },
