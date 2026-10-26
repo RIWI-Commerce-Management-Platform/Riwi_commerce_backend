@@ -14,7 +14,11 @@ export type { AgendaPeriod } from './agenda-range.js';
 export class GetVisitAgendaUseCase {
   constructor(private readonly visitDao: VisitDao) {}
 
-  async execute(advisorId: number, period: AgendaPeriod, date?: string) {
+  async execute(
+    advisorId: number | undefined,
+    period: AgendaPeriod,
+    date?: string,
+  ) {
     const { startDate, endDate } = resolveAgendaRange(
       period,
       parseAgendaDate(date),
