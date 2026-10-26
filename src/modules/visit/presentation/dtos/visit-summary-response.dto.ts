@@ -10,6 +10,9 @@ export class VisitSummaryResponseDto {
   clientId: number;
 
   @ApiPropertyOptional({ nullable: true })
+  advisorId?: number;
+
+  @ApiPropertyOptional({ nullable: true })
   routeId: number | null;
 
   @ApiProperty()
@@ -23,12 +26,25 @@ export class VisitSummaryResponseDto {
   @ApiPropertyOptional({ nullable: true })
   objective: string | null;
 
+  @ApiPropertyOptional({ nullable: true })
+  startTime?: string | null;
+
+  @ApiPropertyOptional({ nullable: true })
+  endTime?: string | null;
+
+  @ApiPropertyOptional({ nullable: true })
+  observations?: string | null;
+
   constructor(visit: Visit) {
     this.id = visit.id;
     this.clientId = visit.clientId;
+    this.advisorId = visit.advisorId;
     this.routeId = visit.routeId;
     this.scheduledAt = visit.scheduledAt;
     this.status = visit.status;
     this.objective = visit.objective;
+    this.startTime = visit.startTime;
+    this.endTime = visit.endTime;
+    this.observations = visit.observations;
   }
 }

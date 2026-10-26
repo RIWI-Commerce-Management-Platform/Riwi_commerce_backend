@@ -23,4 +23,10 @@ export class VisitAgendaQueryDto {
     message: "date must use the 'YYYY-MM-DD' format.",
   })
   date?: string;
+
+  @ApiPropertyOptional({
+    description: 'Filter by advisor ID (optional for Director/Admin).',
+  })
+  @IsOptional()
+  advisorId?: number;
 }

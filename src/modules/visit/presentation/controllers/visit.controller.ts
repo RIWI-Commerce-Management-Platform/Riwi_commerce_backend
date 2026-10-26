@@ -77,6 +77,8 @@ import { FollowUpResponseDto } from '../dtos/follow-up-response.dto.js';
 
 import { VisitAttachmentResponseDto } from '../dtos/visit-attachment-response.dto.js';
 
+import { VisitDao } from '../../domain/dao/visit.dao.js';
+
 interface UploadedFilePayload {
   buffer: Buffer;
   originalname: string;
@@ -107,11 +109,12 @@ export class VisitsController {
     private readonly uploadAttachment: UploadVisitAttachmentUseCase,
     private readonly listAttachments: ListVisitAttachmentsUseCase,
     private readonly deleteAttachment: DeleteVisitAttachmentUseCase,
+    private readonly visitDao: VisitDao,
   ) {}
 
   @Get('agenda')
   @ApiOperation({
-    summary: 'Get the authenticated advisor agenda for a day or a week',
+    summary: 'Get the advisor agenda for a day or a week',
   })
   @ApiQuery({
     name: 'period',
@@ -125,6 +128,12 @@ export class VisitsController {
     description: "Reference date in 'YYYY-MM-DD' format. Defaults to today.",
     example: '2026-10-20',
   })
+  @ApiQuery({
+    name: 'advisorId',
+    required: false,
+    description:
+      'Optional advisor ID to filter. If omitted and user is Admin/Director, returns all.',
+  })
   @ApiResponse({
     status: 200,
     description: 'Visits ordered by scheduled date and time.',
@@ -135,14 +144,62 @@ export class VisitsController {
     @Query() query: VisitAgendaQueryDto,
   ): Promise<VisitSummaryResponseDto[]> {
     const advisorId = await this.currentAdvisor.extract(request);
+    const userRole = (request as any).user?.role;
+
+    let targetAdvisorId: number | undefined;
+    if (userRole === 'ASESOR') {
+      targetAdvisorId = advisorId;
+    } else if (query.advisorId) {
+      targetAdvisorId = Number(query.advisorId);
+    } else if (userRole === 'ADMIN' || userRole === 'DIRECTOR_REGIONAL') {
+      targetAdvisorId = undefined;
+    } else {
+      targetAdvisorId = advisorId;
+    }
 
     const visits = await this.getVisitAgenda.execute(
-      advisorId,
+      targetAdvisorId,
       query.period ?? 'day',
       query.date,
     );
 
     return visits.map((visit) => new VisitSummaryResponseDto(visit));
+  }
+
+  @Post()
+  @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({ summary: 'Register a new visit (manual registration)' })
+  @ApiResponse({
+    status: 201,
+    description: 'Visit registered successfully.',
+    type: VisitDetailResponseDto,
+  })
+  async create(
+    @Req() request: Request,
+    @Body() body: any,
+  ): Promise<VisitDetailResponseDto> {
+    const actorId = await this.currentAdvisor.extract(request);
+    const advisorId = body.advisorId ? Number(body.advisorId) : actorId;
+    const scheduledAt = body.scheduledAt
+      ? new Date(body.scheduledAt)
+      : new Date();
+
+    const visit = await this.visitDao.create({
+      clientId: Number(body.clientId),
+      advisorId,
+      routeId: body.routeId ? Number(body.routeId) : null,
+      scheduledAt,
+      status: body.status ?? 'VISITED',
+      objective: body.objective ?? null,
+      observations: body.observations ?? null,
+      startTime: body.startTime ?? null,
+      endTime: body.endTime ?? null,
+      quoteGenerated: Boolean(body.quoteGenerated),
+      orderGenerated: Boolean(body.orderGenerated),
+      results: body.results,
+    });
+
+    return new VisitDetailResponseDto(visit);
   }
 
   @Get(':id')

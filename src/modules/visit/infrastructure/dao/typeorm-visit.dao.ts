@@ -6,7 +6,11 @@ import { Repository, Between, In } from 'typeorm';
 
 import { Visit } from '../../domain/visit.entity.js';
 
-import { VisitAgendaFilters, VisitDao } from '../../domain/dao/visit.dao.js';
+import {
+  CreateVisitCommand,
+  VisitAgendaFilters,
+  VisitDao,
+} from '../../domain/dao/visit.dao.js';
 
 import { VisitOrmEntity } from '../visit.orm-entity.js';
 
@@ -28,17 +32,52 @@ export class TypeOrmVisitDao implements VisitDao {
   ) {}
 
   async findAgenda(filters: VisitAgendaFilters): Promise<Visit[]> {
+    const where: any = {
+      scheduledAt: Between(filters.startDate, filters.endDate),
+    };
+
+    if (filters.advisorId && filters.advisorId > 0) {
+      where.advisorId = filters.advisorId;
+    }
+
     const visits = await this.repository.find({
-      where: {
-        advisorId: filters.advisorId,
-        scheduledAt: Between(filters.startDate, filters.endDate),
-      },
+      where,
       order: {
         scheduledAt: 'ASC',
       },
     });
 
     return visits.map((visit) => VisitMapper.toDomain(visit));
+  }
+
+  async create(command: CreateVisitCommand): Promise<Visit> {
+    const entity = new VisitOrmEntity();
+    entity.clientId = command.clientId;
+    entity.advisorId = command.advisorId;
+    entity.routeId = command.routeId ?? null;
+    entity.scheduledAt = command.scheduledAt;
+    entity.status = command.status ?? 'PENDING';
+    entity.objective = command.objective ?? null;
+    entity.observations = command.observations ?? null;
+    entity.startTime = command.startTime ?? null;
+    entity.endTime = command.endTime ?? null;
+    entity.quoteGenerated = command.quoteGenerated ?? false;
+    entity.orderGenerated = command.orderGenerated ?? false;
+
+    const saved = await this.repository.save(entity);
+
+    if (command.results && command.results.length > 0) {
+      const links = command.results.map((result) => {
+        const link = new VisitResultLinkOrmEntity();
+        link.visitId = saved.id;
+        link.resultId = result.id;
+        link.observation = result.observation ?? null;
+        return link;
+      });
+      await this.linkRepository.save(links);
+    }
+
+    return (await this.findById(saved.id))!;
   }
 
   async findById(id: number): Promise<Visit | null> {

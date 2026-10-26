@@ -140,6 +140,13 @@ describe('VisitsController', () => {
         ]),
     };
     mockDeleteAttachment = { execute: vi.fn().mockResolvedValue(undefined) };
+    const mockVisitDao = {
+      findAgenda: vi.fn(),
+      findById: vi.fn(),
+      save: vi.fn(),
+      findByIdAndAdvisor: vi.fn(),
+      create: vi.fn().mockResolvedValue(buildVisit()),
+    };
 
     controller = new VisitsController(
       mockGetAgenda as unknown as GetVisitAgendaUseCase,
@@ -154,6 +161,7 @@ describe('VisitsController', () => {
       mockUpload as unknown as UploadVisitAttachmentUseCase,
       mockListAttachments as unknown as ListVisitAttachmentsUseCase,
       mockDeleteAttachment as unknown as DeleteVisitAttachmentUseCase,
+      mockVisitDao as any,
     );
   });
 
