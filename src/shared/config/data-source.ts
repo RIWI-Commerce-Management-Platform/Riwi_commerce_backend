@@ -2,6 +2,7 @@ import 'reflect-metadata';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { DataSource } from 'typeorm';
+import { databaseSsl } from './database-ssl.js';
 
 /**
  * Standalone DataSource for the TypeORM CLI (migration:generate/run/revert).
@@ -28,6 +29,7 @@ const dataSource = new DataSource({
   username: process.env.POSTGRES_USER,
   password: process.env.POSTGRES_PASSWORD,
   database: process.env.POSTGRES_DB,
+  ssl: databaseSsl(),
   synchronize: false,
   entities: [
     join(currentDir, '../../modules/**/infrastructure/*.orm-entity{.ts,.js}'),

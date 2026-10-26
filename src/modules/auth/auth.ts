@@ -4,6 +4,7 @@ import { Pool } from 'pg';
 import { UserRole } from './domain/user-role.enum.js';
 import { sendPasswordResetEmail } from './infrastructure/password-reset-mailer.js';
 import { isInactiveAdvisor } from './infrastructure/inactive-advisor.guard.js';
+import { databaseSsl } from '../../shared/config/database-ssl.js';
 
 // Better Auth's built-in Kysely adapter. The TypeORM adapter can't be used
 // because it doesn't support numeric ids. The tables are still created by
@@ -14,6 +15,7 @@ const pool = new Pool({
   user: process.env.POSTGRES_USER,
   password: process.env.POSTGRES_PASSWORD,
   database: process.env.POSTGRES_DB,
+  ssl: databaseSsl(),
 });
 
 // HU-10: Microsoft 365 sign-in is only enabled when its credentials exist.

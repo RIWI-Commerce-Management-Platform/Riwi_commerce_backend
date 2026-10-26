@@ -1,3 +1,5 @@
+import { databaseSsl } from './database-ssl.js';
+
 /**
  * Centralized application configuration, read from environment variables.
  */
@@ -9,6 +11,7 @@ export default () => ({
     username: process.env.POSTGRES_USER,
     password: process.env.POSTGRES_PASSWORD,
     name: process.env.POSTGRES_DB,
+    ssl: databaseSsl(),
   },
   jwt: {
     secret: process.env.JWT_SECRET ?? 'dev-secret-change-me',

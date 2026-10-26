@@ -6,6 +6,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { VisitsModule } from './modules/visit/visit.module.js';
 import configuration from './shared/config/configuration.js';
+import type { DatabaseSsl } from './shared/config/database-ssl.js';
 import { ZonesModule } from './modules/zones/zones.module.js';
 import { FileStorageModule } from './shared/file-storage/file-storage.module.js';
 import { QuotesModule } from './modules/quotes/quotes.module.js';
@@ -50,6 +51,7 @@ export const { ObserveModule, ObserveInstrument } = createObserveModule();
         username: config.get<string>('database.username'),
         password: config.get<string>('database.password'),
         database: config.get<string>('database.name'),
+        ssl: config.get<DatabaseSsl>('database.ssl'),
         autoLoadEntities: true,
         synchronize: false,
       }),
